@@ -11,7 +11,7 @@ if (-not (Test-Path $PublicRepoPath)) {
 
 # 1. Copy ONLY public files
 Copy-Item "README.md" "$PublicRepoPath\" -Force
-Copy-Item "CHANGELOG_PUBLIC.md" "$PublicRepoPath\CHANGELOG.md" -Force
+Copy-Item "CHANGELOG.md" "$PublicRepoPath\" -Force
 Copy-Item "LICENSE" "$PublicRepoPath\LICENSE.txt" -Force
 Copy-Item "FEATURES_AND_SAVINGS.md" "$PublicRepoPath\" -Force
 Copy-Item ".github" "$PublicRepoPath\" -Recurse -Force

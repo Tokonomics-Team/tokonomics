@@ -11,4 +11,5 @@ esbuild.js
 .DS_Store
 .tokenopt/**
 CHANGELOG_PUBLIC.md
+CHANGELOG_INTERNAL.md
 *.vsix
