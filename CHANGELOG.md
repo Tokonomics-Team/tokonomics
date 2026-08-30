@@ -1,16 +1,16 @@
 # Tokonomics Release Notes
 
-All notable user-facing changes and improvements to **Tokonomics** are documented here.
+All notable user-facing changes, feature enhancements, and token savings updates are documented here.
 
 ---
 
 ## [4.1.0] - 2026-08-30
-### 🚀 New Features & Enhancements
-- **⚡ In-Memory RAM Accelerator Engine**:
-  - Automatically pre-warms workspace context on startup in idle micro-batches for instantaneous 0ms first-prompt latency.
-  - Added high-speed in-memory symbol search index to surgically retrieve referenced signatures without loading full files.
-  - Added multi-turn conversational deduplication to slash 500–2,000 tokens on follow-up chat turns.
-  - Added customizable RAM budget (`tokenOptimizer.ramBudgetMB`, default 64MB) with automatic LRU memory management.
+### 🚀 New Features & Performance Enhancements
+- **⚡ In-Memory RAM Context Accelerator**:
+  - Background workspace pre-warming on startup for instantaneous 0ms first-prompt latency.
+  - High-speed in-memory symbol search index to surgically retrieve referenced signatures without loading full files.
+  - Multi-turn conversational deduplication to save 500–2,000 tokens on follow-up chat turns.
+  - User-configurable RAM budget (`tokenOptimizer.ramBudgetMB`, default 64MB) with automatic LRU memory management.
   - New chat telemetry command: **`@tokonomics /ram`** to inspect memory budget, active cache hit rate, and indexed symbols.
 - **🛡️ 100% Anonymized Diagnostic Logger & Crash Reporter**:
   - Automatically scrubs usernames, local directory paths, IP addresses, and API keys.
@@ -21,7 +21,7 @@ All notable user-facing changes and improvements to **Tokonomics** are documente
 - **🎯 Smart Model Router & Governance**:
   - Suggests the most cost-effective model tier (Flash vs. Standard vs. Reasoning) based on prompt complexity.
   - Added enterprise `modelAllowList` configuration for strict cost control.
-- **🏷️ Official Rebranding**: Full Tokonomics branding, refreshed status bar pill (`⚡ Tokonomics: Active`), and updated command names.
+- **🏷️ Official Rebranding & Licensing**: Full Tokonomics branding, refreshed status bar pill (`⚡ Tokonomics: Active`), updated command names, and proprietary commercial license.
 
 ---
 
