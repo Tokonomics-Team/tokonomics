@@ -320,7 +320,8 @@
     "vsce:package": "npx @vscode/vsce package --no-dependencies --out tokonomics-4.1.0.vsix",
     "publish:vsce": "npx @vscode/vsce publish --no-dependencies",
     "publish:ovsx": "npx ovsx publish tokonomics-4.1.0.vsix",
-    "publish:all": "npm run publish:vsce && npm run publish:ovsx"
+    "publish:all": "npm run publish:vsce && npm run publish:ovsx",
+    "sync:public": "powershell -ExecutionPolicy Bypass -File ./scripts/sync-public-repo.ps1"
   },
   "dependencies": {
     "web-tree-sitter": "^0.22.6"
