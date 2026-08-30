@@ -1,0 +1,21 @@
+# STRICT SOURCE CODE PREVENTION RULE
+# The public repository MUST ONLY contain documentation, assets, and issue templates.
+# All engine source code is strictly forbidden in this repository.
+
+src/
+tests/
+dist/
+out/
+out_test/
+scripts/
+node_modules/
+*.ts
+*.tsx
+*.map
+tsconfig.json
+esbuild.js
+.vsix
+*.vsix
+.env
+.env.*
+.tokenopt/
