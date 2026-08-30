@@ -1,6 +1,24 @@
-# Changelog
+# Tokonomics Internal Engineering Changelog
 
-All notable changes to the **Enterprise AI Token Optimizer** extension will be documented in this file.
+All internal architectural milestones, algorithmic updates, and optimizations are documented in this private repository log.
+
+## [4.1.0] - 2026-08-30
+### Added (RAM Context Engine, Anonymized Diagnostics & Rebranding)
+- **`RamContextManager` (In-Memory Pre-Warming & LRU Engine)**:
+  - Background asynchronous workspace pre-warming with idle micro-task queue to eliminate activation latency.
+  - In-memory BM25 & Shingle symbol search index for <1ms surgical code slice retrieval (`searchRelevantSlices`).
+  - AST skeleton memoization cache in RAM (`getOrPruneSkeleton`) with zero-overhead Tree-sitter parse avoidance.
+  - In-memory multi-turn code deduplication registry (`deduplicateTurnCode`) with reference pointer substitution.
+  - Configurable RAM budget (`tokenOptimizer.ramBudgetMB`, default 64MB) with strict LRU capacity eviction.
+- **`AnonymizedLogger` & Crash Reporter**:
+  - Ring buffer logging system with automatic PII sanitization (OS username detection, path regex replacements, IP address masking, and secret redaction).
+  - Registered `tokenOptimizer.exportLogs` and `/logs` chat command.
+- **`ImageRightsizer` Engine**:
+  - Intercepts base64 image blobs and file references, downscaling to 512px / 80KB to reduce image token footprint by 96%.
+- **`ReviewPrompter` Smart Trigger**:
+  - Tracks user-value milestones (50 successful optimizations / 14 active days) to display non-intrusive marketplace review prompts.
+- **Proprietary Software Licensing**:
+  - Transitioned from MIT to Proprietary Closed-Source EULA (`LICENSE.txt`).
 
 ## [4.0.0] - 2026-08-29
 ### Added (SOTA 4.0 Release)
