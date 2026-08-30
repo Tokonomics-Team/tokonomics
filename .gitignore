@@ -7,3 +7,5 @@ out_test/
 *.log
 .vscode-test/
 .tokenopt/
+INTERNAL_ARCHITECTURE_AND_FEATURES.md
+CHANGELOG_INTERNAL.md
