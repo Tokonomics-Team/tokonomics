@@ -1,0 +1,9 @@
+node_modules/
+dist/
+out/
+out_test/
+*.vsix
+.DS_Store
+*.log
+.vscode-test/
+.tokenopt/

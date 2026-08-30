@@ -1,0 +1,10 @@
+.vscode/**
+.vscode-test/**
+src/**
+tests/**
+out_test/**
+scripts/**
+tsconfig.json
+esbuild.js
+.git/**
+.DS_Store

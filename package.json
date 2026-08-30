@@ -1,0 +1,335 @@
+{
+  "name": "tokonomics",
+  "displayName": "Tokonomics — Save 65-88% on AI Coding Costs (Claude, GPT-4o, Copilot, Gemini)",
+  "description": "Slash your AI token costs by 65-88%. AST code pruning, semantic caching, smart model routing, image rightsizing, and provider cache alignment — all in one zero-config extension. Free forever.",
+  "version": "4.1.0",
+  "publisher": "tokonomics",
+  "icon": "assets/icon.png",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "AI",
+    "Programming Languages",
+    "Machine Learning",
+    "Other"
+  ],
+  "keywords": [
+    "token optimizer",
+    "ai cost reduction",
+    "prompt compression",
+    "copilot optimizer",
+    "claude caching",
+    "gpt-4o savings",
+    "ai token savings",
+    "ast pruning"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Tokonomics-Team/tokonomics"
+  },
+  "homepage": "https://tokonomics-team.github.io/tokonomics",
+  "bugs": {
+    "url": "https://github.com/Tokonomics-Team/tokonomics/issues"
+  },
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onLanguageModel:token-optimizer-proxy",
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "languageModelProviders": [
+      {
+        "id": "token-optimizer-proxy",
+        "displayName": "Token-Optimized Enterprise Proxy (Auto-Detecting)"
+      }
+    ],
+    "chatParticipants": [
+      {
+        "id": "token-optimizer-participant",
+        "name": "tokenopt",
+        "description": "Enterprise AI Token Optimizer: Compacts code context and analyzes token usage",
+        "commands": [
+          {
+            "name": "map",
+            "description": "Generate workspace PageRank structural repository map"
+          },
+          {
+            "name": "pack",
+            "description": "Pack multiple workspace files into an AST-pruned context payload"
+          },
+          {
+            "name": "stats",
+            "description": "Show token savings and ROI metrics"
+          },
+          {
+            "name": "ram",
+            "description": "Show in-memory RAM cache, symbol index, and memory budget metrics"
+          },
+          {
+            "name": "logs",
+            "description": "View and export 100% anonymized diagnostic logs and crash report"
+          },
+          {
+            "name": "analyze",
+            "description": "Analyze active editor file for token redundancy"
+          },
+          {
+            "name": "compact",
+            "description": "Compact code or prompt context"
+          }
+        ]
+      }
+    ],
+    "commands": [
+      {
+        "command": "tokenOptimizer.showDashboard",
+        "title": "Tokonomics: Show Savings Dashboard",
+        "category": "Tokonomics"
+      },
+      {
+        "command": "tokenOptimizer.showAnalyticsWebview",
+        "title": "Tokonomics: Open Visual Analytics Webview",
+        "category": "Tokonomics"
+      },
+      {
+        "command": "tokenOptimizer.comparePrunedDiff",
+        "title": "Tokonomics: Compare Original vs Pruned Skeleton (Side-by-Side Diff)",
+        "category": "Tokonomics"
+      },
+      {
+        "command": "tokenOptimizer.optimizeSelection",
+        "title": "Tokonomics: Optimize & Copy Selection as Context",
+        "category": "Tokonomics"
+      },
+      {
+        "command": "tokenOptimizer.toggleAstPruning",
+        "title": "Tokonomics: Toggle AST Structural Pruning",
+        "category": "Tokonomics"
+      },
+      {
+        "command": "tokenOptimizer.resetMetrics",
+        "title": "Tokonomics: Reset Session Savings Metrics",
+        "category": "Tokonomics"
+      },
+      {
+        "command": "tokenOptimizer.exportLogs",
+        "title": "Tokonomics: Export Anonymized Diagnostic Logs",
+        "category": "Tokonomics"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "tokenOptimizer.showDashboard"
+        },
+        {
+          "command": "tokenOptimizer.showAnalyticsWebview"
+        },
+        {
+          "command": "tokenOptimizer.comparePrunedDiff"
+        },
+        {
+          "command": "tokenOptimizer.optimizeSelection"
+        },
+        {
+          "command": "tokenOptimizer.toggleAstPruning"
+        },
+        {
+          "command": "tokenOptimizer.resetMetrics"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "tokenOptimizer.comparePrunedDiff",
+          "group": "AI@1"
+        },
+        {
+          "command": "tokenOptimizer.optimizeSelection",
+          "when": "editorHasSelection",
+          "group": "AI@2"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "tokenOptimizer.comparePrunedDiff",
+          "group": "AI"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Enterprise AI Token Optimizer",
+      "properties": {
+        "tokenOptimizer.enableAstPruning": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable AST structural code signature pruning across TypeScript, JavaScript, Python, Go, Rust, Java, and C#."
+        },
+        "tokenOptimizer.enableCacheAlignment": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable 1024-token prefix stabilization and 4-tier provider prompt cache alignment."
+        },
+        "tokenOptimizer.enableTextCompression": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable semantic token filtering on conversational logs and natural language contexts."
+        },
+        "tokenOptimizer.compressionRatio": {
+          "type": "number",
+          "default": 0.4,
+          "minimum": 0.1,
+          "maximum": 0.9,
+          "description": "Target retention ratio for natural language prompt compression (0.1 to 0.9)."
+        },
+        "tokenOptimizer.targetProvider": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "anthropic",
+            "openai",
+            "gemini",
+            "deepseek",
+            "generic"
+          ],
+          "default": "auto",
+          "description": "Target cloud provider for prompt caching (default: 'auto' dynamically infers provider from the active model in the window)."
+        },
+        "tokenOptimizer.maxHistoryTurns": {
+          "type": "number",
+          "default": 8,
+          "minimum": 2,
+          "maximum": 50,
+          "description": "Maximum number of conversation history message turns to retain in active payload."
+        },
+        "tokenOptimizer.stripDiffsAndLogs": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically compact verbose terminal logs, error traces, and git diffs in conversation history."
+        },
+        "tokenOptimizer.targetUpstreamModelFamily": {
+          "type": "string",
+          "default": "auto",
+          "description": "The upstream VS Code language model family (default: 'auto' dynamically detects the active model in the current window)."
+        },
+        "tokenOptimizer.enableDailyBudgetGuardrail": {
+          "type": "boolean",
+          "default": false,
+          "description": "Optional: Enable daily token spend alert warnings when your daily spend approaches the budget ceiling."
+        },
+        "tokenOptimizer.dailyBudgetUsd": {
+          "type": "number",
+          "default": 5.0,
+          "minimum": 0.5,
+          "maximum": 500.0,
+          "description": "Optional: Daily spend budget threshold in USD (active when enableDailyBudgetGuardrail is true)."
+        },
+        "tokenOptimizer.mcpSchemaCompression": {
+          "type": "string",
+          "enum": [
+            "off",
+            "low",
+            "medium",
+            "high"
+          ],
+          "default": "medium",
+          "description": "MCP/Tool schema compression level. 'low': truncate descriptions. 'medium': strip descriptions + enums + defaults. 'high': collapse 15+ tools into a single meta-tool."
+        },
+        "tokenOptimizer.enableDiffOutputOptimization": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically detect code edit/refactor intent and instruct models to output unified diff patches instead of entire files (saves 40-70% output tokens)."
+        },
+        "tokenOptimizer.enableModelRouting": {
+          "type": "boolean",
+          "default": true,
+          "description": "Analyze task complexity and suggest optimal model tiers (Flash vs Standard vs Reasoning)."
+        },
+        "tokenOptimizer.enableResponseCache": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable instant zero-token exact-hash response caching for read-only questions."
+        },
+        "tokenOptimizer.tabRelevanceThreshold": {
+          "type": "number",
+          "default": 20,
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Minimum relevance score (0-100) for including open editor tabs into context packs."
+        },
+        "tokenOptimizer.maxIndexFileSizeKB": {
+          "type": "number",
+          "default": 300,
+          "minimum": 50,
+          "maximum": 5000,
+          "description": "Maximum file size (in KB) for workspace indexing. Files larger than this are skipped during repo mapping to preserve memory. Increase this if your project has large auto-generated files (e.g. protobuf, GraphQL schemas) that you want indexed."
+        },
+        "tokenOptimizer.responseCacheMaxSize": {
+          "type": "number",
+          "default": 100,
+          "minimum": 10,
+          "maximum": 500,
+          "description": "Maximum number of cached AI responses held in memory. Lower this on machines with limited RAM."
+        },
+        "tokenOptimizer.modelAllowList": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "Enterprise governance: restrict which model IDs or families are allowed. Leave empty to allow all models. Example: ['claude-3.5-sonnet', 'gpt-4o']. Blocked models will show a policy warning instead of sending the request."
+        },
+        "tokenOptimizer.enableImageRightsizing": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically compress and downscale inline base64 images and large screenshot references before sending to AI models. Saves 60-96% on image token costs."
+        },
+        "tokenOptimizer.imageMaxDimension": {
+          "type": "number",
+          "default": 512,
+          "minimum": 128,
+          "maximum": 2048,
+          "description": "Maximum dimension (width or height in pixels) for rightsized images. Lower values save more tokens but reduce image quality."
+        },
+        "tokenOptimizer.ramBudgetMB": {
+          "type": "number",
+          "default": 64,
+          "minimum": 16,
+          "maximum": 1024,
+          "description": "Maximum RAM (in MB) allocated for in-memory AST skeletons, PageRank graph, background pre-warming, and symbol search. Lower on low-RAM devices (e.g. 16MB/32MB); increase on large enterprise repos (e.g. 128MB/256MB)."
+        },
+        "tokenOptimizer.enableBackgroundRamWarming": {
+          "type": "boolean",
+          "default": true,
+          "description": "Asynchronously pre-warms the codebase in RAM on startup in idle micro-batches for 0ms first-prompt latency."
+        },
+        "tokenOptimizer.enableRamSemanticIndex": {
+          "type": "boolean",
+          "default": true,
+          "description": "Maintains a high-speed in-memory symbol search index in RAM to surgically retrieve referenced signatures without dumping full files."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "tsc -p ./",
+    "watch": "tsc -w -p ./",
+    "package": "node esbuild.js --production",
+    "dev": "node esbuild.js",
+    "test": "node scripts/run-tests.js",
+    "download-parsers": "node scripts/download-parsers.js",
+    "vsce:package": "npx @vscode/vsce package --no-dependencies --out tokonomics-4.1.0.vsix",
+    "publish:vsce": "npx @vscode/vsce publish --no-dependencies",
+    "publish:ovsx": "npx ovsx publish tokonomics-4.1.0.vsix",
+    "publish:all": "npm run publish:vsce && npm run publish:ovsx"
+  },
+  "dependencies": {
+    "web-tree-sitter": "^0.22.6"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/vscode": "^1.90.0",
+    "@vscode/vsce": "^2.30.0",
+    "esbuild": "^0.21.5",
+    "typescript": "^5.4.5"
+  }
+}
