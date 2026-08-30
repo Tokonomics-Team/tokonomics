@@ -4,6 +4,12 @@ All notable user updates, feature additions, and performance improvements to **T
 
 ---
 
+## [4.1.2] - 2026-08-30
+### 🛡️ Documentation & Link Cleanups
+- Replaced local file URI paths in documentation with public repository links.
+
+---
+
 ## [4.1.1] - 2026-08-30
 ### 🛡️ Documentation & Marketplace Release
 - Updated official marketplace metadata, license terms, and community support links.

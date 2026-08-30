@@ -185,4 +185,4 @@ Tokonomics is built on standard VS Code APIs and runs across all major environme
 
 Copyright © 2026 **Tokonomics Team**. All Rights Reserved.
 
-Tokonomics is proprietary software. Unauthorized copying, modification, decompilation, reverse engineering, or redistribution of this software or its underlying algorithms is strictly prohibited. See [`LICENSE.txt`](file:///d:/AntigravityProjects/AITokenOptimizer/LICENSE.txt) for full terms.
+Tokonomics is proprietary software. Unauthorized copying, modification, decompilation, reverse engineering, or redistribution of this software or its underlying algorithms is strictly prohibited. See [LICENSE.txt](https://github.com/Tokonomics-Team/tokonomics/blob/main/LICENSE.txt) for full terms.
