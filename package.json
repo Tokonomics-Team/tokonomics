@@ -4,6 +4,7 @@
   "description": "Slash your AI token costs by 65-88%. AST code pruning, semantic caching, smart model routing, image rightsizing, and provider cache alignment — all in one zero-config extension. Free forever.",
   "version": "4.1.0",
   "publisher": "tokonomics",
+  "license": "SEE LICENSE IN LICENSE.txt",
   "icon": "assets/icon.png",
   "engines": {
     "vscode": "^1.90.0"
