@@ -1,55 +1,49 @@
 # Tokonomics Release Notes
 
-All notable user-facing changes, feature enhancements, and token savings updates are documented here.
+All notable user updates, feature additions, and performance improvements to **Tokonomics** are documented here.
+
+---
+
+## [4.1.1] - 2026-08-30
+### 🛡️ Documentation & Marketplace Release
+- Updated official marketplace metadata, license terms, and community support links.
 
 ---
 
 ## [4.1.0] - 2026-08-30
-### 🚀 New Features & Performance Enhancements
-- **⚡ In-Memory RAM Context Accelerator**:
-  - Background workspace pre-warming on startup for instantaneous 0ms first-prompt latency.
-  - High-speed in-memory symbol search index to surgically retrieve referenced signatures without loading full files.
-  - Multi-turn conversational deduplication to save 500–2,000 tokens on follow-up chat turns.
-  - User-configurable RAM budget (`tokenOptimizer.ramBudgetMB`, default 64MB) with automatic LRU memory management.
-  - New chat telemetry command: **`@tokonomics /ram`** to inspect memory budget, active cache hit rate, and indexed symbols.
-- **🛡️ 100% Anonymized Diagnostic Logger & Crash Reporter**:
-  - Automatically scrubs usernames, local directory paths, IP addresses, and API keys.
-  - New command: **`Tokonomics: Export Anonymized Diagnostic Logs`** to generate safe, PII-free diagnostic reports for GitHub issues.
-  - New chat command: **`@tokonomics /logs`**.
-- **📸 High-Efficiency Image Rightsizer**:
-  - Automatically scales and optimizes screenshot attachments to save up to 96% on multimodal token costs.
-- **🎯 Smart Model Router & Governance**:
-  - Suggests the most cost-effective model tier (Flash vs. Standard vs. Reasoning) based on prompt complexity.
-  - Added enterprise `modelAllowList` configuration for strict cost control.
-- **🏷️ Official Rebranding & Licensing**: Full Tokonomics branding, refreshed status bar pill (`⚡ Tokonomics: Active`), updated command names, and proprietary commercial license.
+### 🚀 Features & Enhancements
+- **In-Memory RAM Accelerator**: 0ms instant local memory acceleration for faster prompt processing and lower token consumption.
+- **Anonymized Diagnostic Logger**: 100% private, PII-free diagnostic logger (`@tokonomics /logs` and `Tokonomics: Export Anonymized Diagnostic Logs`).
+- **Image & Screenshot Rightsizer**: Automatically optimizes screenshot attachments to save up to 96% on image token costs.
+- **Smart Model Routing**: Automatically suggests the most cost-effective AI model tier based on task complexity.
+- **Official Rebranding**: Complete Tokonomics visual identity and updated slash commands.
 
 ---
 
 ## [4.0.0] - 2026-08-29
-### ⚡ Major Performance & Savings Update
-- **Deep Context Optimization**: Increased average token savings to **65%–88%** on multi-file code queries.
-- **Instant Response Acceleration**: Instantaneous 0ms responses for repeated queries and common technical lookups.
-- **Intelligent Diff Output Generator**: Directs AI models to return compact diff patches rather than repeating whole files, saving 40%–70% on output tokens.
-- **Agentic Loop Guardrails**: Added token velocity alerts and stagnation circuit breakers to prevent runaway agent loops.
-- **Context Slicing**: Support for surgical line-range context packing (`file.ts:L10-L50`).
+### ⚡ Performance & Token Savings
+- **Advanced Context Optimization**: Increased average token savings to **65%–88%** on multi-file coding workflows.
+- **Instant Response Cache**: Instantaneous responses for repeated queries with zero token usage.
+- **Output Patch Optimization**: Directs models to generate concise code patches, saving 40%–70% on output tokens.
+- **Agent Cost Guardrails**: Real-time spending alerts and loop prevention.
 
 ---
 
 ## [3.0.0] - 2026-08-29
-### 🌟 UI & FinOps Analytics
-- **Visual Analytics Dashboard**: Interactive webview dashboard showing lifetime token savings, dollar ROI projections, and optimization breakdown.
-- **Cloud Cache Alignment**: Prefix stabilization for Anthropic, OpenAI, and Gemini prompt cache discounts (saving an extra 50%–90%).
-- **Interactive Status Bar Pill**: Real-time token reduction percentage and financial savings counter in the bottom status bar.
+### 🌟 Analytics & Dashboards
+- **Visual Analytics Dashboard**: Interactive FinOps dashboard tracking token savings and dollar ROI.
+- **Provider Cache Alignment**: Prefix optimization for Anthropic, OpenAI, and Gemini prompt cache discounts.
+- **Live Status Bar Telemetry**: Real-time token reduction percentage and financial savings counter.
 
 ---
 
 ## [2.0.0] - 2026-08-29
-### 🗺️ Structural Context Mapping
-- **Smart Workspace Repository Mapping (`@tokonomics /map`)**: Builds compact 1,024-token structural codebase maps.
-- **Multi-File Context Packer (`@tokonomics /pack`)**: Bundle and right-size multiple project files into a single compacted payload.
+### 🗺️ Workspace Mapping
+- **Structural Workspace Map (`@tokonomics /map`)**: High-efficiency codebase structure mapping.
+- **Context Packing (`@tokonomics /pack`)**: Bundle and right-size multiple project files into compact payloads.
 
 ---
 
 ## [1.0.0] - 2026-08-29
 ### 🎉 Initial Launch
-- Initial release of the Tokonomics intelligent context optimizer for VS Code.
+- Initial release of Tokonomics AI Token Optimizer for VS Code.
