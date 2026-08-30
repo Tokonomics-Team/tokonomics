@@ -7,4 +7,8 @@ scripts/**
 tsconfig.json
 esbuild.js
 .git/**
+.gitignore
 .DS_Store
+.tokenopt/**
+CHANGELOG_PUBLIC.md
+*.vsix

@@ -45,6 +45,32 @@
   "bugs": {
     "url": "https://github.com/Tokonomics-Team/tokonomics/issues"
   },
+  "qna": "https://github.com/Tokonomics-Team/tokonomics/discussions",
+  "pricing": "Free",
+  "galleryBanner": {
+    "color": "#0d1117",
+    "theme": "dark"
+  },
+  "badges": [
+    {
+      "url": "https://img.shields.io/badge/Privacy-100%25%20Local-success.svg",
+      "href": "https://tokonomics-team.github.io/tokonomics#privacy",
+      "description": "100% Local Execution"
+    },
+    {
+      "url": "https://img.shields.io/badge/Token%20Savings-65%25%20--%2088%25-brightgreen.svg",
+      "href": "https://tokonomics-team.github.io/tokonomics#benchmarks",
+      "description": "Token Reduction"
+    }
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": true
+    },
+    "virtualWorkspaces": {
+      "supported": true
+    }
+  },
   "main": "./dist/extension.js",
   "activationEvents": [
     "onLanguageModel:token-optimizer-proxy",
