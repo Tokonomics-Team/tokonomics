@@ -1,11 +1,13 @@
 # Tokonomics ⚡
 ### Cut Your AI Coding Token Costs by 65% – 88% (Claude, GPT-4o, Copilot, Gemini & DeepSeek)
 
+[![Website](https://img.shields.io/badge/Website-tokonomics--team.github.io-00f0ff.svg)](https://tokonomics-team.github.io/tokonomics)
 [![Version](https://img.shields.io/badge/version-4.1.0-blue.svg)](https://marketplace.visualstudio.com)
 [![VS Code](https://img.shields.io/badge/VS%20Code-%5E1.90.0-purple.svg)](https://code.visualstudio.com)
 [![Token Savings](https://img.shields.io/badge/Token%20Savings-65%25%20--%2088%25-brightgreen.svg)]()
 [![Privacy](https://img.shields.io/badge/Privacy-100%25%20Local-success.svg)]()
-[![Open VSX](https://img.shields.io/badge/Open%20VSX-Compatible-orange.svg)](https://open-vsx.org)
+[![Issues](https://img.shields.io/badge/Issues-Report%20Bug-red.svg)](https://github.com/Tokonomics-Team/tokonomics/issues)
+[![Discussions](https://img.shields.io/badge/Community-Discussions-yellowgreen.svg)](https://github.com/Tokonomics-Team/tokonomics/discussions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 > 🔒 **100% LOCAL & PRIVATE — ZERO CLOUD SERVERS**  
@@ -116,6 +118,7 @@ Open your VS Code Chat panel (`Ctrl + Shift + I` or `Cmd + Shift + I`) and ask y
 | Command | What It Does |
 |:---|:---|
 | `@tokonomics /ram` | Displays live in-memory RAM cache usage, BM25 symbol count, and budget status |
+| `@tokonomics /logs` | View diagnostic health and export 100% anonymized logs for bug reporting |
 | `@tokonomics /map` | Generates a 1,024-token structural PageRank map of your workspace |
 | `@tokonomics /pack <path>` | Packs multiple files/folders into an AST-pruned context skeleton |
 | `@tokonomics /analyze` | Analyzes the active editor file for token redundancy |
@@ -159,6 +162,18 @@ Customize Tokonomics in your `settings.json`:
   "tokenOptimizer.modelAllowList": []
 }
 ```
+
+---
+
+## 🤝 Community, Support & Feedback
+
+We welcome feedback, bug reports, and feature requests!
+
+- 🌐 **Live Website & Documentation**: [tokonomics-team.github.io/tokonomics](https://tokonomics-team.github.io/tokonomics)
+- 🐛 **Report a Bug**: [GitHub Issues](https://github.com/Tokonomics-Team/tokonomics/issues/new?template=bug_report.md) *(Please run `Tokonomics: Export Anonymized Diagnostic Logs` to attach safe, PII-free diagnostics)*
+- 💡 **Request a Feature**: [Feature Request Form](https://github.com/Tokonomics-Team/tokonomics/issues/new?template=feature_request.md)
+- 💬 **Community Discussions**: [GitHub Discussions](https://github.com/Tokonomics-Team/tokonomics/discussions)
+- ⭐ **GitHub Repository**: [github.com/Tokonomics-Team/tokonomics](https://github.com/Tokonomics-Team/tokonomics)
 
 ---
 
