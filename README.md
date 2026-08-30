@@ -78,6 +78,18 @@ Developed through extensive research and engineering by the **Tokonomics Team**,
 
 ---
 
+## 🎯 Target Use Cases & Supported AI Ecosystem
+
+Tokonomics is engineered for individual developers, AI engineers, and enterprise development teams using AI coding assistants and API proxies:
+
+- **Anthropic Claude (Claude 3.5 Sonnet, Claude 3 Opus, Haiku)**: Automatically stabilizes the 1,024-token prompt prefix to unlock Anthropic's **90% prompt caching discount**.
+- **OpenAI (GPT-4o, GPT-4o mini, o1, o3-mini)**: Compresses multi-turn conversation payloads and stabilizes static headers for OpenAI's **50% cached token discount**.
+- **GitHub Copilot & Cursor**: Reduces conversational code bloat, rightsizes attached files, and prevents context window exhaustion during deep refactoring tasks.
+- **DeepSeek & Gemini (DeepSeek-V3, DeepSeek-R1, Gemini 1.5 Pro/Flash)**: Minimizes token overhead for reasoning models that require large context allocations.
+- **Enterprise AI FinOps & Rate Limit Prevention**: Mitigates 429 Rate Limit spikes and reduces monthly cloud API bills across engineering organizations by up to 88%.
+
+---
+
 ## 🚀 How to Use Tokonomics
 
 ### 1. Chat with `@tokonomics` (or `@tokenopt`)
