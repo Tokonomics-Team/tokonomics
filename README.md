@@ -10,8 +10,8 @@
 [![Discussions](https://img.shields.io/badge/Community-Discussions-yellowgreen.svg)](https://github.com/Tokonomics-Team/tokonomics/discussions)
 [![License: Proprietary](https://img.shields.io/badge/License-Proprietary-red.svg)](https://github.com/Tokonomics-Team/tokonomics/blob/main/LICENSE.txt)
 
-> 🔒 **100% LOCAL & PRIVATE — ZERO CLOUD SERVERS**  
-> All token optimization algorithms, memory indexing, image compression, and context right-sizing run **100% locally on your machine** inside your VS Code extension host. **No external servers, no third-party APIs, and zero telemetry.** Your source code and prompts **never** leave your device.
+> 🔒 **100% LOCAL COMPILATION — ZERO INTERMEDIARY SERVERS**  
+> All context compilation algorithms, AST structural pruning, PageRank indexing, and cost calculations run **100% locally on your machine** inside your VS Code extension host. **No Tokonomics backend servers, no intermediate proxy relays, and zero telemetry.** Your optimized prompts and context are transmitted **only directly to your selected upstream AI provider** (Anthropic, OpenAI, GitHub Copilot, or local Ollama) according to your own AI configuration and credentials.
 
 ---
 
@@ -59,14 +59,16 @@ Look at the bottom-right status bar in VS Code:
 Type `@tokonomics` followed by a slash command:
 | Command | Action |
 | :--- | :--- |
-| `@tokonomics /dashboard` | Open the full interactive real-time visualizer dashboard |
-| `@tokonomics /live` | View live active session token and cost metrics banner |
+| `@tokonomics /dashboard` | Open the interactive real-time visualizer dashboard with dual waterfalls |
+| `@tokonomics /live` | View live active session token and cost efficiency stream |
+| `@tokonomics /explain` | Inspect the 16-stage compiler decision trace for the most recent optimization |
 | `@tokonomics /stats` | View aggregated multi-window metrics (`Session`, `Today`, `Lifetime`) |
-| `@tokonomics /explain` | Inspect the decision trace of your most recent optimization turn |
 | `@tokonomics /map` | Generate a high-signal, 1,024-token structural map of your workspace |
-| `@tokonomics /pack <path>` | Pack and compact multiple files or folders into a right-sized context skeleton |
+| `@tokonomics /pack <path>` | Pack and compact workspace files into an AST-pruned context skeleton |
 | `@tokonomics /analyze` | Run a real-time token audit on your currently active editor file |
-| `@tokonomics /ram` | View in-memory RAM cache status and indexed symbol count |
+| `@tokonomics /compact` | Compact code or conversational prompt context |
+| `@tokonomics /logs` | View and export 100% anonymized diagnostic logs and crash report |
+| `@tokonomics /ram` | View in-memory RAM cache status, indexed symbols, and memory budget |
 
 ### 4. Right-Click Context Menu & Command Palette
 - Select any code in your editor, right-click, and choose **`Tokonomics: Optimize Selected Code Context`** to copy a right-sized structural skeleton directly to your clipboard.

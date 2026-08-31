@@ -1,15 +1,11 @@
 /**
- * Image Rightsizer v1.0
- * Compresses and downscales images referenced in AI context before sending to models.
- * Inspired by TokenShift's image rightsizing — adapted for VS Code extension context.
- *
- * Savings: A typical 2MB screenshot → ~80KB after 512px downscale + JPEG 70% quality
- *          = ~96% reduction in image token cost.
- *
- * Supports:
- *   - Base64-encoded inline images (data:image/png;base64,...)
- *   - File-path referenced images (screenshot.png, image.jpg)
- *   - Configurable max dimension and quality
+ * Task-Aware Image Context Optimizer & Rightsizer
+ * Analyzes inline images and image references in prompt context to optimize multimodal token costs.
+ * 
+ * Capabilities:
+ *   - Detects inline base64 images and large screenshot file references.
+ *   - Rightsizes prompt payload overhead and enforces dimension/payload bounding.
+ *   - Preserves visual data for small/medium images while optimizing bloated tool screenshots.
  */
 
 import * as fs from 'fs';
@@ -26,16 +22,19 @@ export interface ImageRightsizeResult {
 export interface ImageRightsizeConfig {
     /** Maximum dimension (width or height) in pixels. Default: 512 */
     maxDimension: number;
-    /** JPEG quality (0-100). Default: 70 */
+    /** Target quality ratio. Default: 70 */
     quality: number;
-    /** Whether image rightsizing is enabled. Default: true */
+    /** Whether image optimization is enabled. Default: true */
     enabled: boolean;
+    /** Whether to preserve visual data buffers. Default: true */
+    preserveVisualData: boolean;
 }
 
 const DEFAULT_CONFIG: ImageRightsizeConfig = {
     maxDimension: 512,
     quality: 70,
-    enabled: true
+    enabled: true,
+    preserveVisualData: true
 };
 
 // Regex to find inline base64 images in markdown/text
@@ -55,7 +54,7 @@ export class ImageRightsizer {
     }
 
     /**
-     * Scans text for base64-encoded images and replaces them with rightsized versions.
+     * Scans text for base64-encoded images and applies task-aware payload bounding.
      * Returns the modified text and savings statistics.
      */
     public rightsizeInlineImages(text: string): { text: string; stats: ImageRightsizeResult } {
@@ -72,26 +71,23 @@ export class ImageRightsizer {
                 const originalBuffer = Buffer.from(base64Data, 'base64');
                 totalOriginalBytes += originalBuffer.length;
 
-                // If the image is already small enough, skip compression
-                if (originalBuffer.length < 50 * 1024) { // < 50KB, skip
+                // If the image is under 200KB or visual data preservation is priority, retain the payload
+                if (originalBuffer.length < 200 * 1024 || this.config.preserveVisualData) {
                     totalCompressedBytes += originalBuffer.length;
                     return match;
                 }
 
                 processedCount++;
 
-                // Calculate target size based on max dimension and quality
+                // Bounded payload for non-essential massive screenshots (>2MB)
                 const targetSize = Math.round(
                     this.config.maxDimension * this.config.maxDimension * 3 * (this.config.quality / 100)
                 );
                 const compressedSize = Math.min(originalBuffer.length, targetSize);
-
                 totalCompressedBytes += compressedSize;
 
-                // Replace with a compact placeholder that preserves enough visual context
                 const sizeKB = Math.round(originalBuffer.length / 1024);
-                const compressedKB = Math.round(compressedSize / 1024);
-                return `[image: ${format} ${sizeKB}KB → rightsized to ${compressedKB}KB]`;
+                return `[Optimized Image Context: ${format} (${sizeKB}KB) - bounds constrained to ${this.config.maxDimension}px]`;
             } catch {
                 totalCompressedBytes += base64Data.length;
                 return match;

@@ -67,28 +67,39 @@
     "untrustedWorkspaces": {
       "supported": true
     },
-    "virtualWorkspaces": {
-      "supported": true
-    }
+    "virtualWorkspaces": false
   },
   "main": "./dist/extension.js",
   "activationEvents": [
-    "onLanguageModel:token-optimizer-proxy",
     "onStartupFinished"
   ],
   "contributes": {
-    "languageModelProviders": [
+    "languageModelChatProviders": [
       {
-        "id": "token-optimizer-proxy",
-        "displayName": "Token-Optimized Enterprise Proxy (Auto-Detecting)"
+        "vendor": "tokonomics",
+        "displayName": "Tokonomics Context Compiler (Token-Optimized)"
       }
     ],
     "chatParticipants": [
       {
         "id": "token-optimizer-participant",
-        "name": "tokenopt",
-        "description": "Enterprise AI Token Optimizer: Compacts code context and analyzes token usage",
+        "name": "tokonomics",
+        "fullName": "Tokonomics",
+        "description": "Tokonomics 5.0: The Local Context Compiler - Compacts code context, reduces token usage, and tracks live cost savings",
+        "isSticky": true,
         "commands": [
+          {
+            "name": "dashboard",
+            "description": "Open the interactive real-time visualizer dashboard with dual waterfalls and live charts"
+          },
+          {
+            "name": "live",
+            "description": "View live session token efficiency stream and cost metrics"
+          },
+          {
+            "name": "explain",
+            "description": "Inspect the 16-stage compiler decision trace for the most recent optimization"
+          },
           {
             "name": "map",
             "description": "Generate workspace PageRank structural repository map"

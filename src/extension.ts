@@ -48,7 +48,9 @@ export async function activate(context: vscode.ExtensionContext) {
 
     const cacheAligner = new CacheAlignerEngine();
     const metricsTracker = new MetricsTracker(context.globalState);
-    const contextAnalyzer = new ContextAnalyzer(astEngine, cacheAligner, metricsTracker);
+    const localHistoryStore = LocalHistoryStore.getInstance(context.globalState);
+    const pipelineOrchestrator = new PipelineOrchestrator(astEngine, undefined, cacheAligner, metricsTracker);
+    const contextAnalyzer = new ContextAnalyzer(astEngine, cacheAligner, metricsTracker, pipelineOrchestrator);
     const fileWatchIndex = new FileWatchIndex(workspaceRoot);
     const cacheMaxSize = optConf.get<number>('responseCacheMaxSize', 100);
     const responseCache = new ResponseCache(cacheMaxSize);
@@ -57,7 +59,7 @@ export async function activate(context: vscode.ExtensionContext) {
     // Initialize RAM Context Manager with user-configured budget
     const ramManager = new RamContextManager(astEngine, {
         ramBudgetMB: optConf.get<number>('ramBudgetMB', 64),
-        enableBackgroundWarming: optConf.get<boolean>('enableBackgroundRamWarming', true),
+        enableBackgroundWarming: optConf.get<boolean>('enableBackgroundRamWarming', false),
         enableSemanticIndex: optConf.get<boolean>('enableRamSemanticIndex', true)
     }, workspaceRoot);
 
@@ -96,22 +98,22 @@ export async function activate(context: vscode.ExtensionContext) {
                 const conf = vscode.workspace.getConfiguration('tokenOptimizer');
                 ramManager.updateConfig({
                     ramBudgetMB: conf.get<number>('ramBudgetMB', 64),
-                    enableBackgroundWarming: conf.get<boolean>('enableBackgroundRamWarming', true),
+                    enableBackgroundWarming: conf.get<boolean>('enableBackgroundRamWarming', false),
                     enableSemanticIndex: conf.get<boolean>('enableRamSemanticIndex', true)
                 });
             }
         })
     );
 
-    // Background RAM Pre-Warming (Idle micro-task)
-    if (workspaceRoot && optConf.get<boolean>('enableBackgroundRamWarming', true)) {
+    // Background RAM Pre-Warming (Only if explicitly enabled by user)
+    if (workspaceRoot && optConf.get<boolean>('enableBackgroundRamWarming', false)) {
         setTimeout(() => {
             ramManager.warmWorkspace(workspaceRoot).then(res => {
                 console.log(`[Tokonomics] RAM Pre-Warm complete: ${res.skeletonsCached} skeletons, ${res.symbolsIndexed} symbols in ${res.durationMs}ms`);
             }).catch(err => {
                 console.warn('[Tokonomics] RAM Pre-Warm warning:', err);
             });
-        }, 500);
+        }, 1000);
     }
 
     // 3. Setup UI & Visual Diff Provider
@@ -147,7 +149,7 @@ export async function activate(context: vscode.ExtensionContext) {
         console.warn('[Tokonomics] Note on LM Provider registration:', err);
     }
 
-    // 5. Register VS Code Native Chat Participant (@tokonomics / @tokenopt)
+    // 5. Register VS Code Native Chat Participant (@tokonomics)
     try {
         registerChatParticipant(
             context,
@@ -157,16 +159,17 @@ export async function activate(context: vscode.ExtensionContext) {
             fileWatchIndex,
             responseCache,
             onComplete,
-            ramManager
+            ramManager,
+            pipelineOrchestrator
         );
     } catch (err) {
         console.warn('[Tokonomics] Chat participant registration note:', err);
     }
 
-    // 6. Register Commands
+    // 6. Register Commands (Strictly unique command IDs)
     context.subscriptions.push(
-        vscode.commands.registerCommand('tokenOptimizer.showDashboard', async () => {
-            await statusBarManager?.showDashboard();
+        vscode.commands.registerCommand('tokenOptimizer.showDashboard', () => {
+            DashboardWebviewPanel.createOrShow(metricsTracker, astEngine);
         })
     );
 
@@ -253,12 +256,6 @@ export async function activate(context: vscode.ExtensionContext) {
             });
             await vscode.window.showTextDocument(doc, { preview: false });
             vscode.window.showInformationMessage('📋 Tokonomics Anonymized Diagnostic Log generated (100% sanitized, no private data).');
-        })
-    );
-
-    context.subscriptions.push(
-        vscode.commands.registerCommand('tokenOptimizer.showDashboard', () => {
-            DashboardWebviewPanel.createOrShow(metricsTracker, astEngine);
         })
     );
 

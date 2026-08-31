@@ -230,6 +230,15 @@ export class DashboardWebviewPanel {
         };
     }
 
+    private getNonce(): string {
+        let text = '';
+        const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        for (let i = 0; i < 32; i++) {
+            text += possible.charAt(Math.floor(Math.random() * possible.length));
+        }
+        return text;
+    }
+
     private performWorkspaceScan(): WorkspaceScanResult {
         const startTime = Date.now();
         const root = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
@@ -246,11 +255,11 @@ export class DashboardWebviewPanel {
         let totalPrunedTokens = 0;
 
         const scanDir = (dir: string) => {
-            if (totalFiles >= 150) return;
+            if (totalFiles >= 50) return; // Bounded to 50 files to ensure zero UI freezing
             try {
                 const entries = fs.readdirSync(dir, { withFileTypes: true });
                 for (const entry of entries) {
-                    if (totalFiles >= 150) break;
+                    if (totalFiles >= 50) break;
                     const full = path.join(dir, entry.name);
                     const rel = path.relative(root, full).replace(/\\/g, '/');
                     if (entry.isDirectory()) {
@@ -262,6 +271,8 @@ export class DashboardWebviewPanel {
                             const ext = path.extname(entry.name).toLowerCase();
                             if (allowedExts.includes(ext)) {
                                 try {
+                                    const stat = fs.statSync(full);
+                                    if (stat.size > 500 * 1024) continue; // Skip files > 500KB for UI responsiveness
                                     const content = fs.readFileSync(full, 'utf8');
                                     const count = TokenCounter.countTokens(content);
                                     totalRawTokens += count;
@@ -305,11 +316,13 @@ export class DashboardWebviewPanel {
         workspaceScan: WorkspaceScanResult
     ): string {
         const latestEvent = recentEvents[recentEvents.length - 1];
+        const nonce = this.getNonce();
 
         return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}'; img-src data: https:; font-src https:;">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tokonomics 5.0 Real-Time Dashboard</title>
     <style>
@@ -652,7 +665,7 @@ export class DashboardWebviewPanel {
         </div>
     </div>
 
-    <script>
+    <script nonce="${nonce}">
         const vscode = acquireVsCodeApi();
         let eventsCache = ${JSON.stringify(recentEvents)};
 

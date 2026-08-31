@@ -15,12 +15,14 @@ import { CrossTurnDeduplicator } from '../engine/deduplicator';
 import { DiffOutputOptimizer } from '../engine/diffOutputOptimizer';
 import { PromptMinifier } from '../engine/promptMinifier';
 import { MessagePayload, TokenOptimizationConfig, TokenStats } from '../types';
+import { PipelineOrchestrator } from '../engine/pipelineOrchestrator';
 
 export class ContextAnalyzer {
     constructor(
         private astEngine: AstPrunerEngine,
         private cacheAligner: CacheAlignerEngine,
-        private metricsTracker: MetricsTracker
+        private metricsTracker: MetricsTracker,
+        private pipelineOrchestrator?: PipelineOrchestrator
     ) {}
 
     public processMessages(
