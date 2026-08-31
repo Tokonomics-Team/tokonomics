@@ -8,9 +8,10 @@
  */
 
 import { TokenCounter } from './tokenizer';
+import { MessagePayload } from '../types';
 
 export interface SummarizedHistoryResult {
-    messages: Array<{ role: string; content: string }>;
+    messages: MessagePayload[];
     tokensBefore: number;
     tokensAfter: number;
     tokensSaved: number;
@@ -23,7 +24,7 @@ export class ProgressiveHistorySummarizer {
      * Recursively compresses multi-turn conversational history with Turn Anchoring
      */
     public static summarize(
-        messages: Array<{ role: string; content: string }>,
+        messages: MessagePayload[],
         maxUncompressedTurns: number = 3
     ): SummarizedHistoryResult {
         if (messages.length <= maxUncompressedTurns) {
@@ -82,12 +83,12 @@ export class ProgressiveHistorySummarizer {
             summaryContent += `\n[PRESERVED ERROR CONSTRAINTS]:\n${preservedErrorTraces.join('\n')}`;
         }
 
-        const summarizedMessage: { role: string; content: string } = {
+        const summarizedMessage: MessagePayload = {
             role: 'system',
             content: summaryContent
         };
 
-        const resultMessages = [summarizedMessage, ...recentTurns];
+        const resultMessages: MessagePayload[] = [summarizedMessage, ...recentTurns];
         const totalAfter = resultMessages.reduce((acc, m) => acc + TokenCounter.countTokens(m.content), 0);
 
         return {

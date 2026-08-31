@@ -19,6 +19,9 @@ import { ResponseCache } from './cache/responseCache';
 import { ReviewPrompter } from './ui/reviewPrompter';
 import { RamContextManager } from './engine/ramManager';
 import { AnonymizedLogger } from './security/anonymizedLogger';
+import { PipelineOrchestrator } from './engine/pipelineOrchestrator';
+import { LiveMetricsAggregator } from './metrics/liveAggregator';
+import { LocalHistoryStore } from './history/localHistoryStore';
 
 let statusBarManager: StatusBarManager | undefined;
 
@@ -250,6 +253,69 @@ export async function activate(context: vscode.ExtensionContext) {
             });
             await vscode.window.showTextDocument(doc, { preview: false });
             vscode.window.showInformationMessage('📋 Tokonomics Anonymized Diagnostic Log generated (100% sanitized, no private data).');
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('tokenOptimizer.showDashboard', () => {
+            DashboardWebviewPanel.createOrShow(metricsTracker, astEngine);
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('tokenOptimizer.liveStats', async () => {
+            const summary = LiveMetricsAggregator.getInstance().getAggregateSummary('session');
+            vscode.window.showInformationMessage(
+                `⚡ Tokonomics Live Session: ${summary.totalPrompts} prompts | ${summary.savedTokens.toLocaleString()} tokens saved (-${summary.averageReductionPercentage}%) | ~$${summary.savedCostUSD.toFixed(3)} saved | CQ: ${summary.averagePredictedCQ}%`
+            );
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('tokenOptimizer.aggregateStats', async () => {
+            const agg = LiveMetricsAggregator.getInstance();
+            const s = agg.getAggregateSummary('session');
+            const t = agg.getAggregateSummary('today');
+            const l = agg.getAggregateSummary('lifetime');
+            const report = [
+                `# 📊 Tokonomics Real-Time Aggregated Metrics`,
+                ``,
+                `### ⚡ Active Session`,
+                `- **Prompts:** ${s.totalPrompts}`,
+                `- **Tokens Saved:** ${s.savedTokens.toLocaleString()} (-${s.averageReductionPercentage}%)`,
+                `- **Estimated Savings:** ~$${s.savedCostUSD.toFixed(3)} USD`,
+                `- **Average Context Quality:** ${s.averagePredictedCQ}%`,
+                `- **Average Latency:** ${s.averageOptimizationLatencyMs}ms`,
+                ``,
+                `### 📅 Today`,
+                `- **Prompts:** ${t.totalPrompts}`,
+                `- **Tokens Saved:** ${t.savedTokens.toLocaleString()} (-${t.averageReductionPercentage}%)`,
+                `- **Estimated Savings:** ~$${t.savedCostUSD.toFixed(3)} USD`,
+                ``,
+                `### 🏛️ Lifetime`,
+                `- **Prompts:** ${l.totalPrompts}`,
+                `- **Tokens Saved:** ${l.savedTokens.toLocaleString()} (-${l.averageReductionPercentage}%)`,
+                `- **Estimated Savings:** ~$${l.savedCostUSD.toFixed(3)} USD`
+            ].join('\n');
+
+            const doc = await vscode.workspace.openTextDocument({ content: report, language: 'markdown' });
+            await vscode.window.showTextDocument(doc, { preview: false });
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('tokenOptimizer.explainTrace', async () => {
+            const orchestrator = new PipelineOrchestrator(astEngine, ramManager, cacheAligner, metricsTracker);
+            const traces = orchestrator.getTraceLogger().getTraces();
+            const traceText = traces.length > 0
+                ? JSON.stringify(traces[traces.length - 1], null, 2)
+                : 'No recent context compilation traces recorded in this session.';
+
+            const doc = await vscode.workspace.openTextDocument({
+                content: `# 🔍 Tokonomics Context Compiler Decision Trace\n\n\`\`\`json\n${traceText}\n\`\`\``,
+                language: 'markdown'
+            });
+            await vscode.window.showTextDocument(doc, { preview: false });
         })
     );
 

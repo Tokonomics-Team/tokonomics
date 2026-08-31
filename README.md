@@ -2,7 +2,7 @@
 ### Cut Your AI Coding Token Costs by 65% – 88% (Claude, GPT-4o, Copilot, Gemini & DeepSeek)
 
 [![Website](https://img.shields.io/badge/Website-tokonomics--team.github.io-00f0ff.svg)](https://tokonomics-team.github.io/tokonomics)
-[![Version](https://img.shields.io/badge/version-4.1.0-blue.svg)](https://marketplace.visualstudio.com)
+[![Version](https://img.shields.io/badge/version-4.1.2-blue.svg)](https://marketplace.visualstudio.com)
 [![VS Code](https://img.shields.io/badge/VS%20Code-%5E1.90.0-purple.svg)](https://code.visualstudio.com)
 [![Token Savings](https://img.shields.io/badge/Token%20Savings-65%25%20--%2088%25-brightgreen.svg)]()
 [![Privacy](https://img.shields.io/badge/Privacy-100%25%20Local-success.svg)]()
@@ -38,17 +38,49 @@
 
 ---
 
-## ⚡ Powered by Proprietary R&D: The Tokonomics Intelligent Context Engine
+## 🚀 How to Use Tokonomics (Quick Start)
 
-Developed through extensive research and engineering by the **Tokonomics Team**, Tokonomics uses a proprietary, high-precision context optimization engine designed specifically for developer workflows. It intelligently transforms large coding contexts into ultra-compact, high-signal payloads before transmission to upstream AI models.
+Tokonomics is designed to work automatically in the background with zero setup required. Here are the easiest ways to interact with it:
 
-### 🌟 Core Capabilities:
+### 1. Chat with `@tokonomics`
+Open your VS Code Chat panel (`Ctrl + Alt + I` or `Cmd + Shift + I` or click the Chat icon) and use `@tokonomics`:
+```text
+@tokonomics explain how the authentication flow works in this project
+```
+Tokonomics will compile and optimize your project context in real time, saving up to 88% of tokens while preserving complete context accuracy.
+
+### 2. Live Savings Status Bar & Real-Time Dashboard
+Look at the bottom-right status bar in VS Code:
+- **`⚡ Tokonomics: Active`** indicates the engine is pre-warmed in local RAM.
+- **`⚡ 89% Saved ($4.42)`** updates live after each prompt turn.
+- **Click the status bar item** or run `Ctrl + Shift + P` ➔ **`Tokonomics: Show Savings Dashboard`** to open the real-time visual analytics dashboard with token/cost streams, savings waterfalls, and active file optimization.
+
+### 3. Quick Slash Commands in Chat
+Type `@tokonomics` followed by a slash command:
+| Command | Action |
+| :--- | :--- |
+| `@tokonomics /dashboard` | Open the full interactive real-time visualizer dashboard |
+| `@tokonomics /live` | View live active session token and cost metrics banner |
+| `@tokonomics /stats` | View aggregated multi-window metrics (`Session`, `Today`, `Lifetime`) |
+| `@tokonomics /explain` | Inspect the decision trace of your most recent optimization turn |
+| `@tokonomics /map` | Generate a high-signal, 1,024-token structural map of your workspace |
+| `@tokonomics /pack <path>` | Pack and compact multiple files or folders into a right-sized context skeleton |
+| `@tokonomics /analyze` | Run a real-time token audit on your currently active editor file |
+| `@tokonomics /ram` | View in-memory RAM cache status and indexed symbol count |
+
+### 4. Right-Click Context Menu & Command Palette
+- Select any code in your editor, right-click, and choose **`Tokonomics: Optimize Selected Code Context`** to copy a right-sized structural skeleton directly to your clipboard.
+- Open Command Palette (`Ctrl + Shift + P` / `Cmd + Shift + P`) and type **`Tokonomics`** to access all optimization tools.
+
+---
+
+## ⚡ Core Capabilities
 
 1. **Intelligent Code Context Right-Sizing (Saves 65% – 88%)**  
-   Intelligently extracts essential structural signatures, types, and architectural interfaces while discarding redundant implementation noise. Supported across **TypeScript, JavaScript, Python, Go, Rust, Java, C#, C++, PHP, and SQL**.
+   Intelligently extracts essential structural signatures, types, and architectural interfaces while discarding redundant implementation noise. Supported across **C, C++, Rust, Go, TypeScript, JavaScript, Python, Java, C#, PHP, and SQL**.
 
 2. **In-Memory RAM Accelerator (Configurable Budget & 0ms Latency)**  
-   Maintains an ultra-fast local memory index within your configured budget (`16MB – 1024MB`, default `64MB`). Provides 0ms instant cached lookups and multi-turn conversational deduplication without disk I/O bottlenecks.
+   Maintains an ultra-fast local memory index within your configured budget (`16MB – 1024MB`, default `64MB`). Provides instant cached lookups and multi-turn conversational deduplication without disk I/O bottlenecks.
 
 3. **Instant Local Response Cache (Saves 100% | 0ms Latency)**  
    Resolves repeated developer questions and identical queries instantly from an on-device hybrid cache. Delivers instantaneous responses with **0 tokens consumed**.
@@ -82,38 +114,11 @@ Developed through extensive research and engineering by the **Tokonomics Team**,
 
 Tokonomics is engineered for individual developers, AI engineers, and enterprise development teams using AI coding assistants and API proxies:
 
-- **Anthropic Claude (Claude 3.5 Sonnet, Claude 3 Opus, Haiku)**: Automatically stabilizes the 1,024-token prompt prefix to unlock Anthropic's **90% prompt caching discount**.
+- **Anthropic Claude (Claude 3.7 Sonnet, Claude 3.5 Sonnet, Claude Opus)**: Automatically stabilizes the 1,024-token prompt prefix to unlock Anthropic's **90% prompt caching discount**.
 - **OpenAI (GPT-4o, GPT-4o mini, o1, o3-mini)**: Compresses multi-turn conversation payloads and stabilizes static headers for OpenAI's **50% cached token discount**.
 - **GitHub Copilot & Cursor**: Reduces conversational code bloat, rightsizes attached files, and prevents context window exhaustion during deep refactoring tasks.
-- **DeepSeek & Gemini (DeepSeek-V3, DeepSeek-R1, Gemini 1.5 Pro/Flash)**: Minimizes token overhead for reasoning models that require large context allocations.
+- **DeepSeek & Gemini (DeepSeek-V3, DeepSeek-R1, Gemini 2.5 Pro/Flash)**: Minimizes token overhead for reasoning models that require large context allocations.
 - **Enterprise AI FinOps & Rate Limit Prevention**: Mitigates 429 Rate Limit spikes and reduces monthly cloud API bills across engineering organizations by up to 88%.
-
----
-
-## 🚀 How to Use Tokonomics
-
-### 1. Chat with `@tokonomics` (or `@tokenopt`)
-Open your VS Code Chat panel (`Ctrl + Shift + I` or `Cmd + Shift + I`) and ask your question:
-```text
-@tokonomics explain how authentication works in this service
-```
-> ⚡ **Tokonomics:** `7,240` → `2,810` tokens (**61.2% saved** | $0.0208 USD)  
-> 🧠 **Model Router Suggestion:** ⚡ *Flash/Haiku Tier* recommended for syntax analysis.
-
-### 2. Quick Slash Commands
-| Command | What It Does |
-|:---|:---|
-| `@tokonomics /ram` | Displays live in-memory RAM cache usage, indexed symbol counts, and budget status |
-| `@tokonomics /logs` | View diagnostic health and export 100% anonymized logs for bug reporting |
-| `@tokonomics /map` | Generates a 1,024-token structural map of your workspace |
-| `@tokonomics /pack <path>` | Packs multiple files/folders into a compacted context skeleton |
-| `@tokonomics /analyze` | Analyzes the active editor file for token redundancy |
-| `@tokonomics /compact <text>` | Compresses arbitrary logs, diffs, or terminal outputs |
-| `@tokonomics /stats` | Shows today's, session, and all-time financial ROI metrics |
-
-### 3. Visual Analytics Dashboard
-Click the **`⚡ Tokonomics: Active`** (or **`⚡ XX% Saved`**) pill in your bottom-right status bar or run:
-- `Ctrl + Shift + P` $\rightarrow$ **`Tokonomics: Show Savings Dashboard`**
 
 ---
 

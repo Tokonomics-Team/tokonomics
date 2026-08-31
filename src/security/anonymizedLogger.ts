@@ -14,6 +14,7 @@
  */
 
 import * as os from 'os';
+import type * as vscode from 'vscode';
 import { SecuritySanitizer } from './sanitizer';
 
 let vscodeModule: any;

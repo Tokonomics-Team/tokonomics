@@ -6,19 +6,27 @@
 
 import * as vscode from 'vscode';
 import { ContextAnalyzer } from './contextAnalyzer';
-import { TargetProvider, TokenOptimizationConfig } from '../types';
+import { MessagePayload, TargetProvider, TokenOptimizationConfig } from '../types';
 
-export class TokenOptimizerLanguageModelProvider implements vscode.LanguageModelChatProvider {
+export class TokenOptimizerLanguageModelProvider {
     constructor(
         private contextAnalyzer: ContextAnalyzer,
         private onOptimizationComplete: () => void
     ) {}
 
+    public async provideTokenCount(
+        model: any,
+        text: string | any,
+        token: vscode.CancellationToken
+    ): Promise<number> {
+        return typeof text === 'string' ? Math.ceil(text.length / 4) : 10;
+    }
+
     public async provideLanguageModelChatResponse(
-        model: vscode.LanguageModelChatInformation,
-        messages: readonly vscode.LanguageModelChatMessage[],
-        options: vscode.ProvideLanguageModelChatResponseOptions,
-        progress: vscode.Progress<vscode.LanguageModelChatResponseFragment>,
+        model: any,
+        messages: readonly any[],
+        options: any,
+        progress: vscode.Progress<any>,
         token: vscode.CancellationToken
     ): Promise<void> {
         const config = this.getOptimizationConfig();
@@ -37,22 +45,24 @@ export class TokenOptimizerLanguageModelProvider implements vscode.LanguageModel
         };
 
         // Convert VS Code messages into internal payload representation
-        const rawMessages: Array<{ role: string; content: string }> = [];
+        const rawMessages: MessagePayload[] = [];
         for (const msg of messages) {
-            const roleStr = msg.role === vscode.LanguageModelChatMessageRole.User 
+            const roleStr: 'system' | 'user' | 'assistant' = msg.role === vscode.LanguageModelChatMessageRole.User 
                 ? 'user' 
                 : msg.role === vscode.LanguageModelChatMessageRole.Assistant 
                     ? 'assistant' 
                     : 'system';
 
-            const textContent = msg.content
-                .map(part => {
-                    if (part instanceof vscode.LanguageModelTextPart) {
-                        return part.value;
-                    }
-                    return '';
-                })
-                .join('');
+            const textContent = Array.isArray(msg.content)
+                ? msg.content
+                    .map((part: any) => {
+                        if (part instanceof vscode.LanguageModelTextPart) {
+                            return part.value;
+                        }
+                        return typeof part === 'string' ? part : '';
+                    })
+                    .join('')
+                : String(msg.content || '');
 
             rawMessages.push({ role: roleStr, content: textContent });
         }

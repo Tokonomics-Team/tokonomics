@@ -713,11 +713,21 @@ export class DashboardWebviewPanel {
 
     <!-- Live Engine Status Bar -->
     <div class="shields-bar">
-        <div class="shield-item"><span class="status-dot"></span> <strong>AST WASM Engine:</strong> Active (7 Langs)</div>
+        <div class="shield-item"><span class="status-dot"></span> <strong>AST WASM Engine:</strong> Active (14 Langs)</div>
         <div class="shield-item"><span class="status-dot"></span> <strong>Incremental PageRank:</strong> Online (${workspaceScan.totalFiles} files)</div>
         <div class="shield-item"><span class="status-dot"></span> <strong>Hybrid Semantic Cache:</strong> Armed (0ms O(1))</div>
         <div class="shield-item"><span class="status-dot"></span> <strong>Diff Output Optimizer:</strong> Active</div>
         <div class="shield-item"><span class="status-dot"></span> <strong>Circuit Breaker:</strong> Protected (&lt;50k/min)</div>
+    </div>
+
+    <!-- Quick How To Use Guide -->
+    <div style="background: rgba(31, 111, 235, 0.1); border: 1px solid rgba(56, 139, 253, 0.4); border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; font-size: 12px; color: var(--text-primary);">
+        <div style="font-weight: 700; color: var(--cyan); margin-bottom: 6px; font-size: 13px;">💡 Quick Guide: How to Use Tokonomics</div>
+        <div style="line-height: 1.6; color: var(--text-muted);">
+            • <strong>Chat with @tokonomics:</strong> Open VS Code Chat and type <code>@tokonomics explain &lt;query&gt;</code> to optimize context on the fly.<br/>
+            • <strong>Slash Commands:</strong> Use <code>@tokonomics /live</code> (session summary), <code>@tokonomics /stats</code> (multi-window metrics), <code>@tokonomics /map</code> (1k-token workspace map), or <code>@tokonomics /explain</code> (decision trace).<br/>
+            • <strong>Instant File Optimization:</strong> Click <em>"⚡ Optimize Active File Now"</em> above or right-click any code to copy an ultra-compact right-sized skeleton.
+        </div>
     </div>
 
     <!-- Active File Diagnostic Card -->

@@ -4,9 +4,13 @@ All notable user updates, feature additions, and performance improvements to **T
 
 ---
 
-## [4.1.2] - 2026-08-30
-### 🛡️ Documentation & Link Cleanups
-- Replaced local file URI paths in documentation with public repository links.
+## [4.1.2] - 2026-08-31
+### 📊 Real-Time Dashboard & Multi-Language Enhancements
+- **Real-Time Visualizer Dashboard**: Event-driven local dashboard with live token/cost streams, savings waterfalls, and active file optimization.
+- **Expanded Multi-Language Support**: Dedicated structural pruning and signature extraction for **C, C++, Rust, Go, TypeScript, JavaScript, Python, Java, C#, PHP, and SQL**.
+- **Model Capability Matrix**: Refreshed pricing profiles and cache economics for Claude 3.7 / 3.5 Sonnet, GPT-4o series, Gemini 2.5 / 3.x, and DeepSeek-V3 / R1.
+- **Live Status Bar Feedback**: Ephemeral savings flash on prompt completion (`⚡ Tokens Saved | Cost Saved`).
+- **Slash Commands**: Added `@tokonomics /dashboard`, `@tokonomics /live`, and `@tokonomics /stats`.
 
 ---
 

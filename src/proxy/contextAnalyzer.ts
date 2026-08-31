@@ -24,7 +24,7 @@ export class ContextAnalyzer {
     ) {}
 
     public processMessages(
-        rawMessages: Array<{ role: string; content: string }>,
+        rawMessages: MessagePayload[],
         config: TokenOptimizationConfig,
         detectedModelFamily?: string
     ): {
@@ -36,7 +36,7 @@ export class ContextAnalyzer {
         let systemDirectives = '';
         let extractedCodeContext = '';
         let userQuery = '';
-        const history: Array<{ role: string; content: string }> = [];
+        const history: MessagePayload[] = [];
 
         let astTokensBefore = 0;
         let astTokensAfter = 0;

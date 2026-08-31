@@ -16,7 +16,7 @@ import { MetricsTracker } from '../metrics/tracker';
 import { AstPrunerEngine } from '../ast/pruner';
 import { ContextAnalyzer } from './contextAnalyzer';
 import { TokenCounter } from '../engine/tokenizer';
-import { TokenOptimizationConfig } from '../types';
+import { MessagePayload, TokenOptimizationConfig } from '../types';
 import { TokenIgnoreFilter } from '../ignore/tokenIgnore';
 import { BudgetGuardrail } from '../metrics/budgetGuard';
 import { RepoMapEngine, FileWatchIndex } from '../repo/repoMap';
@@ -447,7 +447,7 @@ export function registerChatParticipant(
             });
 
             // Build multi-turn raw messages with turn deduplication
-            const rawMessages: Array<{ role: string; content: string }> = [];
+            const rawMessages: MessagePayload[] = [];
             let totalImageTokensSaved = 0;
             for (const h of chatContext.history) {
                 if (h instanceof vscode.ChatRequestTurn) {

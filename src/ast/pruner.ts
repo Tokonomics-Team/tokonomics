@@ -811,7 +811,7 @@ export class AstPrunerEngine {
             const line = lines[i];
             const trimmed = line.trim();
 
-            if (trimmed === '}') {
+            if (trimmed === '}' || trimmed === '};' || trimmed.startsWith('};')) {
                 braceCount--;
                 if (braceCount === 0) {
                     i++;
@@ -819,11 +819,20 @@ export class AstPrunerEngine {
                 }
             }
 
-            const isMethod = /^(public|private|protected|static|async|override|readonly|virtual|\s)*([\w\d_]+)\s*\([^)]*\)\s*(:\s*[\w\d_<>[\]\s|&]+)?\s*\{/i.test(trimmed) ||
+            // Access specifiers (public:, private:, protected:)
+            if (/^(public|private|protected)\s*:/i.test(trimmed)) {
+                members.push(trimmed);
+                i++;
+                continue;
+            }
+
+            // Methods, constructors, and functions across all languages (TS, JS, Java, C#, C++, etc.)
+            const openBrace = line.indexOf('{');
+            const hasParen = line.indexOf('(') !== -1;
+            const isMethod = (hasParen && openBrace !== -1 && line.indexOf('(') < openBrace) ||
                              /^(public|private|protected|\s)*constructor\s*\([^)]*\)\s*\{/i.test(trimmed);
 
             if (isMethod) {
-                const openBrace = line.indexOf('{');
                 const sig = line.substring(0, openBrace).trim();
                 members.push(`    ${sig};`);
 
@@ -844,18 +853,28 @@ export class AstPrunerEngine {
                 continue;
             }
 
+            // TS/JS properties (prop: type;)
             if (/^(public|private|protected|readonly|static|\s)*[\w\d_]+(\?)?:\s*[^;=]+;/i.test(trimmed)) {
                 members.push(`    ${trimmed}`);
             } else if (/^(public|private|protected|readonly|static|\s)*[\w\d_]+(\?)?:\s*[^=]+=/i.test(trimmed)) {
                 const eqIdx = trimmed.indexOf('=');
                 const cleanProp = trimmed.substring(0, eqIdx).trim() + ';';
                 members.push(`    ${cleanProp}`);
+            } else if (/^[\w\d_:<>&*]+\s+[\w\d_]+(\s*\[[^\]]*\])?\s*;/i.test(trimmed)) {
+                // C / C++ / Java / C# fields (uint32_t magic; int port;)
+                members.push(`    ${trimmed}`);
+            }
+
+            for (const ch of line) {
+                if (ch === '{') braceCount++;
+                if (ch === '}') braceCount--;
             }
 
             i++;
         }
 
-        const classCode = `${classHeader} {\n${members.join('\n')}\n}`;
+        const isCppStruct = classHeader.startsWith('struct ') || classHeader.startsWith('class ');
+        const classCode = `${classHeader} {\n${members.join('\n')}\n}${isCppStruct ? ';' : ''}`;
         return { classSignature: classCode, nextIndex: i };
     }
 

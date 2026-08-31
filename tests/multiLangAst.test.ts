@@ -99,7 +99,53 @@ impl DatabasePool {
     assert.ok(!rustResult.prunedCode.includes('Initializing worker thread'), 'Should strip method body');
     console.log('✓ Rust AST Pruner verified.');
 
-    // 3. Java / C# Structural Pruning
+    // 3. C / C++ Structural Pruning
+    const cppCode = `
+#include <iostream>
+#include <vector>
+#include <string>
+#include <memory>
+
+struct PacketHeader {
+    uint32_t magic;
+    uint16_t length;
+    uint8_t flags;
+};
+
+class NetworkEngine {
+private:
+    std::string endpoint;
+    int port;
+
+public:
+    NetworkEngine(const std::string& ep, int p) : endpoint(ep), port(p) {
+        std::cout << "Bootstrapping network engine on " << ep << ":" << p << std::endl;
+        for (int i = 0; i < 50; i++) {
+            std::cout << "Allocating socket buffer pool " << i << std::endl;
+        }
+    }
+
+    virtual bool sendPacket(const PacketHeader& header, const std::vector<uint8_t>& payload) {
+        // Deep loop payload serialization
+        for (size_t i = 0; i < payload.size(); ++i) {
+            std::cout << "CRC checksum calculation byte: " << i << std::endl;
+        }
+        return true;
+    }
+};
+`;
+
+    const cppResult = engine.pruneCodeContext(cppCode, 'cpp');
+    console.log(`[C/C++ AST] Original: ${cppResult.originalTokenCount} -> Pruned: ${cppResult.prunedTokenCount} (${cppResult.reductionPercentage}% reduction)`);
+    assert.ok(cppResult.reductionPercentage >= 40, `Expected >= 40% reduction on C/C++ code, got ${cppResult.reductionPercentage}%`);
+    assert.ok(cppResult.prunedCode.includes('#include <iostream>'), 'Should keep #include directives');
+    assert.ok(cppResult.prunedCode.includes('struct PacketHeader'), 'Should keep struct PacketHeader');
+    assert.ok(cppResult.prunedCode.includes('class NetworkEngine'), 'Should keep class NetworkEngine');
+    assert.ok(!cppResult.prunedCode.includes('Allocating socket buffer pool'), 'Should strip constructor body');
+    assert.ok(!cppResult.prunedCode.includes('CRC checksum calculation byte'), 'Should strip method body');
+    console.log('✓ C & C++ AST Pruner verified.');
+
+    // 4. Java / C# Structural Pruning
     const javaCode = `
 package com.enterprise.service;
 
@@ -128,13 +174,13 @@ public class OrderManager {
 `;
 
     const javaResult = engine.pruneCodeContext(javaCode, 'java');
-    console.log(`[Java AST] Original: ${javaResult.originalTokenCount} -> Pruned: ${javaResult.prunedTokenCount} (${javaResult.reductionPercentage}% reduction)`);
-    assert.ok(javaResult.reductionPercentage >= 40, 'Expected >= 40% reduction on Java code');
+    console.log(`[Java/C# AST] Original: ${javaResult.originalTokenCount} -> Pruned: ${javaResult.prunedTokenCount} (${javaResult.reductionPercentage}% reduction)`);
+    assert.ok(javaResult.reductionPercentage >= 40, 'Expected >= 40% reduction on Java/C# code');
     assert.ok(javaResult.prunedCode.includes('public interface OrderProcessor'), 'Should keep interface');
     assert.ok(!javaResult.prunedCode.includes('Validating inventory item'), 'Should strip method body');
     console.log('✓ Java/C# AST Pruner verified.');
 
-    // 4. Dependency Tree Shaker Test
+    // 5. Dependency Tree Shaker Test
     const fullModule = `
 import { Database } from './db';
 

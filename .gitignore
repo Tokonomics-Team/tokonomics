@@ -7,5 +7,12 @@ out_test/
 *.log
 .vscode-test/
 .tokenopt/
+.agents/
+.tempmediaStorage/
+scratch/
 INTERNAL_ARCHITECTURE_AND_FEATURES.md
 CHANGELOG_INTERNAL.md
+implementation_plan.md
+walkthrough.md
+task.md
+competitive_analysis.md
