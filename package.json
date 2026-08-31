@@ -1,8 +1,8 @@
 {
   "name": "tokonomics",
-  "displayName": "Tokonomics 5.0 — The Local Context Compiler & Real-Time Analytics",
+  "displayName": "Tokonomics 5.0.1 — The Local Context Compiler & Real-Time Analytics",
   "description": "The Local Context Compiler for VS Code. Cut AI coding token costs by 65-88%. 16-stage context compilation, real-time analytics dashboard, multi-language AST structural pruning, and prompt cache alignment for Claude, GPT-4o, Copilot, Gemini & DeepSeek.",
-  "version": "5.0.0",
+  "version": "5.0.1",
   "publisher": "tokonomics",
   "license": "SEE LICENSE IN LICENSE.txt",
   "icon": "assets/icon.png",

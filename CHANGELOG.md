@@ -4,6 +4,19 @@ All notable user updates, feature additions, and performance improvements to **T
 
 ---
 
+## [5.0.1] - 2026-08-31
+### 🛠️ Architecture Hardening, Security & VS Code Chat Fixes
+- **Chat Participant Handle**: Fixed participant registration name to `@tokonomics` (`"name": "tokonomics"` in `package.json`), matching official VS Code Chat conventions.
+- **Activation Crash Fix**: Removed duplicate command registration for `tokenOptimizer.showDashboard` that caused runtime errors on extension activation.
+- **Modern Language Model Metadata**: Replaced deprecated `languageModelProviders` with `contributes.languageModelChatProviders` and matching vendor configuration.
+- **16-Stage Compiler Wiring**: Wired `PipelineOrchestrator.compileContext()` directly into standard chat execution turns with post-inference cost reconciliation.
+- **Dashboard Webview Security**: Hardened dashboard webview with a strict Content Security Policy and dynamic per-render cryptographic nonces.
+- **Path Traversal Guard**: Added workspace directory containment enforcement on `@tokonomics /pack` to strictly prevent traversal outside active workspace roots.
+- **Bounded Workspace Scan**: Added 50-file and 500KB per-file guards to the dashboard workspace scanner to guarantee smooth UI thread responsiveness.
+- **Complete Command Contribution**: Contributed all 10 slash commands (`/dashboard`, `/live`, `/explain`, `/stats`, `/map`, `/pack`, `/analyze`, `/compact`, `/logs`, `/ram`) in the extension manifest.
+
+---
+
 ## [5.0.0] - 2026-08-31
 ### 🏛️ Major Milestone: Tokonomics 5.0 — The Local Context Compiler
 - **16-Stage Local Context Compiler**: Full multi-layer context compilation with dynamic program slicing, knapsack token budget optimization, and sub-millisecond execution.
