@@ -44,7 +44,7 @@ export async function runComprehensiveAuditTests(): Promise<void> {
     const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
 
     // Check version
-    assert.strictEqual(pkg.version, '5.0.1', 'package.json version must be 5.0.1');
+    assert.strictEqual(pkg.version, '5.0.2', 'package.json version must be 5.0.2');
 
     // Check chat participant name
     assert.ok(pkg.contributes?.chatParticipants, 'contributes.chatParticipants must exist');

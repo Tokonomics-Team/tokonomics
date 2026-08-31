@@ -2,7 +2,7 @@
 ### The Local Context Compiler & Real-Time Analytics Engine (Claude, GPT-4o, Copilot, Gemini & DeepSeek)
 
 [![Website](https://img.shields.io/badge/Website-tokonomics--team.github.io-00f0ff.svg)](https://tokonomics-team.github.io/tokonomics)
-[![Version](https://img.shields.io/badge/version-5.0.1-blue.svg)](https://marketplace.visualstudio.com)
+[![Version](https://img.shields.io/badge/version-5.0.2-blue.svg)](https://marketplace.visualstudio.com)
 [![VS Code](https://img.shields.io/badge/VS%20Code-%5E1.90.0-purple.svg)](https://code.visualstudio.com)
 [![Token Savings](https://img.shields.io/badge/Token%20Savings-65%25%20--%2088%25-brightgreen.svg)]()
 [![Privacy](https://img.shields.io/badge/Privacy-100%25%20Local-success.svg)]()

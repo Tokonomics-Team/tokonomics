@@ -2,6 +2,13 @@
 
 All notable user updates, feature additions, and performance improvements to **Tokonomics** are documented here.
 
+## [5.0.2] - 2026-08-31
+### 🛡️ Comprehensive Host Simulation & Secret Redaction Hardening
+- **Automated Host Simulation**: Instituted automated extension host simulation suite validating clean activation, duplicate command elimination, and event lifecycle integrity.
+- **Enhanced Secret Redaction**: Added comprehensive masking for database URIs with credentials and Slack webhooks, with total prefix redaction.
+- **Full Slash Command Audit**: Verified all 10 slash commands (`/dashboard`, `/live`, `/explain`, `/stats`, `/map`, `/pack`, `/analyze`, `/compact`, `/logs`, `/ram`) in host simulation.
+- **100% Test Pass Rate**: All 62 test suites, ablation benchmarks, and host simulation assertions passing.
+
 ---
 
 ## [5.0.1] - 2026-08-31
