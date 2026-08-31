@@ -506,13 +506,18 @@ export function registerChatParticipant(
                     const dedup = ram.deduplicateTurnCode(rsText, activeFileName || 'workspace');
                     rawMessages.push({ role: 'user', content: dedup.text });
                 } else if (h instanceof vscode.ChatResponseTurn) {
-                    const resText = h.response.map(part => {
+                    const participantName = (h as any).participant || (h as any).name || 'tokonomics';
+                    const resText = h.response.map((part: any) => {
                         if (part instanceof vscode.ChatResponseMarkdownPart) {
                             return part.value.value;
                         }
+                        if (typeof part?.value === 'string') return part.value;
+                        if (typeof part?.value?.value === 'string') return part.value.value;
                         return '';
                     }).join('');
-                    rawMessages.push({ role: 'assistant', content: resText });
+                    if (resText.trim().length > 0) {
+                        rawMessages.push({ role: 'assistant', content: resText, name: participantName });
+                    }
                 }
             }
             // Rightsize images in the current prompt too

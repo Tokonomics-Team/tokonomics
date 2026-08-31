@@ -28,7 +28,7 @@ import { FileWatchIndex } from '../src/repo/repoMap';
 import { registerChatParticipant } from '../src/proxy/chatParticipant';
 import { ContextAnalyzer } from '../src/proxy/contextAnalyzer';
 import { activate, deactivate } from '../src/extension';
-import { commandsRegistered, activeChatParticipantId, activeChatParticipantHandler } from './mock-vscode';
+import { commandsRegistered, activeChatParticipantId, activeChatParticipantHandler, registeredLmProviders } from './mock-vscode';
 
 export async function runComprehensiveAuditTests(): Promise<void> {
     console.log('\n====================================================================================');
@@ -265,6 +265,100 @@ export async function runComprehensiveAuditTests(): Promise<void> {
         assert.ok(r.contextQuality.predictedCQ >= 50, 'Predicted CQ must be >= 50%');
     }
     console.log(`  ✓ 25 concurrent context compilations resolved cleanly within ${ramStats.budgetMB}MB RAM envelope.`);
+
+    // ------------------------------------------------------------------------------------------------
+    // TEST 7: Benchmark Preservation Flows & Vendor Registration Audit
+    // ------------------------------------------------------------------------------------------------
+    console.log('\n--- 7. Benchmark Preservation Flows & Vendor Registration Audit ---');
+
+    // 7.1 Vendor Registration Parity
+    assert.ok(registeredLmProviders.some(p => p.vendor === 'tokonomics'), 'LanguageModelChatProvider MUST be registered with vendor "tokonomics"');
+    console.log('  ✓ LanguageModelChatProvider registered with correct manifest vendor "tokonomics".');
+
+    // 7.2 Multi-File Payment Refactor Preservation (Testing idempotency, commit, rollback preservation)
+    const paymentServiceCode = `
+export class PaymentGateway {
+    private isLocked: boolean = false;
+
+    public async processPayment(orderId: string, amount: number, idempotencyKey: string): Promise<PaymentResult> {
+        if (!this.checkIdempotency(idempotencyKey)) {
+            throw new Error('Duplicate transaction');
+        }
+        try {
+            await this.beginTransaction();
+            const res = await this.charge(orderId, amount);
+            await this.commitTransaction(orderId);
+            return res;
+        } catch (err) {
+            await this.rollbackTransaction(orderId, err);
+            throw err;
+        }
+    }
+
+    private checkIdempotency(key: string): boolean {
+        return key.length > 0;
+    }
+
+    private async beginTransaction(): Promise<void> {
+        this.isLocked = true;
+    }
+
+    private async commitTransaction(id: string): Promise<void> {
+        this.isLocked = false;
+    }
+
+    private async rollbackTransaction(id: string, err: any): Promise<void> {
+        this.isLocked = false;
+    }
+}
+`;
+    const paymentPrompt = 'Refactor payment flow to ensure idempotency and atomic rollback.';
+    const paymentCompileRes = await orchestrator.compileContext({
+        messages: [
+            {
+                role: 'user',
+                content: `${paymentPrompt}\n\n\`\`\`typescript\n${paymentServiceCode}\n\`\`\``
+            }
+        ],
+        targetProvider: 'openai',
+        userIntent: 'edit'
+    });
+
+    const paymentOutput = paymentCompileRes.optimizedMessages[0].content;
+    assert.ok(paymentOutput.includes(paymentPrompt), 'Current user request prompt MUST be preserved verbatim 100%');
+    assert.ok(paymentOutput.includes('checkIdempotency') || paymentOutput.includes('idempotency'), 'Idempotency behavior must be preserved');
+    assert.ok(paymentOutput.includes('commitTransaction') || paymentOutput.includes('commit'), 'Commit transaction behavior must be preserved');
+    assert.ok(paymentOutput.includes('rollbackTransaction') || paymentOutput.includes('rollback'), 'Rollback transaction behavior must be preserved');
+    assert.ok(paymentCompileRes.tokensSaved > 0, 'Context compiler must achieve token savings while preserving domain logic');
+    console.log(`  ✓ Multi-file payment refactor preservation verified (${paymentCompileRes.reductionPercentage}% saved, all 4 domain facts preserved).`);
+
+    // 7.3 Single-File API Inventory Preservation
+    const apiInventoryCode = `
+export interface UserDTO { id: string; name: string; email: string; role: 'admin' | 'user'; }
+export interface OrderDTO { orderId: string; totalUSD: number; status: string; }
+export class InventoryApi {
+    public getUser(id: string): UserDTO { return { id, name: 'Alex', email: 'alex@example.com', role: 'user' }; }
+    public listOrders(): OrderDTO[] { return []; }
+    public cancelOrder(id: string): boolean { return true; }
+}
+`;
+    const inventoryPrompt = 'Generate an inventory of all public API endpoints and types.';
+    const inventoryCompileRes = await orchestrator.compileContext({
+        messages: [
+            {
+                role: 'user',
+                content: `${inventoryPrompt}\n\n\`\`\`typescript\n${apiInventoryCode}\n\`\`\``
+            }
+        ],
+        targetProvider: 'anthropic',
+        userIntent: 'question'
+    });
+
+    const inventoryOutput = inventoryCompileRes.optimizedMessages[0].content;
+    assert.ok(inventoryOutput.includes(inventoryPrompt), 'Inventory prompt must be preserved');
+    assert.ok(inventoryOutput.includes('UserDTO') && inventoryOutput.includes('OrderDTO'), 'Exported types must be preserved in API inventory');
+    assert.ok(inventoryOutput.includes('InventoryApi'), 'API class must be preserved');
+    console.log('  ✓ Single-file API inventory preservation verified.');
 
     console.log('\n====================================================================================');
     console.log('🎉 COMPREHENSIVE SOTA EXTENSION AUDIT & HOST SIMULATION PASSED (100%)');

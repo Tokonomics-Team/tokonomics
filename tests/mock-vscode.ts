@@ -200,7 +200,13 @@ export const LanguageModelChatMessage = {
     Assistant: (msg: string) => ({ role: 'assistant', content: msg })
 };
 
+export const registeredLmProviders: Array<{ vendor: string; provider: any }> = [];
+
 export const lm = {
+    registerLanguageModelChatProvider: (vendor: string, provider: any) => {
+        registeredLmProviders.push({ vendor, provider });
+        return { dispose: () => {} };
+    },
     selectChatModels: async () => [
         {
             id: 'claude-3-7-sonnet',

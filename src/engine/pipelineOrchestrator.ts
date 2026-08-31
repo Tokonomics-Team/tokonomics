@@ -259,13 +259,28 @@ export class PipelineOrchestrator {
         const profile = ModelProfileRegistry.getProfile(request.targetProvider || 'claude-3-5-sonnet');
         const tokenBudget = request.maxTokenBudget || 4000;
 
-        // 1. Task Sufficiency Profiling
-        const userPrompt = request.messages.find(m => m.role === 'user')?.content || '';
-        const taskProfile = this.sufficiencyEngine.buildTaskProfile('debug', userPrompt, [request.activeFilePath || 'workspace/focal.ts']);
+        // 1. Task Sufficiency Profiling & Focal Keyword Extraction
+        const rawUserMsg = request.messages.filter(m => m.role === 'user').pop()?.content || '';
+        const userInstruction = rawUserMsg.replace(/```[\s\S]*?```/g, '').trim() || rawUserMsg;
+        const promptTokens = TokenCounter.countTokens(userInstruction);
+        const extractedKeywords = (userInstruction.match(/[a-zA-Z_][a-zA-Z0-9_]*/g) || [])
+            .filter(w => w.length > 2 && !['const', 'let', 'var', 'the', 'and', 'with', 'for', 'function', 'class', 'from', 'import', 'export', 'this', 'that', 'please', 'make', 'code', 'file', 'method', 'function'].includes(w.toLowerCase()));
+        
+        const focalKeywords = Array.from(new Set([
+            ...(request.userIntent ? [request.userIntent] : []),
+            ...extractedKeywords
+        ]));
+
+        const taskProfile = this.sufficiencyEngine.buildTaskProfile(
+            request.userIntent === 'edit' ? 'refactor' : (request.userIntent === 'question' ? 'explain' : 'debug'),
+            userInstruction,
+            [request.activeFilePath || 'workspace/focal.ts']
+        );
 
         // 2. Process Messages through Multi-Tier Optimization
         for (let i = 0; i < request.messages.length; i++) {
             const msg = request.messages[i];
+            const isLatestUserTurn = i === request.messages.length - 1 && msg.role === 'user';
 
             if (msg.role === 'system') {
                 // Rule-based compaction on system prompts
@@ -279,16 +294,30 @@ export class PipelineOrchestrator {
                     evidence: ['RuleBasedCompressor']
                 });
             } else if (msg.content.includes('```')) {
-                // Extract code blocks, run SDG Slicing & Knapsack Optimization
-                const codeMatch = msg.content.match(/```(?:[a-zA-Z0-9_-]+)?\n([\s\S]*?)```/);
-                if (codeMatch && codeMatch[1]) {
-                    const rawCode = codeMatch[1];
-                    const sliceRes = this.sdgSlicer.computeBackwardSlice(rawCode, request.cursorLine || 15);
+                // Extract and optimize code blocks while preserving surrounding user instructions verbatim
+                let updatedContent = msg.content;
+                const codeBlockRegex = /```([a-zA-Z0-9_-]+)?\n([\s\S]*?)```/g;
+                let match: RegExpExecArray | null;
+                let blocksOptimized = 0;
+
+                while ((match = codeBlockRegex.exec(msg.content)) !== null) {
+                    const fullMatch = match[0];
+                    const langTag = match[1] || 'typescript';
+                    const rawCode = match[2];
+                    const rawCodeTokens = TokenCounter.countTokens(rawCode);
+
+                    // If code block is trivial (< 35 tokens) or empty, preserve intact
+                    if (rawCodeTokens < 35) {
+                        continue;
+                    }
+
+                    // Intent-Aware Program Slicing (Preserves focal methods, transactions, commit, rollback, idempotency)
+                    const sliceRes = this.sdgSlicer.computeIntentAwareSlice(rawCode, focalKeywords, request.cursorLine || 15);
 
                     const entity: ContextEntity = {
-                        id: `entity_code_${i}`,
+                        id: `entity_code_${i}_${blocksOptimized}`,
                         filePath: request.activeFilePath || 'src/focal.ts',
-                        symbolName: 'TargetModule',
+                        symbolName: focalKeywords[0] || 'TargetModule',
                         kind: 'class',
                         baseUtility: 100,
                         signatures: [sliceRes.slicedCode.split('\n')[0] || ''],
@@ -302,25 +331,29 @@ export class PipelineOrchestrator {
 
                     const chosenRes = solverRes.assignments.get(entity.id);
                     const finalCode = chosenRes?.text || sliceRes.slicedCode;
-                    const replacedMsg = msg.content.replace(codeMatch[0], `\`\`\`typescript\n${finalCode}\n\`\`\``);
+                    
+                    // Only replace if valid optimized code was produced
+                    if (finalCode && finalCode.trim().length > 0) {
+                        updatedContent = updatedContent.replace(fullMatch, `\`\`\`${langTag}\n${finalCode}\n\`\`\``);
+                        blocksOptimized++;
 
-                    result.push({ ...msg, content: replacedMsg });
-                    decisions.push({
-                        itemId: `code_block_${i}`,
-                        action: 'slice',
-                        reason: `SDG program slice (${sliceRes.reductionPercentage}% reduction) assigned ${chosenRes?.level || 'R4'}`,
-                        confidence: 0.95,
-                        evidence: ['SystemDependenceGraph', 'ContextKnapsackSolver']
-                    });
-                } else {
-                    result.push({ ...msg });
+                        decisions.push({
+                            itemId: `code_block_${i}_${blocksOptimized}`,
+                            action: 'slice',
+                            reason: `SDG intent-aware slice (${sliceRes.reductionPercentage}% reduction, ${focalKeywords.slice(0, 3).join(', ')} preserved) assigned ${chosenRes?.level || 'R4'}`,
+                            confidence: 0.96,
+                            evidence: ['SystemDependenceGraph', 'ContextKnapsackSolver', 'IntentPreservation']
+                        });
+                    }
                 }
+
+                result.push({ ...msg, content: updatedContent });
             } else {
                 result.push({ ...msg });
                 decisions.push({
                     itemId: `turn_${i}`,
                     action: 'preserve',
-                    reason: 'Conversational dialogue preserved',
+                    reason: isLatestUserTurn ? 'Current user request pinned verbatim 100%' : 'Conversational dialogue preserved',
                     confidence: 1.0,
                     evidence: ['Verbatim pass-through']
                 });

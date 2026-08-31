@@ -139,11 +139,11 @@ export async function activate(context: vscode.ExtensionContext) {
 
         if (vscode.lm && typeof (vscode.lm as any).registerLanguageModelChatProvider === 'function') {
             const providerDisposable = (vscode.lm as any).registerLanguageModelChatProvider(
-                'token-optimizer-proxy',
+                'tokonomics',
                 provider
             );
             context.subscriptions.push(providerDisposable);
-            console.log('[Tokonomics] Registered vscode.lm chat provider proxy: token-optimizer-proxy');
+            console.log('[Tokonomics] Registered vscode.lm chat provider proxy with vendor: tokonomics');
         }
     } catch (err) {
         console.warn('[Tokonomics] Note on LM Provider registration:', err);
