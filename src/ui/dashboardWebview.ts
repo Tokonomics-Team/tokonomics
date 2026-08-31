@@ -138,6 +138,8 @@ export class DashboardWebviewPanel {
                 vscode.window.showInformationMessage(
                     `⚡ Optimized "${diagnosis.fileName}": Reduced ${origTokens.toLocaleString()} ➔ ${pruneResult.prunedTokenCount.toLocaleString()} tokens (${pruneResult.reductionPercentage}% saved in ${pruneResult.durationMs}ms)! Pruned skeleton copied to clipboard.`
                 );
+            } else if (message.command === 'comparePrunedDiff') {
+                vscode.commands.executeCommand('tokenOptimizer.comparePrunedDiff');
             } else if (message.command === 'scanWorkspace') {
                 this.cachedWorkspaceScan = this.performWorkspaceScan();
                 this.updateContent();
@@ -401,6 +403,7 @@ export class DashboardWebviewPanel {
         </div>
         <div class="actions">
             <button id="btnOptimizeActive" class="btn-action btn-primary">⚡ Optimize Active File</button>
+            <button id="btnCompareDiff" class="btn-action">🔍 Side-by-Side Diff</button>
             <button id="btnScanWorkspace" class="btn-action">🔄 Audit Workspace</button>
             <button id="btnExport" class="btn-action">Export Audit</button>
             <button id="btnReset" class="btn-action">Reset</button>
@@ -660,6 +663,7 @@ export class DashboardWebviewPanel {
 
         // Top actions
         document.getElementById('btnOptimizeActive').addEventListener('click', () => vscode.postMessage({ command: 'optimizeActiveFile' }));
+        document.getElementById('btnCompareDiff').addEventListener('click', () => vscode.postMessage({ command: 'comparePrunedDiff' }));
         document.getElementById('btnScanWorkspace').addEventListener('click', () => vscode.postMessage({ command: 'scanWorkspace' }));
         document.getElementById('btnExport').addEventListener('click', () => vscode.postMessage({ command: 'exportAuditLog' }));
         document.getElementById('btnReset').addEventListener('click', () => vscode.postMessage({ command: 'resetMetrics' }));
