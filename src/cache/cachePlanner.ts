@@ -28,7 +28,8 @@ export interface CachePlanResult {
 }
 
 export class CachePlanner {
-    private hashContent(str: string): string {
+    private hashContent(str?: string): string {
+        if (!str) return '0';
         let hash = 0x811c9dc5;
         for (let i = 0; i < str.length; i++) {
             hash ^= str.charCodeAt(i);

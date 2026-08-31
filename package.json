@@ -403,10 +403,11 @@
     "package": "node esbuild.js --production",
     "dev": "node esbuild.js",
     "test": "node scripts/run-tests.js",
+    "certify": "node scripts/certify.js",
     "download-parsers": "node scripts/download-parsers.js",
-    "vsce:package": "npx @vscode/vsce package --no-dependencies --out tokonomics-4.1.2.vsix",
+    "vsce:package": "npx @vscode/vsce package --no-dependencies --out tokonomics-5.1.0.vsix",
     "publish:vsce": "npx @vscode/vsce publish --no-dependencies",
-    "publish:ovsx": "npx ovsx publish tokonomics-4.1.2.vsix",
+    "publish:ovsx": "npx ovsx publish tokonomics-5.1.0.vsix",
     "publish:all": "npm run publish:vsce && npm run publish:ovsx",
     "sync:public": "powershell -ExecutionPolicy Bypass -File ./scripts/sync-public-repo.ps1"
   },

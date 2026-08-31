@@ -37,7 +37,7 @@ export class ContextKnapsackSolver {
         lambdaRisk?: number;
     }): SolverResult {
         const startTime = performance.now();
-        const budget = Math.max(100, params.tokenBudget);
+        const budget = Math.max(0, params.tokenBudget);
         const maxRisk = params.maxRisk ?? 1.0;
         const lambdaCache = params.lambdaCache ?? 0.2;
         const lambdaCost = params.lambdaCost ?? 0.005;

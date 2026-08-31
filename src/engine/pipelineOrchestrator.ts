@@ -59,7 +59,7 @@ export class PipelineOrchestrator {
     private compressor: RuleBasedCompressor = new RuleBasedCompressor();
 
     constructor(
-        private astEngine: AstPrunerEngine,
+        private astEngine: AstPrunerEngine = new AstPrunerEngine(),
         private ramManager?: RamContextManager,
         private cacheAligner?: CacheAlignerEngine,
         private metricsTracker?: MetricsTracker
@@ -243,7 +243,7 @@ export class PipelineOrchestrator {
      */
     private async executeLegacyPipeline(request: ContextCompileRequest, decisions: Decision[]): Promise<MessagePayload[]> {
         const result: MessagePayload[] = [];
-        const parserLabel = this.astEngine.getActiveParserLabel();
+        const parserLabel = this.astEngine?.getActiveParserLabel ? this.astEngine.getActiveParserLabel() : 'AST Parser';
 
         for (let i = 0; i < request.messages.length; i++) {
             const msg = request.messages[i];
