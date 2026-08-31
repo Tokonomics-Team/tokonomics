@@ -382,6 +382,16 @@
           "type": "boolean",
           "default": true,
           "description": "Maintains a high-speed in-memory symbol search index in RAM to surgically retrieve referenced signatures without dumping full files."
+        },
+        "tokenOptimizer.pipelineMode": {
+          "type": "string",
+          "enum": [
+            "compiler",
+            "hybrid",
+            "legacy"
+          ],
+          "default": "compiler",
+          "description": "Context compilation engine mode (compiler: Phase 1-16 SOTA compiler with SDG program slicing; hybrid: transitional; legacy: basic AST pruner)."
         }
       }
     }

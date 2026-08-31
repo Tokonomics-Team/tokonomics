@@ -63,6 +63,16 @@ export class AstPrunerEngine {
         }
     }
 
+    public hasTreeSitterActive(): boolean {
+        return this.isInitialized && this.languages.size > 0;
+    }
+
+    public getActiveParserLabel(): string {
+        return this.hasTreeSitterActive() 
+            ? `Tree-sitter WASM (${Array.from(this.languages.keys()).join(', ')})`
+            : 'Deterministic Stateful AST Slicer (AST Fallback)';
+    }
+
     public pruneCodeContext(
         codeText: string,
         languageHint?: string,

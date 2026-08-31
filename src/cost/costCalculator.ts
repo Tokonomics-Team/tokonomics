@@ -39,17 +39,12 @@ export class CostCalculator {
             : modelIdOrProfile;
 
         const inputRate = profile.pricing.inputCostPer1M;
-        const cachedRate = profile.pricing.cachedInputCostPer1M;
 
-        // Raw unoptimized cost (100% uncached standard pricing)
+        // Raw unoptimized cost
         const rawCost = (rawTokens / 1_000_000) * inputRate;
 
-        // Optimized cost accounts for static prefix cache pricing
-        const cachedPortion = Math.min(optimizedTokens, cacheableTokens);
-        const uncachedPortion = Math.max(0, optimizedTokens - cachedPortion);
-
-        const optimizedCost = ((uncachedPortion / 1_000_000) * inputRate) +
-                              ((cachedPortion / 1_000_000) * cachedRate);
+        // Optimized cost based directly on actual token reduction (zero speculative caching)
+        const optimizedCost = (optimizedTokens / 1_000_000) * inputRate;
 
         const savings = Math.max(0, rawCost - optimizedCost);
         const savingsPct = rawCost > 0 ? (savings / rawCost) * 100 : 0;

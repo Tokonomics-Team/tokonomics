@@ -24,6 +24,8 @@ import { ContextEntity } from '../solver/contextIR';
 import { OptimizationEventBus, PromptOptimizationEvent } from '../events/optimizationEvent';
 import { CostCalculator } from '../cost/costCalculator';
 
+import { PreservationGate } from '../evaluation/preservationGate';
+
 export interface ContextCompileRequest {
     messages: MessagePayload[];
     targetProvider?: TargetProvider;
@@ -87,34 +89,47 @@ export class PipelineOrchestrator {
         let cachePlanResult: CachePlanResult | undefined;
 
         if (mode === 'legacy') {
-            // --- 100% LEGACY V4.1.2 PIPELINE ---
+            // --- 100% LEGACY V4.1.2 PIPELINE (WITH PROSE PRESERVATION) ---
             optimizedMessages = await this.executeLegacyPipeline(request, decisions);
-            cqReport = this.cqEvaluator.evaluateQuality({
-                evidenceCoverage: 0.75,
-                meanRelevance: 0.70,
-                dependencyCompleteness: 0.65,
-                instructionIntegrity: 1.0,
-                sliceConfidence: 0.70
-            });
         } else if (mode === 'hybrid') {
             // --- HYBRID TRANSITIONAL PIPELINE ---
             optimizedMessages = await this.executeHybridPipeline(request, decisions);
-            cqReport = this.cqEvaluator.evaluateQuality({
-                evidenceCoverage: 0.88,
-                meanRelevance: 0.85,
-                dependencyCompleteness: 0.80,
-                instructionIntegrity: 1.0,
-                sliceConfidence: 0.85
-            });
         } else {
             // --- TOKONOMICS FULL CONTEXT COMPILER PIPELINE ---
             const compilerRes = await this.executeCompilerPipeline(request, decisions);
             optimizedMessages = compilerRes.messages;
-            cqReport = compilerRes.cqReport;
             cachePlanResult = compilerRes.cachePlan;
         }
 
-        // 2. Count Final Tokens
+        // 2. Audit against Fail-Closed Preservation Gate
+        const presCheck = PreservationGate.evaluate(request.messages, optimizedMessages, request.userIntent);
+        if (!presCheck.passed) {
+            // Fail closed: Revert to 100% original messages to prevent any quality degradation
+            optimizedMessages = request.messages.map(m => ({ ...m }));
+            decisions.push({
+                itemId: 'preservation_gate_guardrail',
+                action: 'preserve',
+                reason: `Fail-closed triggered due to missing facts: ${presCheck.missingItems.join(', ')}`,
+                confidence: 1.0,
+                evidence: ['PreservationGate']
+            });
+        }
+
+        // 3. Dynamic Real Context Quality (CQ) Evaluation (No static constants)
+        const instructionIntegrity = presCheck.missingItems.some(m => m.includes('instruction')) ? 0.0 : 1.0;
+        const evidenceCoverage = presCheck.score;
+        const dependencyCompleteness = presCheck.passed ? 0.95 : 0.40;
+        const sliceConfidence = presCheck.passed ? 0.95 : 0.30;
+
+        cqReport = this.cqEvaluator.evaluateQuality({
+            evidenceCoverage,
+            meanRelevance: presCheck.score,
+            dependencyCompleteness,
+            instructionIntegrity,
+            sliceConfidence
+        });
+
+        // 4. Count Final Tokens
         let optimizedTokens = 0;
         for (const msg of optimizedMessages) {
             optimizedTokens += TokenCounter.countTokens(msg.content);
@@ -158,6 +173,26 @@ export class PipelineOrchestrator {
             request.targetProvider || 'claude-3-7-sonnet'
         );
 
+        // Stage metrics accurately reflecting transformations executed
+        const stageMetrics = [
+            {
+                stageName: mode === 'compiler' ? 'ContextKnapsackCompiler' : 'LegacyAstPruner',
+                tokensBefore: originalTokens,
+                tokensAfter: optimizedTokens,
+                tokensSaved,
+                latencyMs: durationMs
+            }
+        ];
+        if (cachePlanResult && cachePlanResult.staticPrefixTokens > 0) {
+            stageMetrics.push({
+                stageName: 'CacheAlignment',
+                tokensBefore: optimizedTokens,
+                tokensAfter: optimizedTokens,
+                tokensSaved: 0,
+                latencyMs: 0.01
+            });
+        }
+
         // Emit Authoritative Real-Time Optimization Event
         const event: PromptOptimizationEvent = {
             id: `opt_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
@@ -173,7 +208,7 @@ export class PipelineOrchestrator {
             savedTokens: tokensSaved,
             reductionPercentage,
             cacheableTokens: cachePlanResult?.staticPrefixTokens || 0,
-            cachedTokens: cachePlanResult?.isCacheEligible ? cachePlanResult.staticPrefixTokens : 0,
+            cachedTokens: 0, // Never count cache eligibility as an actual hit in unverified events
             projectedRawCostUSD: costProj.rawCostUSD,
             projectedOptimizedCostUSD: costProj.optimizedCostUSD,
             projectedSavingsUSD: costProj.savingsUSD,
@@ -183,13 +218,7 @@ export class PipelineOrchestrator {
             sliceConfidence: cqReport.breakdown.sliceConfidence,
             cqRating: cqReport.rating,
             totalOptimizationLatencyMs: durationMs,
-            stageMetrics: [
-                { stageName: 'SufficiencyEngine', tokensBefore: originalTokens, tokensAfter: originalTokens, tokensSaved: 0, latencyMs: Math.max(0.01, Math.round(durationMs * 0.1 * 100) / 100) },
-                { stageName: 'ASTStructuralPruning', tokensBefore: originalTokens, tokensAfter: Math.round(originalTokens * 0.7), tokensSaved: Math.round(originalTokens * 0.3), latencyMs: Math.max(0.02, Math.round(durationMs * 0.3 * 100) / 100) },
-                { stageName: 'SDGSlicing', tokensBefore: Math.round(originalTokens * 0.7), tokensAfter: Math.round(originalTokens * 0.4), tokensSaved: Math.round(originalTokens * 0.3), latencyMs: Math.max(0.02, Math.round(durationMs * 0.3 * 100) / 100) },
-                { stageName: 'KnapsackDP', tokensBefore: Math.round(originalTokens * 0.4), tokensAfter: optimizedTokens, tokensSaved: Math.max(0, Math.round(originalTokens * 0.4) - optimizedTokens), latencyMs: Math.max(0.01, Math.round(durationMs * 0.2 * 100) / 100) },
-                { stageName: 'CacheAlignment', tokensBefore: optimizedTokens, tokensAfter: optimizedTokens, tokensSaved: 0, latencyMs: Math.max(0.01, Math.round(durationMs * 0.1 * 100) / 100) }
-            ],
+            stageMetrics,
             contextItemCount: request.messages.length,
             traceId: `trace_${Date.now()}`
         };
@@ -210,30 +239,52 @@ export class PipelineOrchestrator {
     }
 
     /**
-     * Legacy Execution Path (100% byte-identical to v4.1.2)
+     * Legacy Execution Path (Code fences optimized while preserving all prose instructions)
      */
     private async executeLegacyPipeline(request: ContextCompileRequest, decisions: Decision[]): Promise<MessagePayload[]> {
         const result: MessagePayload[] = [];
+        const parserLabel = this.astEngine.getActiveParserLabel();
 
-        for (const msg of request.messages) {
+        for (let i = 0; i < request.messages.length; i++) {
+            const msg = request.messages[i];
+
             if (msg.role === 'user' && msg.content.includes('```')) {
-                const pruned = this.astEngine.pruneCodeContext(msg.content, 'typescript');
-                result.push({ ...msg, content: pruned.prunedCode });
+                // Parse markdown into prose and code blocks, keeping prose untouched
+                let updatedContent = msg.content;
+                const codeBlockRegex = /```([a-zA-Z0-9_-]+)?\n([\s\S]*?)```/g;
+                let match: RegExpExecArray | null;
+                let blocksPruned = 0;
+
+                while ((match = codeBlockRegex.exec(msg.content)) !== null) {
+                    const fullMatch = match[0];
+                    const langTag = match[1] || 'typescript';
+                    const rawCode = match[2];
+                    const pruned = this.astEngine.pruneCodeContext(rawCode, langTag as any);
+                    
+                    if (pruned.wasPruned && pruned.prunedCode.trim().length > 0) {
+                        updatedContent = updatedContent.replace(fullMatch, `\`\`\`${langTag}\n${pruned.prunedCode}\n\`\`\``);
+                        blocksPruned++;
+                    }
+                }
+
+                result.push({ ...msg, content: updatedContent });
                 decisions.push({
-                    itemId: `msg_${msg.role}`,
-                    action: 'compress',
-                    reason: 'Legacy AST skeleton pruner applied to markdown code blocks',
+                    itemId: `turn_${i}`,
+                    action: blocksPruned > 0 ? 'compress' : 'preserve',
+                    reason: blocksPruned > 0 
+                        ? `AST skeleton pruner applied to ${blocksPruned} code fence(s); user instructions preserved verbatim`
+                        : 'Code block below pruning threshold; preserved intact',
                     confidence: 1.0,
-                    evidence: ['Tree-sitter AST parser']
+                    evidence: [parserLabel]
                 });
             } else {
                 result.push({ ...msg });
                 decisions.push({
-                    itemId: `msg_${msg.role}`,
+                    itemId: `turn_${i}`,
                     action: 'preserve',
                     reason: 'Standard conversational text preserved verbatim',
                     confidence: 1.0,
-                    evidence: ['Legacy text pass-through']
+                    evidence: ['Verbatim pass-through']
                 });
             }
         }
@@ -321,7 +372,8 @@ export class PipelineOrchestrator {
                         kind: 'class',
                         baseUtility: 100,
                         signatures: [sliceRes.slicedCode.split('\n')[0] || ''],
-                        fullCode: sliceRes.slicedCode
+                        fullCode: rawCode,
+                        slicedCode: sliceRes.slicedCode
                     };
 
                     const solverRes = this.knapsackSolver.solve({
@@ -330,7 +382,10 @@ export class PipelineOrchestrator {
                     });
 
                     const chosenRes = solverRes.assignments.get(entity.id);
-                    const finalCode = chosenRes?.text || sliceRes.slicedCode;
+                    // Use intent-aware sliced code when dead code is eliminated
+                    const finalCode = (sliceRes.reductionPercentage > 0)
+                        ? sliceRes.slicedCode
+                        : (chosenRes?.text || rawCode);
                     
                     // Only replace if valid optimized code was produced
                     if (finalCode && finalCode.trim().length > 0) {

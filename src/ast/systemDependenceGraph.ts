@@ -47,25 +47,35 @@ export class SystemDependenceGraph {
                 continue;
             }
 
-            // Extract defined and used variables
+            // Extract defined and used variables via LHS / RHS separation
             const definedVars: string[] = [];
             const usedVars: string[] = [];
+            const eqIdx = lineText.indexOf('=');
+            let rhsText = lineText;
 
-            // Simple parser: let/const/var x = ...
-            const defMatch = lineText.match(/(?:const|let|var)\s+([a-zA-Z0-9_]+)\s*=/);
-            if (defMatch) {
-                definedVars.push(defMatch[1]);
+            if (eqIdx !== -1) {
+                const lhs = lineText.substring(0, eqIdx).trim();
+                rhsText = lineText.substring(eqIdx + 1);
+                const lhsVarMatch = lhs.match(/(?:(?:const|let|var)\s+|this\.)?([a-zA-Z0-9_]+)$/);
+                if (lhsVarMatch) {
+                    definedVars.push(lhsVarMatch[1]);
+                }
+            } else {
+                // Mutations like x++ or x--
+                const mutMatch = lineText.match(/(?:this\.)?([a-zA-Z0-9_]+)\s*(?:\+\+|--|\+=|-=)/);
+                if (mutMatch) {
+                    definedVars.push(mutMatch[1]);
+                    usedVars.push(mutMatch[1]);
+                }
             }
 
-            // Match words that are used
-            const words = lineText.match(/\b[a-zA-Z_][a-zA-Z0-9_]*\b/g) || [];
+            // Extract used variables from RHS and expressions
+            const words = rhsText.match(/\b[a-zA-Z_][a-zA-Z0-9_]*\b/g) || [];
             for (const w of words) {
-                if (['const', 'let', 'var', 'if', 'else', 'for', 'while', 'return', 'function', 'class', 'import', 'export'].includes(w)) {
+                if (['const', 'let', 'var', 'if', 'else', 'for', 'while', 'return', 'function', 'class', 'import', 'export', 'this', 'true', 'false', 'null', 'undefined', 'new', 'double', 'number', 'string', 'boolean'].includes(w)) {
                     continue;
                 }
-                if (!definedVars.includes(w)) {
-                    usedVars.push(w);
-                }
+                usedVars.push(w);
             }
 
             // Check control condition lines
@@ -201,13 +211,52 @@ export class SystemDependenceGraph {
 
         const seedLines: number[] = [];
 
+        const isMethodHeaderLine = (line: string): boolean => {
+            const trimmed = line.trim();
+            if (/^(if|while|for|switch|catch|return|throw)\b/.test(trimmed)) {
+                return false;
+            }
+            return /^\s*(?:(?:public|private|protected|async|static|export|override)\s+)*(?:function|def|fn|func|[a-zA-Z_][a-zA-Z0-9_]*)\s*\(/.test(line);
+        };
+
         for (let i = 0; i < rawLines.length; i++) {
             const lineNum = i + 1;
             const lineLower = rawLines[i].toLowerCase();
+            const isMethodHeader = isMethodHeaderLine(rawLines[i]);
+            const isClassDecl = /^\s*(export\s+)?(class|interface)\b/.test(rawLines[i].trim());
 
-            // Check if line matches any focal keyword
-            const hasKeywordMatch = activeKeywords.some(kw => lineLower.includes(kw));
-            if (hasKeywordMatch) {
+            // If a method header matches focal keywords, seed from its return/throw exit points or all lines if void
+            if (isMethodHeader && activeKeywords.some(kw => lineLower.includes(kw))) {
+                let depth = 0;
+                let foundOpen = false;
+                let foundExit = false;
+                const methodLines: number[] = [];
+
+                for (let k = i; k < rawLines.length; k++) {
+                    const text = rawLines[k];
+                    methodLines.push(k + 1);
+
+                    if (text.includes('{')) {
+                        depth += (text.match(/\{/g) || []).length;
+                        foundOpen = true;
+                    }
+                    if (/^\s*(return|throw)\b/.test(text.trim())) {
+                        seedLines.push(k + 1);
+                        foundExit = true;
+                    }
+                    if (text.includes('}')) {
+                        depth -= (text.match(/\}/g) || []).length;
+                    }
+                    if (foundOpen && depth <= 0) {
+                        break;
+                    }
+                }
+
+                // If void action method (no return/throw), seed all lines of the method
+                if (!foundExit) {
+                    seedLines.push(...methodLines);
+                }
+            } else if (!isClassDecl && !rawLines[i].trim().startsWith('//') && activeKeywords.some(kw => lineLower.includes(kw.toLowerCase()))) {
                 seedLines.push(lineNum);
             }
         }
@@ -246,17 +295,48 @@ export class SystemDependenceGraph {
             }
         }
 
+        // Expand visited lines to include enclosing method headers
+        for (const seed of Array.from(visitedLines)) {
+            let start = seed - 1; // Scan from seed line upwards
+            while (start >= 0) {
+                const prevLine = rawLines[start];
+                if (isMethodHeaderLine(prevLine)) {
+                    visitedLines.add(start + 1); // Add method header
+                    break;
+                }
+                if (/^(export\s+)?(class|interface)\b/.test(prevLine.trim())) {
+                    break;
+                }
+                start--;
+            }
+        }
+
+        // Check for referenced property declarations in the class (e.g. private retryCount = 0;)
+        for (const lineNum of Array.from(visitedLines)) {
+            const line = rawLines[lineNum - 1] || '';
+            const propRegex = /this\.([a-zA-Z0-9_]+)/g;
+            let pMatch: RegExpExecArray | null;
+            while ((pMatch = propRegex.exec(line)) !== null) {
+                const propName = pMatch[1];
+                for (let k = 0; k < rawLines.length; k++) {
+                    if (new RegExp(`^\\s*(?:(?:private|public|protected|readonly|static)\\s+)*${propName}\\b`).test(rawLines[k])) {
+                        visitedLines.add(k + 1);
+                    }
+                }
+            }
+        }
+
         const includedLines = Array.from(visitedLines).sort((a, b) => a - b);
         const slicedStatements: string[] = [];
 
         for (let i = 0; i < rawLines.length; i++) {
             const lineNum = i + 1;
             const text = rawLines[i];
-            const isHeader = /^(export\s+)?(class|interface|type)\b/.test(text.trim());
-            const isMethodHeader = /^\s*(public|private|protected|async)?\s*(function|def|fn|func|[a-zA-Z0-9_]+)\s*\(/.test(text);
+            const isHeader = /^(export\s+)?(class|interface|type|enum)\b/.test(text.trim());
+            const isMethodHeader = isMethodHeaderLine(text);
             const isClosing = text.trim() === '}' || text.trim() === '};';
 
-            if (visitedLines.has(lineNum) || isHeader || (isMethodHeader && visitedLines.has(lineNum + 1)) || isClosing) {
+            if (visitedLines.has(lineNum) || isHeader || isClosing) {
                 slicedStatements.push(text);
             }
         }

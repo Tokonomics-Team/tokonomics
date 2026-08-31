@@ -22,6 +22,7 @@ import { AnonymizedLogger } from './security/anonymizedLogger';
 import { PipelineOrchestrator } from './engine/pipelineOrchestrator';
 import { LiveMetricsAggregator } from './metrics/liveAggregator';
 import { LocalHistoryStore } from './history/localHistoryStore';
+import { FeatureFlagRegistry } from './engine/featureFlags';
 
 let statusBarManager: StatusBarManager | undefined;
 
@@ -33,12 +34,16 @@ export async function activate(context: vscode.ExtensionContext) {
     logger.info('Activation', 'Tokonomics AI Token Optimizer is activating...');
 
     // Global uncaught error listener to capture unhandled exceptions safely
-    process.on('unhandledRejection', (reason) => {
-        logger.captureException('Process', reason, 'unhandledRejection');
+    process.on('uncaughtException', (err: any) => {
+        logger.error('UnhandledException', err);
     });
 
     const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
     const optConf = vscode.workspace.getConfiguration('tokenOptimizer');
+
+    // Initialize pipeline mode from user configuration (default: compiler)
+    const initialPipelineMode = optConf.get<'compiler' | 'hybrid' | 'legacy'>('pipelineMode', 'compiler');
+    FeatureFlagRegistry.setPipelineMode(initialPipelineMode);
 
     // 1. Initialize Engines, Caches & In-Memory RAM Manager
     const astEngine = new AstPrunerEngine();
@@ -89,7 +94,7 @@ export async function activate(context: vscode.ExtensionContext) {
         })
     );
 
-    // Dynamic RAM Budget configuration listener
+    // Dynamic configuration listener
     context.subscriptions.push(
         vscode.workspace.onDidChangeConfiguration(e => {
             if (e.affectsConfiguration('tokenOptimizer.ramBudgetMB') ||
@@ -101,6 +106,12 @@ export async function activate(context: vscode.ExtensionContext) {
                     enableBackgroundWarming: conf.get<boolean>('enableBackgroundRamWarming', false),
                     enableSemanticIndex: conf.get<boolean>('enableRamSemanticIndex', true)
                 });
+            }
+            if (e.affectsConfiguration('tokenOptimizer.pipelineMode')) {
+                const conf = vscode.workspace.getConfiguration('tokenOptimizer');
+                const newMode = conf.get<'compiler' | 'hybrid' | 'legacy'>('pipelineMode', 'compiler');
+                FeatureFlagRegistry.setPipelineMode(newMode);
+                console.log(`[Tokonomics] Pipeline mode updated to: ${newMode}`);
             }
         })
     );

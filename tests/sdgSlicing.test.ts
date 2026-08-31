@@ -54,6 +54,23 @@ export class OrderProcessor {
     console.log(`[SDG Slicing] Sliced ${sliceRes.originalLinesCount} lines ➔ ${sliceRes.slicedLinesCount} lines (-${sliceRes.reductionPercentage}%)`);
     console.log('✓ SystemDependenceGraph dynamic backward slicing verified.');
 
+    // 1.1 Test Intent-Aware Slicing on ConnectionPool
+    const poolCode = `
+export class ConnectionPool {
+    private retryCount = 0;
+    public async acquire(): Promise<Conn> {
+        if (this.retryCount > 3) throw new Error("Pool exhausted");
+        this.retryCount++;
+        return this.connectWithBackoff(this.retryCount * 1000);
+    }
+    private connectWithBackoff(ms: number): Promise<Conn> { return Promise.resolve({} as Conn); }
+}
+`;
+    const poolSlice = sdg.computeIntentAwareSlice(poolCode, ['debug', 'Fix', 'retry', 'delay', 'logic', 'ConnectionPool'], 15);
+    if (!poolSlice.slicedCode.includes('acquire') || !poolSlice.slicedCode.includes('retryCount')) {
+        throw new Error(`ConnectionPool slice missed acquire or retryCount: ${poolSlice.slicedCode}`);
+    }
+
     // 2. Test Slice Confidence on Static Code (Safe -> use_slice)
     const staticRisk = evaluator.evaluateSliceRisk(sampleCode, sliceRes.originalLinesCount, sliceRes.slicedLinesCount);
     if (staticRisk.sliceConfidence < 0.85 || staticRisk.recommendedAction !== 'use_slice') {
