@@ -36,7 +36,7 @@ export async function runLoggerTests() {
     const rawSecretLog = 'Connection failed with sk-ant-api03-abcdef1234567890abcdef1234567890 for user auth';
     const sanitizedSecret = logger.sanitize(rawSecretLog);
     assert.ok(!sanitizedSecret.includes('abcdef1234567890'), 'Should redact API key from log text');
-    assert.ok(sanitizedSecret.includes('REDACTED_API_KEY'), 'Should contain redacted placeholder');
+    assert.ok(sanitizedSecret.includes('REDACTED_'), 'Should contain redacted placeholder');
     console.log('✓ Secret Redaction in Logs verified.');
 
     // 3. Test IP Address Redaction

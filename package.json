@@ -166,6 +166,21 @@
         "command": "tokenOptimizer.exportLogs",
         "title": "Tokonomics: Export Anonymized Diagnostic Logs",
         "category": "Tokonomics"
+      },
+      {
+        "command": "tokenOptimizer.liveStats",
+        "title": "Tokonomics: Show Live Session Savings",
+        "category": "Tokonomics"
+      },
+      {
+        "command": "tokenOptimizer.aggregateStats",
+        "title": "Tokonomics: Open Aggregated Savings Ledger",
+        "category": "Tokonomics"
+      },
+      {
+        "command": "tokenOptimizer.explainTrace",
+        "title": "Tokonomics: Inspect Compiler Decision Trace",
+        "category": "Tokonomics"
       }
     ],
     "menus": {
@@ -187,6 +202,18 @@
         },
         {
           "command": "tokenOptimizer.resetMetrics"
+        },
+        {
+          "command": "tokenOptimizer.exportLogs"
+        },
+        {
+          "command": "tokenOptimizer.liveStats"
+        },
+        {
+          "command": "tokenOptimizer.aggregateStats"
+        },
+        {
+          "command": "tokenOptimizer.explainTrace"
         }
       ],
       "editor/context": [

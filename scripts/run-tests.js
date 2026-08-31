@@ -40,6 +40,7 @@ import { runEventReconciliationTests } from '../tests/eventReconciliation.test';
 import { runDashboardResilienceTests } from '../tests/dashboardResilience.test';
 import { runCompilerIntegrationTests } from '../tests/compilerIntegration.test';
 import { runE2ETests } from '../tests/e2e.test';
+import { runComprehensiveAuditTests } from '../tests/comprehensive-audit.test';
 
 async function runAll() {
     try {
@@ -76,8 +77,9 @@ async function runAll() {
         await runDashboardResilienceTests();
         await runCompilerIntegrationTests();
         await runE2ETests();
+        await runComprehensiveAuditTests();
         console.log('\\n====================================================================================');
-        console.log('🎉 ALL V4.0 SOTA TESTS, CALIBRATION BENCHMARKS & DASHBOARD SUITES PASSED (100%)');
+        console.log('🎉 ALL V5.0.1 SOTA TESTS, CALIBRATION BENCHMARKS & HOST AUDIT SUITES PASSED (100%)');
         console.log('====================================================================================\\n');
     } catch (err) {
         console.error('\\n❌ Test Failed:', err);
@@ -98,7 +100,10 @@ runAll();
             outfile: runnerPath,
             platform: 'node',
             target: 'node20',
-            external: ['vscode', 'web-tree-sitter'],
+            alias: {
+                'vscode': path.join(__dirname, '..', 'tests', 'mock-vscode.ts')
+            },
+            external: ['web-tree-sitter'],
             format: 'cjs'
         });
 
