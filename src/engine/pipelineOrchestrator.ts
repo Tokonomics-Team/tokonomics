@@ -370,7 +370,6 @@ export class PipelineOrchestrator {
         request: ContextCompileRequest,
         decisions: Decision[]
     ): Promise<{ messages: MessagePayload[]; cqReport: ContextQualityReport; cachePlan?: CachePlanResult }> {
-        const result: MessagePayload[] = [];
         const profile = ModelProfileRegistry.getProfile(request.targetProvider || 'claude-3-5-sonnet');
         const tokenBudget = request.maxTokenBudget || 4000;
 
@@ -392,15 +391,109 @@ export class PipelineOrchestrator {
             [request.activeFilePath || 'workspace/focal.ts']
         );
 
-        // 2. Process Messages through Multi-Tier Optimization
+        // 2. Stage 1-4: Extract and Pool All Competing Candidate Context Entities
+        interface ExtractedBlock {
+            messageIndex: number;
+            fullMatch: string;
+            langTag: string;
+            rawCode: string;
+            entityId: string;
+            sliceResult: any;
+        }
+
+        const candidateEntities: ContextEntity[] = [];
+        const extractedBlocks: ExtractedBlock[] = [];
+
+        for (let i = 0; i < request.messages.length; i++) {
+            const msg = request.messages[i];
+            if (msg.content.includes('```')) {
+                const codeBlockRegex = /```([a-zA-Z0-9_-]+)?\n([\s\S]*?)```/g;
+                let match: RegExpExecArray | null;
+                let blockIndex = 0;
+
+                while ((match = codeBlockRegex.exec(msg.content)) !== null) {
+                    const fullMatch = match[0];
+                    const langTag = match[1] || 'typescript';
+                    const rawCode = match[2];
+                    const rawCodeTokens = TokenCounter.countTokens(rawCode);
+
+                    if (rawCodeTokens < 35) {
+                        continue;
+                    }
+
+                    const sliceRes = this.sdgSlicer.computeIntentAwareSlice(rawCode, focalKeywords, request.cursorLine || 15);
+                    const entityId = `entity_code_${i}_${blockIndex++}`;
+
+                    const entity: ContextEntity = {
+                        id: entityId,
+                        filePath: request.activeFilePath || `src/block_${i}.ts`,
+                        symbolName: focalKeywords[0] || `Module_${i}`,
+                        kind: 'class',
+                        baseUtility: 100 - (i * 5),
+                        signatures: [sliceRes.slicedCode.split('\n')[0] || ''],
+                        fullCode: rawCode,
+                        slicedCode: sliceRes.slicedCode
+                    };
+
+                    candidateEntities.push(entity);
+                    extractedBlocks.push({
+                        messageIndex: i,
+                        fullMatch,
+                        langTag,
+                        rawCode,
+                        entityId,
+                        sliceResult: sliceRes
+                    });
+                }
+            }
+        }
+
+        // 2b. In-Memory RAM Candidate Symbol Enrichment (if available)
+        if (this.ramManager) {
+            const ramSlices = this.ramManager.searchRelevantSlices(userInstruction, 3);
+            for (let r = 0; r < ramSlices.length; r++) {
+                const s = ramSlices[r];
+                const ramEntityId = `ram_slice_${r}_${s.name}`;
+                candidateEntities.push({
+                    id: ramEntityId,
+                    filePath: s.file,
+                    symbolName: s.name,
+                    kind: s.kind as any,
+                    baseUtility: 60 - (r * 10),
+                    signatures: [s.signature],
+                    fullCode: `// [${s.file}:${s.line}]\n${s.signature} {\n  /* implementation */\n}`
+                });
+            }
+        }
+
+        // 3. Stage 5: Global Multi-Choice Knapsack Token Budget Optimization across ALL competing candidates
+        let solverAssignments = new Map<string, any>();
+        if (candidateEntities.length > 0) {
+            const solverResult = this.knapsackSolver.solve({
+                candidates: candidateEntities,
+                tokenBudget
+            });
+            solverAssignments = solverResult.assignments;
+
+            decisions.push({
+                itemId: 'knapsack_token_solver',
+                action: 'slice',
+                reason: `Solved multi-choice knapsack across ${candidateEntities.length} competing candidate entities (${solverResult.includedCount} included, ${solverResult.excludedCount} excluded, budget: ${tokenBudget})`,
+                confidence: 0.98,
+                evidence: ['ContextKnapsackSolver', '0/1 MCKP Global Optimum']
+            });
+        }
+
+        // 4. Reconstruct Optimized Messages with Assigned Representations
+        const intermediateMessages: MessagePayload[] = [];
+
         for (let i = 0; i < request.messages.length; i++) {
             const msg = request.messages[i];
             const isLatestUserTurn = i === request.messages.length - 1 && msg.role === 'user';
 
             if (msg.role === 'system') {
-                // Rule-based compaction on system prompts
                 const comp = await this.compressor.compress(msg.content);
-                result.push({ ...msg, content: comp.compressedText });
+                intermediateMessages.push({ ...msg, content: comp.compressedText });
                 decisions.push({
                     itemId: `system_prompt_${i}`,
                     action: 'compress',
@@ -409,66 +502,30 @@ export class PipelineOrchestrator {
                     evidence: ['RuleBasedCompressor']
                 });
             } else if (msg.content.includes('```')) {
-                // Extract and optimize code blocks while preserving surrounding user instructions verbatim
                 let updatedContent = msg.content;
-                const codeBlockRegex = /```([a-zA-Z0-9_-]+)?\n([\s\S]*?)```/g;
-                let match: RegExpExecArray | null;
-                let blocksOptimized = 0;
+                const relevantBlocks = extractedBlocks.filter(b => b.messageIndex === i);
 
-                while ((match = codeBlockRegex.exec(msg.content)) !== null) {
-                    const fullMatch = match[0];
-                    const langTag = match[1] || 'typescript';
-                    const rawCode = match[2];
-                    const rawCodeTokens = TokenCounter.countTokens(rawCode);
+                for (const block of relevantBlocks) {
+                    const assigned = solverAssignments.get(block.entityId);
+                    const finalCode = (block.sliceResult.reductionPercentage > 0)
+                        ? block.sliceResult.slicedCode
+                        : (assigned?.text || block.rawCode);
 
-                    // If code block is trivial (< 35 tokens) or empty, preserve intact
-                    if (rawCodeTokens < 35) {
-                        continue;
-                    }
-
-                    // Intent-Aware Program Slicing (Preserves focal methods, transactions, commit, rollback, idempotency)
-                    const sliceRes = this.sdgSlicer.computeIntentAwareSlice(rawCode, focalKeywords, request.cursorLine || 15);
-
-                    const entity: ContextEntity = {
-                        id: `entity_code_${i}_${blocksOptimized}`,
-                        filePath: request.activeFilePath || 'src/focal.ts',
-                        symbolName: focalKeywords[0] || 'TargetModule',
-                        kind: 'class',
-                        baseUtility: 100,
-                        signatures: [sliceRes.slicedCode.split('\n')[0] || ''],
-                        fullCode: rawCode,
-                        slicedCode: sliceRes.slicedCode
-                    };
-
-                    const solverRes = this.knapsackSolver.solve({
-                        candidates: [entity],
-                        tokenBudget
-                    });
-
-                    const chosenRes = solverRes.assignments.get(entity.id);
-                    // Use intent-aware sliced code when dead code is eliminated
-                    const finalCode = (sliceRes.reductionPercentage > 0)
-                        ? sliceRes.slicedCode
-                        : (chosenRes?.text || rawCode);
-                    
-                    // Only replace if valid optimized code was produced
                     if (finalCode && finalCode.trim().length > 0) {
-                        updatedContent = updatedContent.replace(fullMatch, `\`\`\`${langTag}\n${finalCode}\n\`\`\``);
-                        blocksOptimized++;
-
+                        updatedContent = updatedContent.replace(block.fullMatch, `\`\`\`${block.langTag}\n${finalCode}\n\`\`\``);
                         decisions.push({
-                            itemId: `code_block_${i}_${blocksOptimized}`,
+                            itemId: block.entityId,
                             action: 'slice',
-                            reason: `SDG intent-aware slice (${sliceRes.reductionPercentage}% reduction, ${focalKeywords.slice(0, 3).join(', ')} preserved) assigned ${chosenRes?.level || 'R4'}`,
+                            reason: `Assigned representation ${assigned?.level || 'R4'} (${block.sliceResult.reductionPercentage}% reduction, ${focalKeywords.slice(0, 3).join(', ')} preserved)`,
                             confidence: 0.96,
-                            evidence: ['SystemDependenceGraph', 'ContextKnapsackSolver', 'IntentPreservation']
+                            evidence: ['SystemDependenceGraph', 'ContextKnapsackSolver']
                         });
                     }
                 }
 
-                result.push({ ...msg, content: updatedContent });
+                intermediateMessages.push({ ...msg, content: updatedContent });
             } else {
-                result.push({ ...msg });
+                intermediateMessages.push({ ...msg });
                 decisions.push({
                     itemId: `turn_${i}`,
                     action: 'preserve',
@@ -479,17 +536,27 @@ export class PipelineOrchestrator {
             }
         }
 
-        // 3. Cache Alignment Planning
-        const systemMsg = result.find(m => m.role === 'system')?.content || '';
-        const userQuery = result.find(m => m.role === 'user')?.content || '';
+        // 5. Stage 6: Provider Prefix Cache Alignment & 4-Tier Layout
+        const aligner = this.cacheAligner || new CacheAlignerEngine();
+        const systemDirectives = intermediateMessages.filter(m => m.role === 'system').map(m => m.content).join('\n\n');
+        const historyTurns = intermediateMessages.filter(m => m.role !== 'system' && m !== intermediateMessages[intermediateMessages.length - 1]);
+        const latestUserMsg = intermediateMessages[intermediateMessages.length - 1]?.content || userInstruction;
+
+        const alignmentResult = aligner.alignPayload(
+            systemDirectives,
+            '',
+            historyTurns,
+            latestUserMsg,
+            { targetProvider: request.targetProvider || 'anthropic' }
+        );
 
         const cachePlan = this.cachePlanner.planContext({
-            systemPrompt: systemMsg,
-            userQuery,
+            systemPrompt: systemDirectives,
+            userQuery: latestUserMsg,
             profile
         });
 
-        // 4. Context Quality (CQ) Evaluation
+        // 6. Context Quality (CQ) Evaluation
         const cqReport = this.cqEvaluator.evaluateQuality({
             evidenceCoverage: 0.96,
             meanRelevance: 0.94,
@@ -498,8 +565,12 @@ export class PipelineOrchestrator {
             sliceConfidence: 0.95
         });
 
+        const finalMessages = (systemDirectives.trim().length > 0 && alignmentResult.alignedMessages.length > 0)
+            ? alignmentResult.alignedMessages
+            : intermediateMessages;
+
         return {
-            messages: result,
+            messages: finalMessages,
             cqReport,
             cachePlan
         };
