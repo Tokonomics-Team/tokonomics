@@ -67,6 +67,10 @@ export class ContextRiskEngine {
             riskScore += 2;
             reasons.push('Active failing unit test suite detected');
         }
+        if (input.terminalErrorSnippet) {
+            riskScore += 2;
+            reasons.push('Active runtime exception or terminal error snippet provided');
+        }
 
         // Map score to RiskLevel
         let riskLevel: RiskLevel = 'low';

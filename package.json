@@ -428,6 +428,7 @@
     "certify:deep": "node scripts/certify-deep.js",
     "validate": "node scripts/validate.js",
     "validate:all": "node scripts/validate-all.js",
+    "audit:clean-room": "node scripts/clean-room-audit.js",
     "download-parsers": "node scripts/download-parsers.js",
     "vsce:package": "npx @vscode/vsce package --no-dependencies --out tokonomics-5.1.1.vsix",
     "publish:vsce": "npx @vscode/vsce publish --no-dependencies",
