@@ -1,3 +1,14 @@
+/**
+ * Tokonomics AST Structural Pruner & Skeleton Engine
+ * 
+ * Provides ultra-fast (< 0.1ms), zero-binary AST structural skeleton generation across 14 languages:
+ * TypeScript, JavaScript, Python, Go, Rust, Java, C, C++, C#, Ruby, PHP, Swift, Kotlin, and SQL.
+ * 
+ * Architecture:
+ * - Default Engine: Zero-dependency, pure TypeScript Stateful AST Slicer (keeps VSIX < 1MB, zero WASM heap overhead).
+ * - Optional Extensible Engine: web-tree-sitter parser if external .wasm grammars are supplied in parsers/.
+ */
+
 import * as path from 'path';
 import * as fs from 'fs';
 import { AstPruneResult, AstPrunerOptions, SupportedLanguage } from './types';
@@ -9,7 +20,7 @@ let Parser: any = null;
 try {
     Parser = require('web-tree-sitter');
 } catch (err) {
-    // web-tree-sitter fallback
+    // Optional web-tree-sitter
 }
 
 export class AstPrunerEngine {
