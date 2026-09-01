@@ -1,14 +1,22 @@
 const esbuild = require('esbuild');
+const fs = require('fs');
+const path = require('path');
 
 const isProduction = process.argv.includes('--production');
 const isWatch = process.argv.includes('--watch');
 
 async function build() {
+    const parserSource = path.dirname(require.resolve('@vscode/tree-sitter-wasm'));
+    const parserOutput = path.join(__dirname, 'parsers');
+    fs.mkdirSync(parserOutput, { recursive: true });
+    for (const asset of ['tree-sitter.wasm', 'tree-sitter-typescript.wasm', 'tree-sitter-javascript.wasm', 'tree-sitter-python.wasm']) {
+        fs.copyFileSync(path.join(parserSource, asset), path.join(parserOutput, asset));
+    }
     const context = await esbuild.context({
         entryPoints: ['src/extension.ts'],
         bundle: true,
         outfile: 'dist/extension.js',
-        external: ['vscode', 'web-tree-sitter'],
+        external: ['vscode'],
         format: 'cjs',
         platform: 'node',
         target: 'node20',

@@ -6,7 +6,7 @@
  * 
  * Architecture:
  * - Default Engine: Zero-dependency, pure TypeScript Stateful AST Slicer (keeps VSIX < 1MB, zero WASM heap overhead).
- * - Optional Extensible Engine: web-tree-sitter parser if external .wasm grammars are supplied in parsers/.
+ * - Packaged Engine: Microsoft VS Code's version-matched Tree-sitter runtime and grammars.
  */
 
 import * as path from 'path';
@@ -17,10 +17,13 @@ import { DependencyTreeShaker } from './treeShaker';
 import { SecuritySanitizer } from '../security/sanitizer';
 
 let Parser: any = null;
+let TreeSitterLanguage: any = null;
 try {
-    Parser = require('web-tree-sitter');
+    const treeSitter = require('@vscode/tree-sitter-wasm');
+    Parser = treeSitter.Parser;
+    TreeSitterLanguage = treeSitter.Language;
 } catch (err) {
-    // Optional web-tree-sitter
+    // Build/test environments without installed production dependencies use the deterministic fallback.
 }
 
 export class AstPrunerEngine {
@@ -42,15 +45,23 @@ export class AstPrunerEngine {
         this.extensionPath = extensionPath;
         this.initPromise = (async () => {
             try {
-                if (!Parser) return;
-                await Parser.init();
+                if (!Parser || !TreeSitterLanguage || !extensionPath) return;
+                const runtimeWasm = path.join(extensionPath, 'parsers', 'tree-sitter.wasm');
+                if (!fs.existsSync(runtimeWasm)) return;
+                await Parser.init({ locateFile: () => runtimeWasm });
                 this.parser = new Parser();
 
                 const parsersDir = path.join(extensionPath, 'parsers');
                 if (fs.existsSync(parsersDir)) {
-                    await this.loadLanguageGrammar('typescript', path.join(parsersDir, 'tree-sitter-typescript.wasm'));
-                    await this.loadLanguageGrammar('javascript', path.join(parsersDir, 'tree-sitter-javascript.wasm'));
-                    await this.loadLanguageGrammar('python', path.join(parsersDir, 'tree-sitter-python.wasm'));
+                    const failures: string[] = [];
+                    for (const [language, file] of [
+                        ['typescript', 'tree-sitter-typescript.wasm'],
+                        ['javascript', 'tree-sitter-javascript.wasm'],
+                        ['python', 'tree-sitter-python.wasm']
+                    ]) {
+                        if (!await this.loadLanguageGrammar(language, path.join(parsersDir, file))) failures.push(language);
+                    }
+                    if (failures.length > 0) throw new Error(`Missing or incompatible Tree-sitter grammars: ${failures.join(', ')}`);
                 }
 
                 this.isInitialized = this.languages.size > 0;
@@ -63,15 +74,17 @@ export class AstPrunerEngine {
         return this.initPromise;
     }
 
-    private async loadLanguageGrammar(langKey: string, wasmPath: string): Promise<void> {
+    private async loadLanguageGrammar(langKey: string, wasmPath: string): Promise<boolean> {
         try {
             if (fs.existsSync(wasmPath)) {
-                const lang = await Parser.Language.load(wasmPath);
+                const lang = await TreeSitterLanguage.load(wasmPath);
                 this.languages.set(langKey, lang);
+                return true;
             }
         } catch (e) {
-            // Grammar unavailable
+            return false;
         }
+        return false;
     }
 
     public hasTreeSitterActive(): boolean {

@@ -240,6 +240,12 @@ export class AnonymizedLogger {
         return report.join('\n');
     }
 
+    /** Deletes all in-memory diagnostics and clears the VS Code output channel. */
+    public clear(): void {
+        this.buffer = [];
+        this.outputChannel?.clear();
+    }
+
     public getLogCount(): number {
         return this.buffer.length;
     }
@@ -248,7 +254,4 @@ export class AnonymizedLogger {
         return this.buffer.filter(b => b.level === 'ERROR' || b.level === 'CRASH').length;
     }
 
-    public clear(): void {
-        this.buffer = [];
-    }
 }

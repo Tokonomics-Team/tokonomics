@@ -34,6 +34,8 @@ import { OptimizationEventBus, PromptOptimizationEvent } from '../events/optimiz
 import { LiveMetricsAggregator } from '../metrics/liveAggregator';
 import { CostCalculator } from '../cost/costCalculator';
 import { DashboardWebviewPanel } from '../ui/dashboardWebview';
+import { ModelRequestBoundary } from '../security/requestBoundary';
+import { WorkspaceSourcePolicy } from '../security/sourcePolicy';
 
 export function registerChatParticipant(
     context: vscode.ExtensionContext,
@@ -50,7 +52,9 @@ export function registerChatParticipant(
         return;
     }
 
-    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    const workspaceTrusted = () => vscode.workspace.isTrusted !== false;
+    const workspaceRoots = () => (vscode.workspace.workspaceFolders || []).map(folder => folder.uri.fsPath);
+    const workspaceRoot = workspaceTrusted() ? workspaceRoots()[0] : undefined;
     const ignoreFilter = new TokenIgnoreFilter(workspaceRoot);
     const watchIndex = fileWatchIndex || new FileWatchIndex(workspaceRoot);
     const cache = responseCache || new ResponseCache();
@@ -69,6 +73,11 @@ export function registerChatParticipant(
 
     const participant = vscode.chat.createChatParticipant('token-optimizer-participant', async (request, chatContext, response, token) => {
         const command = request.command;
+
+        if (!workspaceTrusted() && (command === 'map' || command === 'pack' || command === 'analyze')) {
+            response.markdown('Workspace context is disabled in Restricted Mode. Trust this workspace before reading or analyzing project files.');
+            return;
+        }
 
         // 1. /dashboard Command: Open Interactive Real-Time Dashboard Webview
         if (command === 'dashboard') {
@@ -149,6 +158,7 @@ export function registerChatParticipant(
                 response.markdown(`⚠️ No workspace open.`);
                 return;
             }
+            const sourcePolicy = new WorkspaceSourcePolicy(workspaceRoots(), true);
 
             // Parse optional line range (e.g. src/auth.ts:10-50 or src/auth.ts:L10-L50)
             let startLine: number | undefined;
@@ -180,7 +190,8 @@ export function registerChatParticipant(
             // Single file with line range slicing
             if (fs.statSync(searchDir).isFile()) {
                 const ext = path.extname(searchDir).toLowerCase();
-                const rawFull = fs.readFileSync(searchDir, 'utf8');
+                const allowedSource = sourcePolicy.readText(searchDir);
+                const rawFull = allowedSource.text;
                 let codeToPrune = rawFull;
                 let rangeNote = '';
 
@@ -213,7 +224,8 @@ export function registerChatParticipant(
                         } else if (entry.isFile()) {
                             const ext = path.extname(entry.name).toLowerCase();
                             if (allowedExts.includes(ext)) {
-                                const raw = fs.readFileSync(full, 'utf8');
+                                const allowedSource = sourcePolicy.readText(full);
+                                const raw = allowedSource.text;
                                 const origTok = TokenCounter.countTokens(raw);
                                 const pruned = astEngine.pruneCodeContext(raw, ext.replace('.', ''));
                                 totalOriginalTokens += origTok;
@@ -383,20 +395,27 @@ export function registerChatParticipant(
 
         // 6. Default AI Pair Programmer & Code Generation Handler
         try {
+            const conf = vscode.workspace.getConfiguration('tokenOptimizer');
+            const contextMode = conf.get<'off' | 'selection' | 'referenced' | 'automatic'>('workspaceContextMode', 'selection');
+            const mayReadWorkspace = workspaceTrusted() && contextMode !== 'off';
+            const mayResolveReferencedFile = mayReadWorkspace && (contextMode === 'referenced' || contextMode === 'automatic');
+            const mayAttachFullDocument = mayReadWorkspace && contextMode === 'automatic';
             // Resolve target active document with 4-tier fallback:
-            let doc: vscode.TextDocument | undefined = vscode.window.activeTextEditor?.document;
-            if (!doc) {
+            let doc: vscode.TextDocument | undefined = mayReadWorkspace && !vscode.window.activeTextEditor?.document.isUntitled
+                ? vscode.window.activeTextEditor?.document
+                : undefined;
+            if (!doc && mayAttachFullDocument) {
                 const visible = vscode.window.visibleTextEditors.find(e => e.document && !e.document.isUntitled && !e.document.uri.scheme.includes('output') && !e.document.uri.scheme.includes('debug'));
                 if (visible) doc = visible.document;
             }
-            if (!doc && lastActiveDocUri) {
+            if (!doc && mayAttachFullDocument && lastActiveDocUri) {
                 try {
                     doc = await vscode.workspace.openTextDocument(lastActiveDocUri);
                 } catch {}
             }
             // Check if prompt specifically mentions any file in workspace
             const root = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-            if (root) {
+            if (root && mayResolveReferencedFile) {
                 const fileMatch = request.prompt.match(/\b([\w\d_-]+\.(?:ts|js|tsx|jsx|py|go|rs|java|cs|cpp|h))\b/i);
                 if (fileMatch && fileMatch[1]) {
                     const foundFiles = await vscode.workspace.findFiles(`**/${fileMatch[1]}`, '**/node_modules/**', 1);
@@ -412,25 +431,28 @@ export function registerChatParticipant(
             let fileInfo = '';
             let activeFileName = '';
 
-            if (doc && !ignoreFilter.isIgnored(doc.fileName)) {
+            if (doc && mayReadWorkspace && !ignoreFilter.isIgnored(doc.fileName)) {
                 activeFileName = doc.fileName;
                 const activeEditor = vscode.window.activeTextEditor;
                 const selectedText = (activeEditor?.document.fileName === doc.fileName && activeEditor.selection) 
                     ? doc.getText(activeEditor.selection) 
                     : '';
-                const codeToAttach = selectedText && selectedText.trim().length > 30 
-                    ? selectedText 
-                    : doc.getText();
+                const includeUnsaved = conf.get<boolean>('includeUnsavedBuffers', false);
+                const canUseBuffer = includeUnsaved || !doc.isDirty;
+                const codeToAttach = canUseBuffer && selectedText && selectedText.trim().length > 30
+                    ? selectedText
+                    : (canUseBuffer && mayAttachFullDocument ? doc.getText() : '');
 
                 if (codeToAttach && codeToAttach.length > 30) {
                     const lang = doc.languageId || 'typescript';
                     const normalizedCode = codeToAttach.replace(/\r\n/g, '\n');
-                    activeFileContext = `\n\n\`\`\`${lang}\n// Context File: ${doc.fileName}\n${normalizedCode}\n\`\`\``;
+                    const sourcePolicy = new WorkspaceSourcePolicy(workspaceRoots(), true);
+                    const safePath = sourcePolicy.assertReadable(doc.fileName).displayPath;
+                    activeFileContext = `\n\n\`\`\`${lang}\n// Context File: <workspace>/${safePath}\n${normalizedCode}\n\`\`\``;
                     fileInfo = ` (with context from ${path.basename(doc.fileName)})`;
                 }
             }
 
-            const conf = vscode.workspace.getConfiguration('tokenOptimizer');
             const config: TokenOptimizationConfig = {
                 enableAstPruning: conf.get<boolean>('enableAstPruning', true),
                 enableCacheAlignment: conf.get<boolean>('enableCacheAlignment', true),
@@ -480,7 +502,7 @@ export function registerChatParticipant(
 
             // Phase 6: In-Memory BM25 Symbol Slices (Surgical RAM context retrieval)
             let referencedSlicesContext = '';
-            const slices = ram.searchRelevantSlices(request.prompt, 2);
+            const slices = mayReadWorkspace && contextMode === 'automatic' ? ram.searchRelevantSlices(request.prompt, 2) : [];
             const filteredSlices = slices.filter(s => !doc || !s.file.includes(path.basename(doc.fileName)));
             if (filteredSlices.length > 0) {
                 referencedSlicesContext = `\n\n// 🔍 In-Memory Referenced Slices (RAM Index):\n` + filteredSlices.map(s => `// [${s.file}:${s.line}] ${s.kind} ${s.name}: ${s.signature}`).join('\n');
@@ -521,7 +543,7 @@ export function registerChatParticipant(
                 }
             }
             // Rightsize images in the current prompt too
-            const { text: rsFullPrompt, stats: rsPromptStats } = imageRightsizer.rightsize(fullPrompt, workspaceRoot);
+            const { text: rsFullPrompt, stats: rsPromptStats } = imageRightsizer.rightsize(fullPrompt, mayReadWorkspace ? workspaceRoot : undefined);
             totalImageTokensSaved += rsPromptStats.estimatedTokensSaved;
             rawMessages.push({ role: 'user', content: rsFullPrompt });
 
@@ -533,6 +555,12 @@ export function registerChatParticipant(
             });
 
             const alignedMessages = compileResult.optimizedMessages;
+            const prepared = ModelRequestBoundary.prepare(alignedMessages, {}, {
+                workspaceRoots: workspaceRoots(),
+                workspaceTrusted: workspaceTrusted(),
+                containsWorkspaceData: activeFileContext.length > 0 || referencedSlicesContext.length > 0,
+                isCancellationRequested: token.isCancellationRequested
+            });
             const originalTokens = compileResult.originalTokens;
             const optimizedTokens = compileResult.optimizedTokens;
             const savedTokens = compileResult.tokensSaved;
@@ -575,12 +603,12 @@ export function registerChatParticipant(
                 models = filtered.length > 0 ? filtered : models;
             }
             if (!models || models.length === 0) {
-                response.markdown(`*(No downstream Copilot/Chat model available in active host)*\n\n**Optimized Prompt Payload:**\n\`\`\`markdown\n${alignedMessages.map(m => `[${m.role.toUpperCase()}]: ${m.content}`).join('\n\n')}\n\`\`\``);
+                response.markdown(`*(No downstream Copilot/Chat model available in active host)*\n\n**Optimized Prompt Payload:**\n\`\`\`markdown\n${prepared.messages.map(m => `[${m.role.toUpperCase()}]: ${m.content}`).join('\n\n')}\n\`\`\``);
                 return;
             }
 
             const targetModel = models[0];
-            const upstreamMessages = alignedMessages.map(m => {
+            const upstreamMessages = prepared.messages.map(m => {
                 if (m.role === 'assistant') return vscode.LanguageModelChatMessage.Assistant(m.content);
                 if (m.role === 'system') return vscode.LanguageModelChatMessage.User(`[SYSTEM]:\n${m.content}`);
                 return vscode.LanguageModelChatMessage.User(m.content);

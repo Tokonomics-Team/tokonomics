@@ -201,6 +201,8 @@ export const LanguageModelChatMessage = {
 };
 
 export const registeredLmProviders: Array<{ vendor: string; provider: any }> = [];
+export let lastModelRequest: { messages: any[]; options: any } | undefined;
+export function clearLastModelRequest() { lastModelRequest = undefined; }
 
 export const lm = {
     registerLanguageModelChatProvider: (vendor: string, provider: any) => {
@@ -213,9 +215,12 @@ export const lm = {
             name: 'Claude 3.7 Sonnet',
             vendor: 'anthropic',
             family: 'claude-3',
-            sendRequest: async () => ({
+            sendRequest: async (messages: any[], options: any) => {
+                lastModelRequest = { messages, options };
+                return ({
                 text: ['Refactored function implementation with zero vulnerabilities.']
-            })
+                });
+            }
         }
     ]
 };

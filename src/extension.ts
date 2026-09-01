@@ -38,7 +38,8 @@ export async function activate(context: vscode.ExtensionContext) {
         logger.error('UnhandledException', err);
     });
 
-    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    const workspaceIsTrusted = () => vscode.workspace.isTrusted !== false;
+    const workspaceRoot = workspaceIsTrusted() ? vscode.workspace.workspaceFolders?.[0]?.uri.fsPath : undefined;
     const optConf = vscode.workspace.getConfiguration('tokenOptimizer');
 
     // Initialize pipeline mode from user configuration (default: compiler)
@@ -72,6 +73,7 @@ export async function activate(context: vscode.ExtensionContext) {
     // 2. Setup Document Watchers for Incremental Indexing & RAM Cache Invalidation
     context.subscriptions.push(
         vscode.workspace.onDidChangeTextDocument(e => {
+            if (!workspaceIsTrusted()) return;
             const file = e.document.fileName;
             fileWatchIndex.onFileChanged(file);
             responseCache.invalidateForFile(file);
@@ -80,6 +82,7 @@ export async function activate(context: vscode.ExtensionContext) {
     );
     context.subscriptions.push(
         vscode.workspace.onDidCreateFiles(e => {
+            if (!workspaceIsTrusted()) return;
             for (const f of e.files) {
                 fileWatchIndex.onFileCreated(f.fsPath);
             }
@@ -87,6 +90,7 @@ export async function activate(context: vscode.ExtensionContext) {
     );
     context.subscriptions.push(
         vscode.workspace.onDidDeleteFiles(e => {
+            if (!workspaceIsTrusted()) return;
             for (const f of e.files) {
                 fileWatchIndex.onFileDeleted(f.fsPath);
                 responseCache.invalidateForFile(f.fsPath);
@@ -118,14 +122,20 @@ export async function activate(context: vscode.ExtensionContext) {
     );
 
     // Background RAM Pre-Warming (Enabled by default per package.json manifest)
-    if (workspaceRoot && optConf.get<boolean>('enableBackgroundRamWarming', true)) {
+    const warmTrustedWorkspace = () => {
+        const trustedRoot = workspaceIsTrusted() ? vscode.workspace.workspaceFolders?.[0]?.uri.fsPath : undefined;
+        if (!trustedRoot || !optConf.get<boolean>('enableBackgroundRamWarming', true)) return;
         setTimeout(() => {
-            ramManager.warmWorkspace(workspaceRoot).then(res => {
+            ramManager.warmWorkspace(trustedRoot).then(res => {
                 console.log(`[Tokonomics] RAM Pre-Warm complete: ${res.skeletonsCached} skeletons, ${res.symbolsIndexed} symbols in ${res.durationMs}ms`);
             }).catch(err => {
                 console.warn('[Tokonomics] RAM Pre-Warm warning:', err);
             });
         }, 1000);
+    };
+    warmTrustedWorkspace();
+    if (typeof vscode.workspace.onDidGrantWorkspaceTrust === 'function') {
+        context.subscriptions.push(vscode.workspace.onDidGrantWorkspaceTrust(warmTrustedWorkspace));
     }
 
     // 3. Setup UI & Visual Diff Provider
@@ -204,7 +214,9 @@ export async function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.commands.registerCommand('tokenOptimizer.resetMetrics', () => {
             metricsTracker.reset();
+            localHistoryStore.clear();
             responseCache.clear();
+            logger.clear();
             statusBarManager?.update();
             if (DashboardWebviewPanel.currentPanel) {
                 DashboardWebviewPanel.currentPanel.updateContent();

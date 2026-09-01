@@ -1,103 +1,75 @@
-/**
- * .tokenignore Pattern Matcher & Context Filter
- * Automatically excludes lockfiles, build artifacts, minified assets, and binary files from AI context payloads.
- */
-
 import * as fs from 'fs';
 import * as path from 'path';
 
-export class TokenIgnoreFilter {
-    private static readonly DEFAULT_IGNORED_PATTERNS = [
-        '**/node_modules/**',
-        '**/dist/**',
-        '**/build/**',
-        '**/out/**',
-        '**/.git/**',
-        '**/.next/**',
-        '**/coverage/**',
-        '**/*.min.js',
-        '**/*.min.css',
-        '**/*.map',
-        '**/*.lock',
-        '**/package-lock.json',
-        '**/yarn.lock',
-        '**/pnpm-lock.yaml',
-        '**/Cargo.lock',
-        '**/poetry.lock',
-        '**/*.wasm',
-        '**/*.svg',
-        '**/*.png',
-        '**/*.jpg',
-        '**/*.jpeg',
-        '**/*.gif',
-        '**/*.ico',
-        '**/*.pdf',
-        '**/*.exe',
-        '**/*.dll',
-        '**/*.so',
-        '**/*.dylib'
-    ];
+interface IgnoreRule { negative: boolean; regex: RegExp; }
 
-    private customPatterns: string[] = [];
+export class TokenIgnoreFilter {
+    private readonly workspaceRoot?: string;
+    private rules: IgnoreRule[] = [];
+    private static readonly SENSITIVE_NAMES = [
+        /^\.env(?:\..+)?$/i, /^\.npmrc$/i, /^\.pypirc$/i, /^\.netrc$/i,
+        /^credentials(?:\..+)?$/i, /^secrets?(?:\..+)?$/i, /^id_(?:rsa|dsa|ecdsa|ed25519)(?:\.pub)?$/i
+    ];
+    private static readonly SENSITIVE_EXTENSIONS = new Set(['.pem', '.key', '.p12', '.pfx', '.jks', '.keystore']);
+    private static readonly BINARY_EXTENSIONS = new Set([
+        '.wasm', '.svg', '.png', '.jpg', '.jpeg', '.gif', '.ico', '.pdf', '.map', '.exe', '.dll', '.so', '.dylib', '.zip', '.tar', '.gz'
+    ]);
 
     constructor(workspaceRoot?: string) {
-        if (workspaceRoot) {
-            this.loadTokenIgnore(workspaceRoot);
-        }
+        this.workspaceRoot = workspaceRoot ? path.resolve(workspaceRoot) : undefined;
+        if (this.workspaceRoot) this.loadIgnoreFiles(this.workspaceRoot);
     }
 
-    public loadTokenIgnore(workspaceRoot: string): void {
-        try {
-            const ignorePath = path.join(workspaceRoot, '.tokenignore');
-            if (fs.existsSync(ignorePath)) {
-                const content = fs.readFileSync(ignorePath, 'utf8');
-                this.customPatterns = content
-                    .split('\n')
-                    .map(line => line.trim())
-                    .filter(line => line.length > 0 && !line.startsWith('#'));
-            }
-        } catch {
-            this.customPatterns = [];
-        }
-    }
+    public loadTokenIgnore(workspaceRoot: string): void { this.loadIgnoreFiles(workspaceRoot); }
 
     public isIgnored(filePath: string): boolean {
-        const normalized = filePath.replace(/\\/g, '/');
-        const fileName = path.basename(normalized).toLowerCase();
+        const normalizedAbsolute = path.resolve(filePath).replace(/\\/g, '/');
+        const relative = this.workspaceRoot
+            ? path.relative(this.workspaceRoot, filePath).replace(/\\/g, '/')
+            : normalizedAbsolute;
+        const fileName = path.basename(relative);
+        const lower = fileName.toLowerCase();
+        if (TokenIgnoreFilter.SENSITIVE_NAMES.some(pattern => pattern.test(fileName))) return true;
+        if (/(^|\/)\.kube\/config$/i.test(relative)) return true;
+        if (TokenIgnoreFilter.SENSITIVE_EXTENSIONS.has(path.extname(lower))) return true;
+        if (lower === 'package-lock.json' || lower === 'yarn.lock' || lower === 'pnpm-lock.yaml' || lower.endsWith('.lock')) return true;
+        if (TokenIgnoreFilter.BINARY_EXTENSIONS.has(path.extname(lower)) || lower.endsWith('.min.js') || lower.endsWith('.min.css')) return true;
+        if (/(^|\/)(node_modules|dist|build|out|coverage|\.git|\.next)(\/|$)/i.test(relative)) return true;
 
-        // Exact lockfiles
-        const knownLockfiles = [
-            'package-lock.json', 'yarn.lock', 'pnpm-lock.yaml', 'cargo.lock', 
-            'poetry.lock', 'composer.lock', 'gemfile.lock', 'pipfile.lock'
-        ];
-        if (knownLockfiles.includes(fileName)) {
-            return true;
+        let ignored = false;
+        for (const rule of this.rules) {
+            if (rule.regex.test(relative)) ignored = !rule.negative;
         }
+        return ignored;
+    }
 
-        // Check file extension / binary extensions
-        const binaryOrJunkExtensions = [
-            '.lock', '.wasm', '.svg', '.png', '.jpg', '.jpeg', '.gif', '.ico', 
-            '.map', '.min.js', '.min.css', '.exe', '.dll', '.so', '.dylib', '.zip', '.tar'
-        ];
-
-        if (binaryOrJunkExtensions.some(ext => normalized.endsWith(ext))) {
-            return true;
-        }
-
-        // Check common directories
-        const ignoredDirs = ['/node_modules/', '/dist/', '/build/', '/.git/', '/.next/', '/coverage/', '/out/'];
-        if (ignoredDirs.some(dir => normalized.includes(dir))) {
-            return true;
-        }
-
-        // Check custom patterns
-        for (const pattern of this.customPatterns) {
-            const cleanPat = pattern.replace(/^\//, '').replace(/\/$/, '').toLowerCase();
-            if (normalized.toLowerCase().includes(cleanPat) || fileName === cleanPat) {
-                return true;
+    private loadIgnoreFiles(workspaceRoot: string): void {
+        this.rules = [];
+        for (const name of ['.gitignore', '.tokenignore']) {
+            try {
+                const ignorePath = path.join(workspaceRoot, name);
+                if (!fs.existsSync(ignorePath)) continue;
+                for (const raw of fs.readFileSync(ignorePath, 'utf8').split(/\r?\n/)) {
+                    const line = raw.trim();
+                    if (!line || line.startsWith('#')) continue;
+                    const negative = line.startsWith('!');
+                    const pattern = negative ? line.slice(1) : line;
+                    if (pattern) this.rules.push({ negative, regex: this.globToRegex(pattern) });
+                }
+            } catch {
+                // Ignore file read errors fail safely to the non-overridable defaults above.
             }
         }
+    }
 
-        return false;
+    private globToRegex(pattern: string): RegExp {
+        const anchored = pattern.startsWith('/');
+        let source = pattern.replace(/^\//, '').replace(/\\/g, '/').replace(/\/$/, '/**');
+        source = source.replace(/[.+^${}()|[\]\\]/g, '\\$&')
+            .replace(/\*\*/g, '\u0000')
+            .replace(/\*/g, '[^/]*')
+            .replace(/\?/g, '[^/]')
+            .replace(/\u0000/g, '.*');
+        return new RegExp(`${anchored ? '^' : '(^|.*/)'}${source}(?:/.*)?$`, 'i');
     }
 }

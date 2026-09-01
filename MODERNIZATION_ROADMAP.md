@@ -68,8 +68,8 @@ Request lifecycle -> append-only ledger -> dashboard and diagnostics
 
 | Phase | Name | State | Approval required to start |
 |---:|---|---|---|
-| 0 | Measurement truth and release safety | Implemented; pending owner review | Granted |
-| 1 | Privacy, security, trust, and packaging | Blocked on approval | Yes |
+| 0 | Measurement truth and release safety | Approved and complete | Granted |
+| 1 | Privacy, security, trust, and packaging | Implemented; pending owner review | Granted |
 | 2 | Canonical compiler and protocol-safe adapters | Blocked on approval | Yes |
 | 3 | Versioned incremental workspace intelligence | Blocked on approval | Yes |
 | 4 | Evidence-aware retrieval and preservation | Blocked on approval | Yes |
@@ -141,6 +141,27 @@ privacy and parser behavior.
 - Untrusted workspaces cause no workspace content reads or background warming.
 - Absolute user paths do not enter provider payloads or diagnostics.
 - Every advertised parser loads and parses a fixture from the packaged VSIX.
+
+### Implementation record
+
+- Added `ModelRequestBoundary` as the final hop for both cloud-model entry points. It
+  fails closed on cancellation, untrusted workspace-derived data, cyclic/deep options,
+  residual credential matches, and oversized payloads; it sanitizes nested string tool
+  options and anonymizes workspace/home paths after context compilation.
+- Added an explicit workspace context consent policy (`off`, `selection`, `referenced`,
+  `automatic`) with the conservative `selection` default and unsaved buffers disabled.
+- Declared limited Restricted Mode support and disabled file commands, workspace
+  attachment, index watchers, RAM retrieval, and warming until workspace trust exists.
+- Added canonical source checks for multi-root containment, realpath/symlink escape,
+  `.gitignore`, `.tokenignore`, non-overridable sensitive names, binaries, and size.
+- Replaced the optional/missing parser setup with pinned
+  `@vscode/tree-sitter-wasm@0.3.1` assets and an actual parser initialization test.
+- Added VSIX inspection to certification and closed all dependency-audit findings by
+  updating VSCE and esbuild. The privacy/retention/deletion contract is recorded in
+  `SECURITY_AND_PRIVACY.md`.
+- Automated Phase 1 adversarial tests cover the request boundary, secrets, paths,
+  trust, source policy, ignore precedence, payload limits, WASM validity, parser startup,
+  and manifest defaults. Phase 2 remains blocked pending owner approval.
 
 ## Phase 2 - Canonical compiler and protocol-safe adapters
 

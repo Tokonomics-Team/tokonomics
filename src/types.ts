@@ -31,6 +31,8 @@ export interface TokenOptimizationConfig {
     ramBudgetMB?: number;
     enableBackgroundRamWarming?: boolean;
     enableRamSemanticIndex?: boolean;
+    workspaceContextMode?: 'off' | 'selection' | 'referenced' | 'automatic';
+    includeUnsavedBuffers?: boolean;
 }
 
 export interface TokenStats {

@@ -14,6 +14,7 @@ import { MessagePayload, TargetProvider, TokenOptimizationConfig } from '../type
 import { OptimizationEventBus, PromptOptimizationEvent } from '../events/optimizationEvent';
 import { TokenCounter } from '../engine/tokenizer';
 import { CostCalculator } from '../cost/costCalculator';
+import { ModelRequestBoundary } from '../security/requestBoundary';
 
 export class TokenOptimizerLanguageModelProvider {
     constructor(
@@ -90,8 +91,15 @@ export class TokenOptimizerLanguageModelProvider {
             return;
         }
 
-        // Format aligned messages for the upstream model
-        const upstreamMessages: vscode.LanguageModelChatMessage[] = alignedMessages.map(m => {
+        // Final outbound security boundary runs after every optimization/compilation stage.
+        const prepared = ModelRequestBoundary.prepare(alignedMessages, options ? { ...options } : {}, {
+            workspaceRoots: (vscode.workspace.workspaceFolders || []).map(folder => folder.uri.fsPath),
+            workspaceTrusted: vscode.workspace.isTrusted !== false,
+            containsWorkspaceData: false,
+            isCancellationRequested: token.isCancellationRequested
+        });
+
+        const upstreamMessages: vscode.LanguageModelChatMessage[] = prepared.messages.map(m => {
             if (m.role === 'assistant') {
                 return vscode.LanguageModelChatMessage.Assistant(m.content);
             }
@@ -101,9 +109,7 @@ export class TokenOptimizerLanguageModelProvider {
             return vscode.LanguageModelChatMessage.User(m.content);
         });
 
-        // Forward request to target backing model, fully preserving caller options (tools, tool calling, model options)
-        const forwardOptions = options ? { ...options } : {};
-        const response = await targetModel.sendRequest(upstreamMessages, forwardOptions, token);
+        const response = await targetModel.sendRequest(upstreamMessages, prepared.options as any, token);
 
         let completeResponseText = '';
         for await (const fragment of response.text) {

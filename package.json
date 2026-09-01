@@ -65,7 +65,13 @@
   ],
   "capabilities": {
     "untrustedWorkspaces": {
-      "supported": true
+      "supported": "limited",
+      "description": "Tokonomics remains available for explicit prompt text, but workspace indexing, file reads, and automatic context attachment are disabled in Restricted Mode.",
+      "restrictedConfigurations": [
+        "tokenOptimizer.workspaceContextMode",
+        "tokenOptimizer.enableBackgroundRamWarming",
+        "tokenOptimizer.enableRamSemanticIndex"
+      ]
     },
     "virtualWorkspaces": false
   },
@@ -237,6 +243,28 @@
     "configuration": {
       "title": "Enterprise AI Token Optimizer",
       "properties": {
+        "tokenOptimizer.workspaceContextMode": {
+          "type": "string",
+          "enum": [
+            "off",
+            "selection",
+            "referenced",
+            "automatic"
+          ],
+          "enumDescriptions": [
+            "Never attach workspace-derived context.",
+            "Attach only an explicit editor selection (default).",
+            "Attach selections and files explicitly named in the prompt.",
+            "Allow active-file and RAM-index context discovery."
+          ],
+          "default": "selection",
+          "description": "Controls which workspace content Tokonomics may add to cloud model requests. Workspace trust is always required."
+        },
+        "tokenOptimizer.includeUnsavedBuffers": {
+          "type": "boolean",
+          "default": false,
+          "description": "Allow explicitly selected unsaved editor text to be attached. Disabled by default to avoid sending unreviewed buffer contents."
+        },
         "tokenOptimizer.enableContextGovernor": {
           "type": "boolean",
           "default": true,
@@ -316,9 +344,9 @@
         },
         "tokenOptimizer.dailyBudgetUsd": {
           "type": "number",
-          "default": 5.0,
+          "default": 5,
           "minimum": 0.5,
-          "maximum": 500.0,
+          "maximum": 500,
           "description": "Optional: Daily spend budget threshold in USD (active when enableDailyBudgetGuardrail is true)."
         },
         "tokenOptimizer.mcpSchemaCompression": {
@@ -370,7 +398,9 @@
         },
         "tokenOptimizer.modelAllowList": {
           "type": "array",
-          "items": { "type": "string" },
+          "items": {
+            "type": "string"
+          },
           "default": [],
           "description": "Enterprise governance: restrict which model IDs or families are allowed. Leave empty to allow all models. Example: ['claude-3.5-sonnet', 'gpt-4o']. Blocked models will show a policy warning instead of sending the request."
         },
@@ -427,6 +457,7 @@
     "certify": "node scripts/certify.js",
     "certify:deep": "node scripts/certify-deep.js",
     "verify:phase0": "node scripts/verify-phase0.js",
+    "verify:vsix": "node scripts/verify-vsix.js",
     "validate": "node scripts/validate.js",
     "validate:all": "node scripts/validate-all.js",
     "audit:clean-room": "node scripts/clean-room-audit.js",
@@ -438,13 +469,13 @@
     "sync:public": "powershell -ExecutionPolicy Bypass -File ./scripts/sync-public-repo.ps1"
   },
   "dependencies": {
-    "web-tree-sitter": "^0.22.6"
+    "@vscode/tree-sitter-wasm": "0.3.1"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",
     "@types/vscode": "^1.90.0",
-    "@vscode/vsce": "^2.30.0",
-    "esbuild": "^0.21.5",
+    "@vscode/vsce": "^3.9.2",
+    "esbuild": "^0.28.2",
     "typescript": "^5.4.5"
   }
 }

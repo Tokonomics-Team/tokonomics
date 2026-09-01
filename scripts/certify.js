@@ -55,6 +55,14 @@ function buildGates() {
             args: ['run', 'vsce:package'],
             required: true,
             inheritOutput: true
+        },
+        {
+            id: 'vsix-integrity',
+            description: 'Inspect packaged trust metadata and compile every shipped parser WASM',
+            command: process.execPath,
+            args: ['scripts/verify-vsix.js'],
+            required: true,
+            inheritOutput: true
         }
     ];
 
