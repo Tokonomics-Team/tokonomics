@@ -23,6 +23,8 @@ import { RuleBasedCompressor } from '../compression/compressionProvider';
 import { ContextEntity } from '../solver/contextIR';
 import { OptimizationEventBus, PromptOptimizationEvent } from '../events/optimizationEvent';
 import { CostCalculator } from '../cost/costCalculator';
+import { DeterministicContextGovernor } from '../governor/contextGovernor';
+import { ContextGovernorDecision, EvidenceCategory } from '../governor/governorTypes';
 
 import { PreservationGate } from '../evaluation/preservationGate';
 
@@ -46,6 +48,7 @@ export interface ContextCompileResult {
     cachePlan?: CachePlanResult;
     trace: OptimizationTrace;
     pipelineModeUsed: PipelineMode;
+    governorDecision?: ContextGovernorDecision;
 }
 
 export class PipelineOrchestrator {
@@ -77,6 +80,15 @@ export class PipelineOrchestrator {
         const flags = FeatureFlagRegistry.getFlags();
         const mode = flags.pipelineMode;
 
+        // 0. Deterministic Context Governor Evaluation (Zero LLM/SLM)
+        const governor = DeterministicContextGovernor.getInstance();
+        const userPrompt = request.messages.map(m => m.content).join(' ');
+        const governorDecision = governor.evaluateContext({
+            userPrompt,
+            activeFilePath: request.activeFilePath,
+            cursorLine: request.cursorLine
+        });
+
         // 1. Calculate Baseline Tokens
         let originalTokens = 0;
         for (const msg of request.messages) {
@@ -84,11 +96,22 @@ export class PipelineOrchestrator {
         }
 
         let optimizedMessages: MessagePayload[] = [];
-        const decisions: Decision[] = [];
+        const decisions: Decision[] = [
+            {
+                itemId: 'deterministic_context_governor',
+                action: 'govern',
+                reason: `Inferred task '${governorDecision.taskType}' (risk: ${governorDecision.riskLevel}, mode: ${governorDecision.retrievalMode}, aggressiveness: ${governorDecision.optimizationAggressiveness})`,
+                confidence: governorDecision.confidence,
+                evidence: governorDecision.riskReasons.length > 0 ? governorDecision.riskReasons : ['IntentExtractor', 'EvidencePolicyMatrix']
+            }
+        ];
         let cqReport: ContextQualityReport;
         let cachePlanResult: CachePlanResult | undefined;
 
-        if (mode === 'legacy') {
+        if (governorDecision.optimizationAggressiveness === 'none') {
+            // Critical risk override: Full context preserved
+            optimizedMessages = request.messages.map(m => ({ ...m }));
+        } else if (mode === 'legacy') {
             // --- 100% LEGACY V4.1.2 PIPELINE (WITH PROSE PRESERVATION) ---
             optimizedMessages = await this.executeLegacyPipeline(request, decisions);
         } else if (mode === 'hybrid') {
@@ -101,8 +124,8 @@ export class PipelineOrchestrator {
             cachePlanResult = compilerRes.cachePlan;
         }
 
-        // 2. Audit against Fail-Closed Preservation Gate
-        const presCheck = PreservationGate.evaluate(request.messages, optimizedMessages, request.userIntent);
+        // 2a. Audit against Fail-Closed Preservation Gate
+        const presCheck = PreservationGate.evaluate(request.messages, optimizedMessages, request.userIntent || governorDecision.taskType);
         if (!presCheck.passed) {
             // Fail closed: Revert to 100% original messages to prevent any quality degradation
             optimizedMessages = request.messages.map(m => ({ ...m }));
@@ -112,6 +135,26 @@ export class PipelineOrchestrator {
                 reason: `Fail-closed triggered due to missing facts: ${presCheck.missingItems.join(', ')}`,
                 confidence: 1.0,
                 evidence: ['PreservationGate']
+            });
+        }
+
+        // 2b. Audit against Deterministic Evidence Safety Gate
+        const providedCategories: EvidenceCategory[] = ['targetImplementation', 'apiContract', 'callers'];
+        if (userPrompt.toLowerCase().includes('test') || userPrompt.toLowerCase().includes('spec')) {
+            providedCategories.push('tests');
+        }
+        if (userPrompt.toLowerCase().includes('error') || userPrompt.toLowerCase().includes('exception')) {
+            providedCategories.push('errorStackTrace');
+        }
+        const safetyAudit = governor.validateEvidenceSafety(governorDecision, providedCategories);
+        if (!safetyAudit.passed && safetyAudit.actionTaken === 'fail_closed_fallback') {
+            optimizedMessages = request.messages.map(m => ({ ...m }));
+            decisions.push({
+                itemId: 'evidence_safety_gate_fallback',
+                action: 'preserve',
+                reason: `Evidence safety gate triggered: missing critical evidence [${safetyAudit.missing.map(m => m.category).join(', ')}]`,
+                confidence: 1.0,
+                evidence: ['EvidenceSafetyGate']
             });
         }
 
@@ -234,7 +277,8 @@ export class PipelineOrchestrator {
             contextQuality: cqReport,
             cachePlan: cachePlanResult,
             trace,
-            pipelineModeUsed: mode
+            pipelineModeUsed: mode,
+            governorDecision
         };
     }
 

@@ -406,6 +406,8 @@
     "certify:fast": "node scripts/run-tests.js",
     "certify": "node scripts/certify.js",
     "certify:deep": "node scripts/certify-deep.js",
+    "validate": "node scripts/validate.js",
+    "validate:all": "node scripts/validate-all.js",
     "download-parsers": "node scripts/download-parsers.js",
     "vsce:package": "npx @vscode/vsce package --no-dependencies --out tokonomics-5.1.0.vsix",
     "publish:vsce": "npx @vscode/vsce publish --no-dependencies",

@@ -2,6 +2,7 @@
 .vscode-test/**
 src/**
 tests/**
+validation/**
 out_test/**
 scripts/**
 tsconfig.json

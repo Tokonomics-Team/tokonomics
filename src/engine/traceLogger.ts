@@ -5,7 +5,7 @@
 
 export interface Decision {
     itemId: string;
-    action: 'include' | 'exclude' | 'downgrade' | 'compress' | 'preserve' | 'slice';
+    action: 'include' | 'exclude' | 'downgrade' | 'compress' | 'preserve' | 'slice' | 'govern';
     reason: string;
     confidence: number;
     evidence: string[];
