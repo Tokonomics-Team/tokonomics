@@ -3,6 +3,7 @@
 src/**
 tests/**
 validation/**
+out/**
 out_test/**
 scripts/**
 tsconfig.json
@@ -28,3 +29,4 @@ BIG_TECH_PM_SUITE.md
 *SUITE*.md
 *.log
 *.vsix
+*.map
