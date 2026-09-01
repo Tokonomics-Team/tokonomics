@@ -14,38 +14,38 @@
       },
       {
         "stageName": "Lexical Retrieval (BM25)",
-        "coldMs": 0.48,
+        "coldMs": 0.42,
         "warmP50Ms": 0.04,
         "warmP90Ms": 0.1,
-        "warmP95Ms": 0.1,
-        "warmP99Ms": 0.14,
+        "warmP95Ms": 0.11,
+        "warmP99Ms": 0.15,
         "meanMs": 0.05
       },
       {
         "stageName": "Dense Vector Search",
-        "coldMs": 0.13,
-        "warmP50Ms": 0.03,
-        "warmP90Ms": 0.07,
-        "warmP95Ms": 0.08,
-        "warmP99Ms": 0.28,
+        "coldMs": 0.12,
+        "warmP50Ms": 0.02,
+        "warmP90Ms": 0.04,
+        "warmP95Ms": 0.06,
+        "warmP99Ms": 0.55,
         "meanMs": 0.04
       },
       {
         "stageName": "Reranking & MMR Diversity",
-        "coldMs": 0.26,
+        "coldMs": 0.33,
         "warmP50Ms": 0.03,
-        "warmP90Ms": 0.1,
-        "warmP95Ms": 0.15,
-        "warmP99Ms": 0.21,
+        "warmP90Ms": 0.06,
+        "warmP95Ms": 0.08,
+        "warmP99Ms": 0.12,
         "meanMs": 0.04
       },
       {
         "stageName": "Deduplication Suite",
         "coldMs": 0.02,
         "warmP50Ms": 0.01,
-        "warmP90Ms": 0.01,
-        "warmP95Ms": 0.01,
-        "warmP99Ms": 0.07,
+        "warmP90Ms": 0.02,
+        "warmP95Ms": 0.02,
+        "warmP99Ms": 0.02,
         "meanMs": 0.01
       },
       {
@@ -62,27 +62,27 @@
         "coldMs": 0.03,
         "warmP50Ms": 0.01,
         "warmP90Ms": 0.01,
-        "warmP95Ms": 0.06,
-        "warmP99Ms": 0.13,
-        "meanMs": 0.02
+        "warmP95Ms": 0.02,
+        "warmP99Ms": 0.05,
+        "meanMs": 0.01
       },
       {
         "stageName": "Context Knapsack Solver",
-        "coldMs": 1.92,
-        "warmP50Ms": 0.85,
-        "warmP90Ms": 1.26,
-        "warmP95Ms": 1.29,
-        "warmP99Ms": 1.39,
-        "meanMs": 0.91
+        "coldMs": 1.76,
+        "warmP50Ms": 0.77,
+        "warmP90Ms": 1.08,
+        "warmP95Ms": 1.13,
+        "warmP99Ms": 1.22,
+        "meanMs": 0.81
       },
       {
         "stageName": "Semantic Compression",
-        "coldMs": 0.03,
+        "coldMs": 0.02,
         "warmP50Ms": 0,
         "warmP90Ms": 0.01,
-        "warmP95Ms": 0.03,
-        "warmP99Ms": 0.07,
-        "meanMs": 0.01
+        "warmP95Ms": 0.01,
+        "warmP99Ms": 0.01,
+        "meanMs": 0
       },
       {
         "stageName": "Cache Planner",
@@ -95,68 +95,68 @@
       },
       {
         "stageName": "Total Optimization Pipeline",
-        "coldMs": 0.26,
-        "warmP50Ms": 0.1,
-        "warmP90Ms": 0.22,
-        "warmP95Ms": 0.3,
-        "warmP99Ms": 0.96,
-        "meanMs": 0.14
+        "coldMs": 0.24,
+        "warmP50Ms": 0.09,
+        "warmP90Ms": 0.19,
+        "warmP95Ms": 0.23,
+        "warmP99Ms": 0.49,
+        "meanMs": 0.11
       }
     ],
-    "totalCompilerColdMs": 0.26,
-    "totalCompilerWarmP50Ms": 0.1,
-    "totalCompilerWarmP90Ms": 0.22,
-    "totalCompilerWarmP95Ms": 0.3,
-    "totalCompilerWarmP99Ms": 0.96
+    "totalCompilerColdMs": 0.24,
+    "totalCompilerWarmP50Ms": 0.09,
+    "totalCompilerWarmP90Ms": 0.19,
+    "totalCompilerWarmP95Ms": 0.23,
+    "totalCompilerWarmP99Ms": 0.49
   },
   "memoryReport": {
     "measurementDate": "2026-09-01",
     "snapshots": [
       {
         "milestone": "baseline",
-        "jsHeapUsedMB": 28.48,
-        "jsHeapTotalMB": 86.03,
-        "processRssMB": 111.21,
-        "arrayBuffersMB": 1.49,
+        "jsHeapUsedMB": 29.28,
+        "jsHeapTotalMB": 54.53,
+        "processRssMB": 109.86,
+        "arrayBuffersMB": 1.65,
         "modelBufferEstimateMB": 0
       },
       {
         "milestone": "after_indexing",
-        "jsHeapUsedMB": 36.69,
-        "jsHeapTotalMB": 89.22,
-        "processRssMB": 129.35,
+        "jsHeapUsedMB": 30.49,
+        "jsHeapTotalMB": 90.75,
+        "processRssMB": 129.26,
         "arrayBuffersMB": 0.15,
         "modelBufferEstimateMB": 0
       },
       {
         "milestone": "after_embedding_model_load",
-        "jsHeapUsedMB": 37.7,
-        "jsHeapTotalMB": 89.45,
-        "processRssMB": 129.6,
+        "jsHeapUsedMB": 31.58,
+        "jsHeapTotalMB": 90.97,
+        "processRssMB": 129.52,
         "arrayBuffersMB": 0.15,
         "modelBufferEstimateMB": 1.5
       },
       {
         "milestone": "after_slm_load",
-        "jsHeapUsedMB": 37.7,
-        "jsHeapTotalMB": 89.45,
-        "processRssMB": 129.6,
+        "jsHeapUsedMB": 31.58,
+        "jsHeapTotalMB": 90.97,
+        "processRssMB": 129.52,
         "arrayBuffersMB": 0.15,
         "modelBufferEstimateMB": 2
       },
       {
         "milestone": "peak_compilation",
-        "jsHeapUsedMB": 37.96,
-        "jsHeapTotalMB": 89.45,
-        "processRssMB": 129.6,
+        "jsHeapUsedMB": 31.84,
+        "jsHeapTotalMB": 90.97,
+        "processRssMB": 129.52,
         "arrayBuffersMB": 0.15,
         "modelBufferEstimateMB": 2
       },
       {
         "milestone": "after_model_unload",
-        "jsHeapUsedMB": 37.97,
-        "jsHeapTotalMB": 89.45,
-        "processRssMB": 129.6,
+        "jsHeapUsedMB": 31.85,
+        "jsHeapTotalMB": 90.97,
+        "processRssMB": 129.53,
         "arrayBuffersMB": 0.15,
         "modelBufferEstimateMB": 0
       }
@@ -167,39 +167,39 @@
         "graphNodes": 1000,
         "bm25Docs": 200,
         "heapDeltaMB": 1.24,
-        "rssDeltaMB": 0.13,
-        "growthRateMBPer10k": 12.37
+        "rssDeltaMB": 0.21,
+        "growthRateMBPer10k": 12.39
       },
       {
         "symbolCount": 10000,
         "graphNodes": 10000,
         "bm25Docs": 2000,
-        "heapDeltaMB": 14.08,
-        "rssDeltaMB": 12.36,
-        "growthRateMBPer10k": 14.08
+        "heapDeltaMB": 14.11,
+        "rssDeltaMB": 5.96,
+        "growthRateMBPer10k": 14.11
       },
       {
         "symbolCount": 50000,
         "graphNodes": 50000,
         "bm25Docs": 10000,
-        "heapDeltaMB": 10.2,
-        "rssDeltaMB": 36.2,
-        "growthRateMBPer10k": 2.04
+        "heapDeltaMB": 44.59,
+        "rssDeltaMB": 47.76,
+        "growthRateMBPer10k": 8.92
       },
       {
         "symbolCount": 100000,
         "graphNodes": 100000,
         "bm25Docs": 20000,
-        "heapDeltaMB": 93.14,
-        "rssDeltaMB": 105.37,
-        "growthRateMBPer10k": 9.31
+        "heapDeltaMB": 53.74,
+        "rssDeltaMB": 62.85,
+        "growthRateMBPer10k": 5.37
       }
     ],
-    "baselineRssMB": 111.21,
-    "indexedRssMB": 129.35,
-    "mlActiveRssMB": 129.6,
-    "peakRssMB": 129.6,
-    "postUnloadRssMB": 129.6,
+    "baselineRssMB": 109.86,
+    "indexedRssMB": 129.26,
+    "mlActiveRssMB": 129.52,
+    "peakRssMB": 129.52,
+    "postUnloadRssMB": 129.53,
     "isEnvelopePreserved": true
   },
   "sdgReport": {
