@@ -3,7 +3,7 @@ const path = require('path');
 const fs = require('fs');
 
 async function main() {
-    console.log('⚡ Building & Running Enterprise Token Optimizer 4.0 SOTA Security & Performance Test Suite...');
+    console.log('Building and running Tokonomics repository automated tests...');
     const runnerPath = path.join(__dirname, '..', 'out_test', 'runner.js');
 
     const testEntry = `
@@ -41,6 +41,7 @@ import { runDashboardResilienceTests } from '../tests/dashboardResilience.test';
 import { runCompilerIntegrationTests } from '../tests/compilerIntegration.test';
 import { runE2ETests } from '../tests/e2e.test';
 import { runComprehensiveAuditTests } from '../tests/comprehensive-audit.test';
+import { runPhase0MeasurementTruthTests } from '../tests/phase0MeasurementTruth.test';
 
 async function runAll() {
     try {
@@ -78,8 +79,10 @@ async function runAll() {
         await runCompilerIntegrationTests();
         await runE2ETests();
         await runComprehensiveAuditTests();
+        runPhase0MeasurementTruthTests();
         console.log('\\n====================================================================================');
-        console.log('🎉 ALL V5.1.1 SOTA TESTS, CALIBRATION BENCHMARKS & HOST AUDIT SUITES PASSED (100%)');
+        console.log('ALL AUTOMATED REPOSITORY TESTS PASSED');
+        console.log('Synthetic benchmark passes do not constitute release, provider, or model-quality certification.');
         console.log('====================================================================================\\n');
     } catch (err) {
         console.error('\\n❌ Test Failed:', err);

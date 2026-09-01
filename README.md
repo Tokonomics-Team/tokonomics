@@ -4,16 +4,21 @@
 [![Website](https://img.shields.io/badge/Website-tokonomics--team.github.io-00f0ff.svg)](https://tokonomics-team.github.io/tokonomics)
 [![Version](https://img.shields.io/badge/version-5.1.1-blue.svg)](https://marketplace.visualstudio.com)
 [![VS Code](https://img.shields.io/badge/VS%20Code-%5E1.90.0-purple.svg)](https://code.visualstudio.com)
-[![Token Savings](https://img.shields.io/badge/Token%20Savings-80.5%25%20Average-brightgreen.svg)]()
-[![Code Accuracy](https://img.shields.io/badge/Code%20Accuracy-%2B34.4%25%20Improvement-success.svg)]()
+[![Benchmarks](https://img.shields.io/badge/Benchmarks-Controlled%20Synthetic-yellow.svg)]()
+[![Validation](https://img.shields.io/badge/Release%20Certification-Pending-orange.svg)]()
 [![Context Governor](https://img.shields.io/badge/Deterministic%20Governor-Active%20(0ms)-blueviolet.svg)]()
-[![Privacy](https://img.shields.io/badge/Privacy-100%25%20Local-success.svg)]()
+[![Processing](https://img.shields.io/badge/Processing-Local%20Compiler-success.svg)]()
 [![Issues](https://img.shields.io/badge/Issues-Report%20Bug-red.svg)](https://github.com/Tokonomics-Team/tokonomics/issues)
 [![Discussions](https://img.shields.io/badge/Community-Discussions-yellowgreen.svg)](https://github.com/Tokonomics-Team/tokonomics/discussions)
 [![License: Proprietary](https://img.shields.io/badge/License-Proprietary-red.svg)](https://github.com/Tokonomics-Team/tokonomics/blob/main/LICENSE.txt)
 
-> 🔒 **100% LOCAL COMPILATION — ZERO INTERMEDIARY SERVERS**  
-> All context compilation algorithms, AST structural pruning, PageRank indexing, Deterministic Context Governance, and cost calculations run **100% locally on your machine** inside your VS Code extension host. **No Tokonomics backend servers, no intermediate proxy relays, and zero telemetry.** Your optimized prompts and context are transmitted **only directly to your selected upstream AI provider** (Anthropic, OpenAI, GitHub Copilot, or local Ollama) according to your own AI configuration and credentials.
+> **Validation status:** Tokonomics performs context compilation in the local extension
+> process and does not use a Tokonomics-operated intermediary service. Compiled prompts are
+> still transmitted to the upstream AI provider selected in VS Code. Published optimization
+> figures below come from a controlled synthetic harness and are not certified production
+> savings or model-quality improvements. See
+> [`validation/claims/claim-registry.json`](validation/claims/claim-registry.json) for the
+> status and limitations of each material claim.
 
 ---
 
@@ -66,7 +71,8 @@ Open your VS Code Chat panel (`Ctrl + Alt + I` or `Cmd + Shift + I` or click the
 ```text
 @tokonomics explain how the authentication flow works in this project
 ```
-Tokonomics will compile and optimize your project context in real time, saving up to 88% of tokens while boosting coding output accuracy.
+Tokonomics will compile and optimize project context in real time. Actual token changes and
+downstream results depend on the request, workspace, selected model, and provider behavior.
 
 ### 2. Live Savings Status Bar & Real-Time Dashboard
 Look at the bottom-right status bar in VS Code:

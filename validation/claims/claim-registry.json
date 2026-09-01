@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-09-01",
+  "policy": "Only verified claims may be stated without qualification. Qualified and experimental claims must disclose their scope. Unverified claims may not be used as release or marketplace promises.",
+  "claims": [
+    {
+      "id": "local-context-processing",
+      "claim": "Tokonomics context-processing algorithms execute in the local VS Code extension process and do not use a Tokonomics-operated backend.",
+      "status": "qualified",
+      "publicLocations": ["README.md", "package.json"],
+      "evidence": ["src/extension.ts", "src/evaluation/networkAuditEngine.ts"],
+      "limitations": "Optimized prompts are still sent to the user-selected upstream model provider. Phase 1 must certify all egress paths and workspace-trust behavior from the packaged extension."
+    },
+    {
+      "id": "token-reduction-range",
+      "claim": "Tokonomics reduces AI coding input tokens by 65-88 percent.",
+      "status": "unverified",
+      "publicLocations": ["README.md", "FEATURES_AND_SAVINGS.md", "package.json"],
+      "evidence": ["validation/reports/benchmark-methodology.md"],
+      "limitations": "Existing measurements use a controlled synthetic corpus and do not yet measure the complete provider payload or independently verify downstream task success."
+    },
+    {
+      "id": "task-success-uplift",
+      "claim": "Tokonomics improves downstream coding task success or code accuracy.",
+      "status": "unverified",
+      "publicLocations": ["README.md", "CHANGELOG.md"],
+      "evidence": ["validation/runner/tokonomicsRunner.ts", "validation/runner/baselineRunner.ts"],
+      "limitations": "The legacy benchmark selects predetermined fixed or buggy patches and cannot establish model-generated task-success uplift."
+    },
+    {
+      "id": "semantic-preservation",
+      "claim": "Optimization guarantees semantic preservation or zero missing critical evidence.",
+      "status": "experimental",
+      "publicLocations": ["README.md", "CHANGELOG.md"],
+      "evidence": ["src/evaluation/preservationGate.ts", "src/governor/evidenceSafetyGate.ts"],
+      "limitations": "Current checks are heuristic and require structured evidence and real task-success validation in Phase 4."
+    },
+    {
+      "id": "ast-language-support",
+      "claim": "Multi-language AST pruning is available for all advertised languages in the installed extension.",
+      "status": "experimental",
+      "publicLocations": ["README.md", "package.json"],
+      "evidence": ["src/ast/pruner.ts", "tests/multiLangAst.test.ts"],
+      "limitations": "Phase 1 must verify parser runtime assets and each language fixture from the packaged VSIX."
+    },
+    {
+      "id": "provider-cache-savings",
+      "claim": "Prompt alignment produces provider cache discounts or verified cached tokens.",
+      "status": "unverified",
+      "publicLocations": ["README.md", "FEATURES_AND_SAVINGS.md"],
+      "evidence": ["src/cache/cachePlanner.ts", "src/evaluation/providerReconciliation.ts"],
+      "limitations": "Cache eligibility is not a provider-reported cache hit. Phase 6 will separate writes, eligible tokens, and reconciled reads."
+    },
+    {
+      "id": "response-cache-correctness",
+      "claim": "Exact and approximate response caching safely eliminates repeated provider calls.",
+      "status": "experimental",
+      "publicLocations": ["README.md", "FEATURES_AND_SAVINGS.md", "package.json"],
+      "evidence": ["src/cache/responseCache.ts", "tests/v4.test.ts"],
+      "limitations": "Approximate answer replay is not production-safe with the current fingerprint and is scheduled for removal or demotion in Phase 6."
+    },
+    {
+      "id": "image-token-savings",
+      "claim": "Image rightsizing reduces the actual image payload and provider token cost.",
+      "status": "unverified",
+      "publicLocations": ["package.json", "FEATURES_AND_SAVINGS.md"],
+      "evidence": ["src/engine/imageRightsizer.ts"],
+      "limitations": "The current preserveVisualData default can leave inline images unchanged; actual outgoing payload savings must be proven in Phase 5."
+    },
+    {
+      "id": "release-certification",
+      "claim": "Tokonomics is certified for worldwide or global production rollout.",
+      "status": "retired",
+      "publicLocations": ["validation/reports/README.md"],
+      "evidence": [],
+      "limitations": "Legacy self-generated certification is superseded. Release certification requires packaged Extension Host testing in Phase 9."
+    }
+  ]
+}

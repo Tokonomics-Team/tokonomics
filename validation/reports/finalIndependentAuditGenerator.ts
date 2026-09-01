@@ -238,7 +238,7 @@ export class FinalIndependentAuditGenerator {
                 'Controlled synthetic benchmark corpus with 8 multi-file workspaces; real open-source repository issue validation ongoing.',
                 'Local SLM acceleration depends on host WebGPU/WASM_SIMD availability; deterministic fallback cascade used when unavailable.'
             ],
-            section31_FinalCertificationDecision: 'CERTIFIED FOR WORLDWIDE PRODUCTION'
+            section31_FinalCertificationDecision: 'NOT_RELEASE_CERTIFIED_CONTROLLED_SYNTHETIC_AUDIT'
         };
 
         // 4. Emit Comprehensive 31-Section Markdown Report
@@ -253,7 +253,7 @@ export class FinalIndependentAuditGenerator {
 > **Context Success Preservation Ratio**: **${threeRunStudy.contextSuccessPreservationRatio}** (${threeRunStudy.tokonomicsTaskSuccess}% / ${threeRunStudy.fullContextTaskSuccess}%)  
 > **Absolute Task Success Improvement**: **+${threeRunStudy.absoluteImprovementPercentagePoints}% points** (Relative: **+${threeRunStudy.relativeImprovementPercentage}%**)  
 > **Red-Team Challenges Defended**: **${redTeamAudit.challengesPassed} / ${redTeamAudit.totalChallenges} (100%)**  
-> **Final Certification Decision**: **CERTIFIED FOR WORLDWIDE PRODUCTION**
+> **Final Certification Decision**: **NOT RELEASE CERTIFIED — CONTROLLED SYNTHETIC AUDIT**
 
 ---
 
@@ -317,7 +317,7 @@ ${oracleAudit.entries.map(e => `| **${e.subsystem}** | \`${e.implementationUnder
 
 ## 6. Final Certification Decision
 
-> ### ✅ **FINAL DECISION: CERTIFIED FOR WORLDWIDE PRODUCTION**
+> ### **FINAL DECISION: CONTROLLED SYNTHETIC AUDIT COMPLETED — NOT RELEASE CERTIFIED**
 > 
 > *All 31 forensic certification requirements have been validated against independent external ground-truth oracles under clean-room conditions with zero holdout contamination and zero downstream degradation.*
 `;
@@ -346,7 +346,7 @@ ${oracleAudit.entries.map(e => `| **${e.subsystem}** | \`${e.implementationUnder
             jsonPath,
             mdPath,
             allReportPaths: allReports,
-            summary: `All 31 audit sections generated and certified across 8 canonical report artifacts.`
+            summary: `All 31 controlled synthetic audit sections generated across 8 report artifacts; no release certification was performed.`
         };
     }
 }

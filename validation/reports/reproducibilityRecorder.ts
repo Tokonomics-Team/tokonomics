@@ -4,6 +4,9 @@
  */
 
 import * as os from 'os';
+import * as fs from 'fs';
+import * as path from 'path';
+import { execFileSync } from 'child_process';
 
 export interface ReproducibilityMetadata {
     repositoryCommitSha: string;
@@ -19,6 +22,8 @@ export interface ReproducibilityMetadata {
     ramTotalGB: number;
     tokenizerVersion: string;
     pricingProfileVersion: string;
+    benchmarkClassification: string;
+    datasetMetadataSha256: string;
     timestamp: string;
 }
 
@@ -28,12 +33,34 @@ export class ReproducibilityRecorder {
         const cpuModel = cpus.length > 0 ? cpus[0].model : 'Unknown CPU';
         const ramGB = Math.round((os.totalmem() / (1024 * 1024 * 1024)) * 10) / 10;
 
+        const rootDir = process.cwd();
+        const packageJson = JSON.parse(fs.readFileSync(path.resolve(rootDir, 'package.json'), 'utf8'));
+        const datasetPath = path.resolve(rootDir, 'validation', 'datasets', 'datasetMetadata.json');
+        const datasetRaw = fs.readFileSync(datasetPath, 'utf8');
+        const datasetMetadata = JSON.parse(datasetRaw);
+
+        let repositoryCommitSha = 'unknown';
+        try {
+            repositoryCommitSha = execFileSync('git', ['rev-parse', 'HEAD'], {
+                cwd: rootDir,
+                encoding: 'utf8',
+                stdio: ['ignore', 'pipe', 'ignore']
+            }).trim();
+        } catch {
+            // A source archive may not contain Git metadata; keep the limitation explicit.
+        }
+
+        const datasetMetadataSha256 = require('crypto')
+            .createHash('sha256')
+            .update(datasetRaw)
+            .digest('hex');
+
         return {
-            repositoryCommitSha: 'aadbff9',
-            tokonomicsVersion: '5.1.1',
-            benchmarkDatasetVersion: '2026-v2.1-multilang',
-            modelProvider: 'Anthropic / OpenAI / Google / DeepSeek',
-            modelVersion: 'Claude-3.7-Sonnet-20250219 / GPT-4o-20241120',
+            repositoryCommitSha,
+            tokonomicsVersion: packageJson.version,
+            benchmarkDatasetVersion: datasetMetadata.benchmarkVersion,
+            modelProvider: 'none (controlled synthetic fixture)',
+            modelVersion: 'not applicable',
             temperature: 0.0,
             maxOutputTokens: 4096,
             compilerFeatureFlags: {
@@ -47,8 +74,10 @@ export class ReproducibilityRecorder {
             operatingSystem: `${os.type()} ${os.release()} (${os.arch()})`,
             cpuModel,
             ramTotalGB: ramGB,
-            tokenizerVersion: 'Claude-BPE-v2 / o200k_base',
-            pricingProfileVersion: '2025-02-19-v1',
+            tokenizerVersion: 'Tokonomics local estimator',
+            pricingProfileVersion: 'synthetic-estimate-only',
+            benchmarkClassification: datasetMetadata.classification,
+            datasetMetadataSha256,
             timestamp: new Date().toISOString()
         };
     }

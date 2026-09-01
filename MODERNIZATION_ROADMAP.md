@@ -1,0 +1,376 @@
+# Tokonomics Modernization Roadmap
+
+## Purpose
+
+This document is the implementation plan for turning Tokonomics into a privacy-safe,
+measurable, provider-correct VS Code context compiler. The work is intentionally
+incremental. Each phase is implemented, audited, covered by automated tests, and
+committed independently. Work on a later phase starts only after the repository owner
+reviews and explicitly approves the preceding phase.
+
+## Delivery protocol
+
+For every phase:
+
+1. Re-audit the affected production paths and record the baseline.
+2. Write or update the design contract before changing behavior.
+3. Implement the smallest coherent migration behind safe defaults or feature flags.
+4. Add unit, property, integration, adversarial, and artifact tests appropriate to the risk.
+5. Run TypeScript compilation, the complete existing test suite, phase-specific tests,
+   packaging checks, and relevant performance/security checks.
+6. Inspect the diff for unrelated changes, generated artifacts, secrets, and stale claims.
+7. Create one or more local commits with focused messages.
+8. Publish the commit hashes, test evidence, limitations, and rollback instructions.
+9. Stop. The next phase requires explicit owner approval.
+
+No phase may silently weaken a safety invariant to make a test pass. A failed or
+unmeasured gate is reported as such.
+
+## Target architecture
+
+```text
+VS Code chat participant / language-model provider / commands
+                              |
+                     Request Boundary
+       trust | consent | source policy | sanitization | cancellation
+                              |
+                     Context Compiler
+       intent -> evidence policy -> retrieval -> typed Context IR
+                              |
+              global budget and context selector
+                              |
+                    safe prompt assembler
+                              |
+                      provider adapter
+
+Workspace snapshots -> incremental index -> retrieval
+Request lifecycle -> append-only ledger -> dashboard and diagnostics
+```
+
+## Architectural invariants
+
+- No workspace content crosses the request boundary without trust, source-policy,
+  and sanitization checks.
+- Every VS Code entry point uses the same compiler.
+- Roles, tool calls, tool results, data parts, images, and streaming semantics are
+  preserved or explicitly rejected.
+- One stable request ID owns one lifecycle and one set of metrics.
+- Cancellation reaches every stage and prevents caching or successful completion.
+- Token budgets cover the complete rendered provider payload.
+- Every context block has provenance, freshness, token cost, utility, dependencies,
+  sensitivity, and a render location.
+- Retrieval observes one immutable workspace snapshot.
+- Measured, estimated, projected, and provider-reconciled values are never conflated.
+- Experimental features are disabled until production-reachable and independently
+  benchmark-proven.
+
+## Phase status
+
+| Phase | Name | State | Approval required to start |
+|---:|---|---|---|
+| 0 | Measurement truth and release safety | Implemented; pending owner review | Granted |
+| 1 | Privacy, security, trust, and packaging | Blocked on approval | Yes |
+| 2 | Canonical compiler and protocol-safe adapters | Blocked on approval | Yes |
+| 3 | Versioned incremental workspace intelligence | Blocked on approval | Yes |
+| 4 | Evidence-aware retrieval and preservation | Blocked on approval | Yes |
+| 5 | Global token budgeting and selection | Blocked on approval | Yes |
+| 6 | Correct caching and token economics | Blocked on approval | Yes |
+| 7 | Authoritative observability and dashboard | Blocked on approval | Yes |
+| 8 | Performance, concurrency, and resilience | Blocked on approval | Yes |
+| 9 | Integration certification and release hardening | Blocked on approval | Yes |
+| 10 | Evaluated state-of-the-art experiments | Blocked on approval | Yes |
+
+## Phase 0 - Measurement truth and release safety
+
+### Objective
+
+Prevent synthetic, predetermined, stale, or incomplete results from being presented as
+release certification. Establish reproducible metadata and a registry for public claims.
+
+### Work items
+
+- Replace pre-populated certification decisions and fixed pass counts with outcomes
+  derived from commands executed in the current run.
+- Record current commit, dirty-tree state, package version, lockfile version, dataset
+  hash, platform, Node version, artifact hash, duration, and exact gate commands.
+- Classify every material public claim as verified, qualified, experimental,
+  unverified, or retired, with evidence and review dates.
+- Clearly label controlled synthetic benchmarks. Predetermined corpus patches may test
+  the harness but may not establish model task success or production uplift.
+- Mark legacy reports as historical and non-authoritative.
+- Add automated integrity tests for metadata, claim evidence, version consistency,
+  dynamic Git provenance, and absence of pre-certified outcomes.
+- Establish artifact and Extension Host certification as required future gates rather
+  than implying they already pass.
+
+### Exit criteria
+
+- Certification starts in an unknown state and derives every gate outcome from a run.
+- A dirty tree or missing required gate cannot receive a release-ready decision.
+- No fixed commit SHA, fixed suite count, or unconditional worldwide-production status
+  remains in the active certification entry points.
+- Public benchmark numbers are explicitly classified and linked to their limitations.
+- Package and lockfile root metadata agree.
+- Automated Phase 0 integrity tests and the full existing suite pass.
+
+## Phase 1 - Privacy, security, trust, and packaging
+
+### Objective
+
+Create a fail-closed egress boundary and make the installed VSIX match its advertised
+privacy and parser behavior.
+
+### Work items
+
+- Add a single request boundary for workspace trust, consent, source policy,
+  sanitization, path anonymization, payload limits, and cancellation.
+- Disable workspace reads, indexing, warming, memory, and automatic active-file
+  attachment in untrusted workspaces.
+- Sanitize the final assembled payload, including history, diagnostics, terminal text,
+  tool parts, data metadata, filenames, and every fallback.
+- Respect ignore rules, sensitive filenames, binary detection, size limits, workspace
+  containment, and symlink boundaries.
+- Package and load every advertised parser from the actual VSIX; fail packaging tests
+  on silent AST fallback.
+- Define local data retention, deletion, and diagnostic-log guarantees.
+- Update vulnerable dependencies and regenerate consistent lock metadata.
+
+### Exit criteria
+
+- Secret canaries never reach a mock provider through any success or fallback path.
+- Untrusted workspaces cause no workspace content reads or background warming.
+- Absolute user paths do not enter provider payloads or diagnostics.
+- Every advertised parser loads and parses a fixture from the packaged VSIX.
+
+## Phase 2 - Canonical compiler and protocol-safe adapters
+
+### Objective
+
+Remove divergent chat/provider behavior and use one request-scoped compiler.
+
+### Work items
+
+- Define canonical request, message-part, model, budget, evidence, decision, and result
+  contracts.
+- Refactor `PipelineOrchestrator` into the sole compiler; reduce `ContextAnalyzer` to a
+  compatibility adapter.
+- Route the chat participant, language-model provider, and applicable commands through
+  the same compiler profiles.
+- Preserve system/user/assistant roles, text, tool calls, tool results, data, images,
+  streaming, usage, and unknown-part handling.
+- Exclude Tokonomics itself from upstream model selection.
+- Propagate a request-scoped cancellation signal through preprocessing, provider
+  streaming, caching, history, and metrics.
+- Use one request ID and lifecycle from ingress through cost reconciliation.
+
+### Exit criteria
+
+- Both model entry points produce equivalent compiled payloads.
+- Protocol conformance tests prove that no supported part or role is dropped.
+- Cancellation creates no completed metric, cache record, or partial success.
+- Exactly one logical event exists per request.
+
+## Phase 3 - Versioned incremental workspace intelligence
+
+### Objective
+
+Make retrieval current, coherent, bounded, and scalable.
+
+### Work items
+
+- Introduce immutable workspace snapshots with file hashes, open-buffer versions, index
+  generations, root identities, and ignore-policy versions.
+- Use one canonical URI identity across absolute paths, relative paths, casing,
+  separators, multi-root workspaces, unsaved buffers, renames, and deletes.
+- Replace dirty markers with debounced, version-checked atomic index updates.
+- Consolidate RAM, file-watch, repo-map, symbol, graph, LSP, and optional SCIP ownership
+  behind one index facade.
+- Replace traversal-order caps with priority-based lazy indexing.
+- Account for strings, symbols, maps, sets, graph edges, parsers, temporary buffers, and
+  retrieval caches in the RAM budget.
+
+### Exit criteria
+
+- Change/create/delete/rename events update search results without full rebuilds.
+- Late work cannot overwrite newer document versions.
+- Every request observes one snapshot generation.
+- Memory stays within the configured envelope plus documented allocator tolerance.
+
+## Phase 4 - Evidence-aware retrieval and preservation
+
+### Objective
+
+Optimize task success per token by selecting structured evidence.
+
+### Work items
+
+- Convert intent into required, optional, and forbidden evidence contracts.
+- Produce candidates from lexical, symbol, AST, import/call graph, LSP,
+  diagnostics, stack traces, tests, open editors, recent diffs, and repository rank.
+- Fuse rankings deterministically and apply diversity control.
+- Treat SDG slices as candidates gated by parser availability, confidence,
+  dependency closure, and preservation checks.
+- Replace keyword-only preservation with symbol/range/dependency/tool-pair evidence.
+- Add progressive expansion and conservative fallback when sufficiency is uncertain.
+
+### Exit criteria
+
+- Critical-evidence recall reaches the agreed benchmark target.
+- Task success is statistically non-inferior to unoptimized context.
+- Inclusion and exclusion decisions are explainable and reproducible.
+
+## Phase 5 - Global token budgeting and selection
+
+### Objective
+
+Make the selected Context IR exactly control the rendered prompt and total budget.
+
+### Work items
+
+- Give every IR block provenance, render location, token cost, utility, mandatory state,
+  dependencies, conflicts, freshness, sensitivity, and transformation history.
+- Budget system/user/history/tool/image/wrapper/evidence tokens plus output reserve and
+  tokenizer safety margin.
+- Select mandatory evidence first, close dependencies, then optimize optional utility
+  under global constraints.
+- Make the solver output authoritative; remove SDG or RAM bypasses.
+- Add exact or error-bounded model tokenization.
+- Count image, schema, cache-layout, and diff-output changes only when they alter the
+  actual outgoing payload.
+
+### Exit criteria
+
+- Rendered payloads remain within budget tolerance.
+- Solver assignments match rendered content exactly.
+- Brute-force fixtures validate small-instance optimality.
+- Mandatory evidence cannot be evicted.
+
+## Phase 6 - Correct caching and token economics
+
+### Objective
+
+Prevent unsafe response reuse and report defensible provider-specific economics.
+
+### Work items
+
+- Fingerprint request, conversation, workspace, snapshot, evidence, model, tools,
+  compiler configuration, policies, and extension version for exact caching.
+- Disable approximate answer replay; optionally use prior entries only as retrieval hints.
+- Exclude mutations, tools, partial streams, cancellation, failure, unresolved workspace
+  state, and time-sensitive requests from caching.
+- Maintain a versioned pricing catalog for input, output, cache writes, cache reads,
+  currencies, dates, sources, aliases, and enterprise overrides.
+- Separate cache eligibility, cache writes, and verified provider cache reads.
+- Calculate net cost and reconcile actual provider usage into the original request.
+
+### Exit criteria
+
+- Adversarial tests produce zero false answer hits.
+- Workspace changes invalidate every dependent exact response.
+- Estimated and reconciled costs are visibly distinct and fixture-verified.
+
+## Phase 7 - Authoritative observability and dashboard
+
+### Objective
+
+Make every displayed value traceable to one real request lifecycle.
+
+### Work items
+
+- Use an append-only request ledger keyed by the canonical request ID.
+- Record actual stage timing, token transitions, selections, cache state, fallback,
+  cancellation, errors, and snapshot generation.
+- Implement real session, local-day, rolling-seven-day, and lifetime windows.
+- Generate UI contracts from the event schema and remove divergent fields.
+- Display unavailable or projected values honestly; never invent reductions or CQ.
+- Provide a privacy-safe decision trace for evidence, budget, redactions, cache, and cost.
+
+### Exit criteria
+
+- Each prompt increments aggregates exactly once.
+- Window expiration and timezone tests pass.
+- Dashboard totals reconcile with ledger totals.
+- No placeholder values remain in user-visible metrics.
+
+## Phase 8 - Performance, concurrency, and resilience
+
+### Objective
+
+Protect the extension host and maintain predictable behavior under load and failure.
+
+### Work items
+
+- Keep activation registration-only and lazily load parsers/indexes after trust.
+- Move parsing, large graph work, expensive ranking, inference, and images behind
+  cancellable worker boundaries.
+- Use bounded priority queues for foreground compilation, index updates, warming, and
+  experiments.
+- Remove mutable cross-request state; share only snapshots and bounded caches.
+- Implement explicit safe fallbacks for parser, index, retrieval, sanitizer, worker,
+  provider, tokenizer, and storage failures.
+- Benchmark 100-, 1,000-, and 10,000-file workspaces and cancellation races.
+
+### Exit criteria
+
+- No unbounded queue or cache remains.
+- Rapid edits converge to the newest state.
+- Activation, compilation, update, memory, event-loop, and cancellation targets pass on
+  documented hardware tiers.
+
+## Phase 9 - Integration certification and release hardening
+
+### Objective
+
+Certify the exact artifact installed by users rather than mocked source behavior.
+
+### Work items
+
+- Test minimum, stable, and pre-release VS Code Extension Hosts.
+- Cover registration, commands, configuration, trust, multi-root, cancellation,
+  streaming, providers, chat, and webviews.
+- Add optimized-versus-raw differential task tests and independent oracles.
+- Add adversarial prompt, secret, binary, path, Unicode, size, race, cache, and corrupted
+  state cases.
+- Install and inspect the exact VSIX, including parser loading and absence of private or
+  development artifacts.
+- Produce SBOM/provenance, compatibility evidence, staged rollout, feature kill switches,
+  and rehearsed rollback.
+
+### Exit criteria
+
+- Clean-room VSIX tests pass for supported VS Code versions.
+- Certification reports derive solely from the current artifact and independent evidence.
+- Marketplace claims match generated evidence and confidence intervals.
+
+## Phase 10 - Evaluated state-of-the-art experiments
+
+### Objective
+
+Promote advanced techniques only when they improve real task success or net cost.
+
+### Candidate experiments
+
+- Evidence-aware local learned ranking
+- Cross-turn delta context with snapshot-safe hashes
+- Provider-specific cache layout
+- Confidence-driven progressive compilation
+- Optional bounded local semantic retrieval
+- Inspectable, opt-in project memory
+- Task-aware vision transformation with readability evaluation
+- Adaptive budget allocation by expected quality, total cost, latency, and confidence
+
+### Promotion criteria
+
+- Production reachability is proven.
+- Privacy and resource use do not expand without explicit consent.
+- Independent benchmarks show statistically meaningful uplift.
+- Failure has a deterministic, conservative fallback.
+- The feature can be disabled independently.
+
+## Program definition of done
+
+Tokonomics may make state-of-the-art production claims only after the installed VSIX is
+proven to preserve protocol semantics, protect untrusted and sensitive workspace data,
+meet global token budgets, retain critical evidence, avoid unsafe cache hits, report
+reconciled economics honestly, remain within latency and memory envelopes, and pass
+artifact-level integration tests with reproducible evidence from the current commit.

@@ -1,8 +1,15 @@
-# ⚡ Enterprise AI Token Optimizer 4.0: Comprehensive Feature & Token Savings Architecture
+# ⚡ Enterprise AI Token Optimizer 4.0: Intended Feature & Savings Architecture
+
+> **Measurement notice:** This document describes intended and experimental behavior. Its
+> percentages are controlled synthetic or illustrative figures, not certified production
+> savings, provider billing outcomes, or model-quality improvements. Some components are not
+> yet reachable from every production entry point. The authoritative status and limitations of
+> material claims are recorded in
+> [`validation/claims/claim-registry.json`](validation/claims/claim-registry.json).
 
 **Enterprise AI Token Optimizer** (`context-compressor`) is an enterprise-grade Visual Studio Code & Antigravity IDE extension engineered to intercept, compress, align, route, and locally cache AI context and output payloads for coding assistants.
 
-By combining **Graph-based PageRank Repository Mapping**, **Multi-Language AST Structural Pruning**, **Asymmetric Scratchpad Compaction**, **Hybrid Semantic Response Caching**, **Diff-Based Output Optimization**, **Deferred Code-Mode MCP Tools**, **3-Tier Hierarchical AST Chunking**, and **4-Tier Provider Prompt Cache Alignment**, it reduces token consumption by **65% to 88%** on input and **40% to 70%** on output.
+The intended design combines **Graph-based PageRank Repository Mapping**, **Multi-Language AST Structural Pruning**, **Asymmetric Scratchpad Compaction**, **Hybrid Semantic Response Caching**, **Diff-Based Output Optimization**, **Deferred Code-Mode MCP Tools**, **3-Tier Hierarchical AST Chunking**, and **4-Tier Provider Prompt Cache Alignment**. The previously published **65% to 88%** input and **40% to 70%** output figures are unverified outside the controlled synthetic harness.
 
 ---
 

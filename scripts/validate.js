@@ -23,7 +23,6 @@ async function main() {
     const entryContent = `
 import { runGovernorTests } from '../tests/governor.test';
 import { ReportGenerator } from '../validation/reports/reportGenerator';
-import { ValidationDashboard } from '../validation/dashboard/validationDashboard';
 
 export async function runFastValidation() {
     console.log('>>> [1/2] RUNNING DETERMINISTIC CONTEXT GOVERNOR TESTS...');
@@ -32,16 +31,7 @@ export async function runFastValidation() {
     console.log('\\n>>> [2/2] RUNNING BENCHMARK VALIDATION SUITE & EMITTING REPORTS...');
     const res = await ReportGenerator.runCompleteValidationSuite();
 
-    console.log('\\n' + ValidationDashboard.renderSummary({
-        totalTasks: 160,
-        tokenReductionPct: 80.5,
-        costReductionPct: 85.5,
-        baselineTaskSuccessPct: 65.6,
-        tokonomicsTaskSuccessPct: 100.0,
-        taskSuccessDeltaPct: 34.4,
-        p50LatencyMs: 0.08,
-        degradationsCount: 0
-    }));
+    console.log('\\nControlled synthetic validation summary: ' + res.summary);
 
     console.log('  ✓ Final Validation JSON: ' + res.reportJsonPath);
     console.log('  ✓ Final Validation Markdown: ' + res.reportMdPath);
@@ -66,7 +56,7 @@ export async function runFastValidation() {
 
     const { runFastValidation } = require(runnerBundlePath);
     await runFastValidation();
-    console.log('\n🎉 VALIDATION FAST PASS COMPLETED WITH ZERO DEGRADATIONS.\n');
+    console.log('\nControlled synthetic validation completed. This is not release certification.\n');
 }
 
 main().catch(err => {

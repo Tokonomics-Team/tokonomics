@@ -2,8 +2,13 @@
 
 > **Document Version**: `2.1.0`  
 > **Benchmark Classification**: `Controlled Synthetic Benchmark` ($N=160$ Multilingual Tasks)  
-> **Target Models**: Claude 3.7 / 3.5 Sonnet, GPT-4o, DeepSeek-V3, Gemini 1.5 Pro  
-> **Standardized Parameters**: Temperature = 0.0, Max Output Tokens = 4096, Deterministic Seeds  
+> **Upstream Models Executed**: None
+> **Evidence Scope**: Compiler mechanics and deterministic synthetic fixtures only
+
+> **Critical limitation:** The current runners select predetermined fixed or buggy patches
+> from the executable corpus. They do not invoke an upstream model and therefore cannot
+> establish model task-success uplift, production code accuracy, provider latency, or billed
+> cost savings. Those outcomes remain unverified until artifact-level external evaluation.
 
 ---
 

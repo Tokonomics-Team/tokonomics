@@ -1,10 +1,10 @@
 {
   "metadata": {
-    "repositoryCommitSha": "aadbff9",
+    "repositoryCommitSha": "ea24a265d2757e7faf4a2f3779fa57b3e44f1daa",
     "tokonomicsVersion": "5.1.1",
-    "benchmarkDatasetVersion": "2026-v2.1-multilang",
-    "modelProvider": "Anthropic / OpenAI / Google / DeepSeek",
-    "modelVersion": "Claude-3.7-Sonnet-20250219 / GPT-4o-20241120",
+    "benchmarkDatasetVersion": "2026-v2.1",
+    "modelProvider": "none (controlled synthetic fixture)",
+    "modelVersion": "not applicable",
     "temperature": 0,
     "maxOutputTokens": 4096,
     "compilerFeatureFlags": {
@@ -18,12 +18,14 @@
     "operatingSystem": "Windows_NT 10.0.26200 (x64)",
     "cpuModel": "AMD Ryzen 7 9800X3D 8-Core Processor           ",
     "ramTotalGB": 31.1,
-    "tokenizerVersion": "Claude-BPE-v2 / o200k_base",
-    "pricingProfileVersion": "2025-02-19-v1",
-    "timestamp": "2026-09-01T11:46:05.476Z"
+    "tokenizerVersion": "Tokonomics local estimator",
+    "pricingProfileVersion": "synthetic-estimate-only",
+    "benchmarkClassification": "Controlled Synthetic Benchmark",
+    "datasetMetadataSha256": "0347d021aa250511b865a987c4fdf4dee8586335e5f48fdba4a79efdc6fed1d2",
+    "timestamp": "2026-09-01T14:25:31.662Z"
   },
-  "executionDurationSec": "0.83",
-  "sectionA_ProductionCorrectness": {
+  "executionDurationSec": "0.84",
+  "sectionA_SyntheticHarnessAssertions": {
     "pipelineIntegrity": "PASS (100% Contract Compliant)",
     "deterministicGovernorCorrectness": "PASS (Deterministic Repeatability & Invariants Verified)",
     "governorOverheadMs": 0.02,
@@ -33,7 +35,7 @@
     "networkIsolation": "PASS (0 Static AST References & 0 Runtime Socket Calls)",
     "packageIsolation": "PASS (validation/ strictly excluded from production bundle & VSIX)"
   },
-  "sectionB_CodeQualityPreservation": {
+  "sectionB_PredeterminedFixtureOutcomes": {
     "totalBenchmarkTasks": 160,
     "trainingSplitTasks": 64,
     "validationSplitTasks": 48,
@@ -170,7 +172,7 @@
       }
     ]
   },
-  "sectionC_OptimizationImpact": {
+  "sectionC_CompilerTransformationSamples": {
     "baselineAverageTokens": 11512,
     "tokonomicsAverageTokens": 91,
     "tokenReductionPct": 99.2,
@@ -519,5 +521,6 @@
     ],
     "adversarialScenariosTested": 8
   },
-  "finalProductionRecommendation": "APPROVED_FOR_GLOBAL_ROLLOUT"
+  "benchmarkClassification": "CONTROLLED_SYNTHETIC_NOT_RELEASE_EVIDENCE",
+  "finalProductionRecommendation": "NOT_EVALUATED_BY_THIS_SYNTHETIC_HARNESS"
 }

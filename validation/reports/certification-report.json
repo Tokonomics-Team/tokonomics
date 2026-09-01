@@ -1,553 +1,238 @@
 {
-  "latencyReport": {
-    "measurementDate": "2026-09-01",
-    "totalWarmIterations": 50,
-    "stages": [
-      {
-        "stageName": "Activation",
-        "coldMs": 0.01,
-        "warmP50Ms": 0,
-        "warmP90Ms": 0,
-        "warmP95Ms": 0,
-        "warmP99Ms": 0.01,
-        "meanMs": 0
-      },
-      {
-        "stageName": "Lexical Retrieval (BM25)",
-        "coldMs": 0.22,
-        "warmP50Ms": 0.04,
-        "warmP90Ms": 0.17,
-        "warmP95Ms": 0.22,
-        "warmP99Ms": 0.67,
-        "meanMs": 0.07
-      },
-      {
-        "stageName": "Dense Vector Search",
-        "coldMs": 0.12,
-        "warmP50Ms": 0.02,
-        "warmP90Ms": 0.07,
-        "warmP95Ms": 0.15,
-        "warmP99Ms": 0.29,
-        "meanMs": 0.04
-      },
-      {
-        "stageName": "Reranking & MMR Diversity",
-        "coldMs": 0.31,
-        "warmP50Ms": 0.03,
-        "warmP90Ms": 0.06,
-        "warmP95Ms": 0.07,
-        "warmP99Ms": 0.15,
-        "meanMs": 0.03
-      },
-      {
-        "stageName": "Deduplication Suite",
-        "coldMs": 0.02,
-        "warmP50Ms": 0.01,
-        "warmP90Ms": 0.02,
-        "warmP95Ms": 0.04,
-        "warmP99Ms": 0.09,
-        "meanMs": 0.01
-      },
-      {
-        "stageName": "Sufficiency Stopping Rules",
-        "coldMs": 0.01,
-        "warmP50Ms": 0,
-        "warmP90Ms": 0,
-        "warmP95Ms": 0,
-        "warmP99Ms": 0,
-        "meanMs": 0
-      },
-      {
-        "stageName": "SDG Program Slicing",
-        "coldMs": 0.03,
-        "warmP50Ms": 0.01,
-        "warmP90Ms": 0.01,
-        "warmP95Ms": 0.02,
-        "warmP99Ms": 0.06,
-        "meanMs": 0.01
-      },
-      {
-        "stageName": "Context Knapsack Solver",
-        "coldMs": 0.94,
-        "warmP50Ms": 0.86,
-        "warmP90Ms": 1.04,
-        "warmP95Ms": 1.04,
-        "warmP99Ms": 1.09,
-        "meanMs": 0.86
-      },
-      {
-        "stageName": "Semantic Compression",
-        "coldMs": 0.02,
-        "warmP50Ms": 0,
-        "warmP90Ms": 0.01,
-        "warmP95Ms": 0.01,
-        "warmP99Ms": 0.01,
-        "meanMs": 0
-      },
-      {
-        "stageName": "Cache Planner",
-        "coldMs": 0.01,
-        "warmP50Ms": 0,
-        "warmP90Ms": 0,
-        "warmP95Ms": 0,
-        "warmP99Ms": 0.01,
-        "meanMs": 0
-      },
-      {
-        "stageName": "Total Optimization Pipeline",
-        "coldMs": 0.24,
-        "warmP50Ms": 0.09,
-        "warmP90Ms": 0.15,
-        "warmP95Ms": 0.22,
-        "warmP99Ms": 0.26,
-        "meanMs": 0.11
+  "schemaVersion": 1,
+  "generatedAt": "2026-09-01T14:26:57.347Z",
+  "mode": "standard",
+  "classification": "development-validation",
+  "releaseCertified": false,
+  "decision": "VALIDATION_PASSED_DIRTY_WORKTREE",
+  "summary": {
+    "gatesExecuted": 5,
+    "gatesPassed": 5,
+    "requiredGates": 5,
+    "requiredGatesPassed": 5,
+    "allRequiredGatesPassed": true
+  },
+  "metadata": {
+    "schemaVersion": 1,
+    "capturedAt": "2026-09-01T14:26:47.140Z",
+    "repository": {
+      "commitSha": "ea24a265d2757e7faf4a2f3779fa57b3e44f1daa",
+      "branch": "main",
+      "clean": false,
+      "status": [
+        "M .vscodeignore",
+        " M FEATURES_AND_SAVINGS.md",
+        " M README.md",
+        " M package-lock.json",
+        " M package.json",
+        " M scripts/certify-deep.js",
+        " M scripts/certify.js",
+        " M scripts/clean-room-audit.js",
+        " M scripts/run-benchmark.js",
+        " M scripts/run-tests.js",
+        " M scripts/validate-all.js",
+        " M scripts/validate.js",
+        " M validation/reports/benchmark-methodology.md",
+        " M validation/reports/certification-report.json",
+        " M validation/reports/certification-report.md",
+        " M validation/reports/final-validation-report.json",
+        " M validation/reports/final-validation-report.md",
+        " M validation/reports/finalIndependentAuditGenerator.ts",
+        " M validation/reports/reportGenerator.ts",
+        " M validation/reports/reproducibilityRecorder.ts",
+        "?? MODERNIZATION_ROADMAP.md",
+        "?? scripts/lib/",
+        "?? scripts/verify-phase0.js",
+        "?? tests/phase0MeasurementTruth.test.ts",
+        "?? validation/claims/",
+        "?? validation/reports/README.md"
+      ]
+    },
+    "package": {
+      "name": "tokonomics",
+      "version": "5.1.1",
+      "lockName": "tokonomics",
+      "lockVersion": "5.1.1",
+      "metadataConsistent": true
+    },
+    "dataset": {
+      "path": "validation/datasets/datasetMetadata.json",
+      "sha256": "0347d021aa250511b865a987c4fdf4dee8586335e5f48fdba4a79efdc6fed1d2",
+      "metadata": {
+        "benchmarkName": "Tokonomics Multilingual Task Benchmark Corpus",
+        "benchmarkVersion": "2026-v2.1",
+        "classification": "Controlled Synthetic Benchmark",
+        "classificationRationale": "Corpus contains programmatically verified multi-file engineering scenarios with deterministic unit and acceptance test suites authored for compiler validation.",
+        "totalTasks": 160,
+        "repositoryCount": 8,
+        "repositorySizeCategory": "Medium-to-Large (10k-50k simulated SLOC per workspace fixture)",
+        "holdoutSplitRatio": {
+          "training": "40% (N=64)",
+          "validation": "30% (N=48)",
+          "holdout": "30% (N=48)"
+        },
+        "languages": [
+          "typescript",
+          "javascript",
+          "python",
+          "go",
+          "rust",
+          "cpp",
+          "java",
+          "csharp"
+        ],
+        "taskTypes": [
+          "debug",
+          "feature",
+          "refactor",
+          "test",
+          "explain",
+          "review",
+          "architecture",
+          "search"
+        ],
+        "acceptanceTestSources": [
+          "Official TypeScript Compiler API (ts.transpileModule)",
+          "Node.js VM Sandboxed Assertions (node:vm)",
+          "Domain-Specific Algorithmic Invariant Oracles"
+        ],
+        "matrixDistribution": {
+          "typescript": {
+            "debug": 6,
+            "feature": 5,
+            "refactor": 5,
+            "test": 4
+          },
+          "javascript": {
+            "debug": 5,
+            "feature": 5,
+            "refactor": 5,
+            "test": 5
+          },
+          "python": {
+            "debug": 5,
+            "feature": 5,
+            "refactor": 5,
+            "test": 5
+          },
+          "go": {
+            "debug": 5,
+            "feature": 5,
+            "refactor": 5,
+            "test": 5
+          },
+          "rust": {
+            "debug": 5,
+            "feature": 5,
+            "refactor": 5,
+            "test": 5
+          },
+          "cpp": {
+            "debug": 5,
+            "feature": 5,
+            "refactor": 5,
+            "test": 5
+          },
+          "java": {
+            "debug": 5,
+            "feature": 5,
+            "refactor": 5,
+            "test": 5
+          },
+          "csharp": {
+            "debug": 5,
+            "feature": 5,
+            "refactor": 5,
+            "test": 5
+          }
+        }
       }
-    ],
-    "totalCompilerColdMs": 0.24,
-    "totalCompilerWarmP50Ms": 0.09,
-    "totalCompilerWarmP90Ms": 0.15,
-    "totalCompilerWarmP95Ms": 0.22,
-    "totalCompilerWarmP99Ms": 0.26
+    },
+    "artifact": {
+      "path": "tokonomics-5.1.1.vsix",
+      "sizeBytes": 822503,
+      "sha256": "57785f30162b5c8687ac7273e0618cc618c2a3605b1c35c4281cf609df6ea76a"
+    },
+    "environment": {
+      "platform": "win32",
+      "architecture": "x64",
+      "nodeVersion": "v24.19.0",
+      "osRelease": "10.0.26200",
+      "cpuModel": "AMD Ryzen 7 9800X3D 8-Core Processor           ",
+      "logicalCpuCount": 16,
+      "totalMemoryBytes": 33341927424
+    }
   },
-  "memoryReport": {
-    "measurementDate": "2026-09-01",
-    "snapshots": [
-      {
-        "milestone": "baseline",
-        "jsHeapUsedMB": 41.56,
-        "jsHeapTotalMB": 87.54,
-        "processRssMB": 168.47,
-        "arrayBuffersMB": 24.95,
-        "modelBufferEstimateMB": 0
-      },
-      {
-        "milestone": "after_indexing",
-        "jsHeapUsedMB": 35.29,
-        "jsHeapTotalMB": 90.98,
-        "processRssMB": 145.92,
-        "arrayBuffersMB": 0.15,
-        "modelBufferEstimateMB": 0
-      },
-      {
-        "milestone": "after_embedding_model_load",
-        "jsHeapUsedMB": 36.32,
-        "jsHeapTotalMB": 91.21,
-        "processRssMB": 146.18,
-        "arrayBuffersMB": 0.15,
-        "modelBufferEstimateMB": 1.5
-      },
-      {
-        "milestone": "after_slm_load",
-        "jsHeapUsedMB": 36.32,
-        "jsHeapTotalMB": 91.21,
-        "processRssMB": 146.18,
-        "arrayBuffersMB": 0.15,
-        "modelBufferEstimateMB": 2
-      },
-      {
-        "milestone": "peak_compilation",
-        "jsHeapUsedMB": 36.59,
-        "jsHeapTotalMB": 91.21,
-        "processRssMB": 146.18,
-        "arrayBuffersMB": 0.15,
-        "modelBufferEstimateMB": 2
-      },
-      {
-        "milestone": "after_model_unload",
-        "jsHeapUsedMB": 36.59,
-        "jsHeapTotalMB": 91.21,
-        "processRssMB": 146.18,
-        "arrayBuffersMB": 0.15,
-        "modelBufferEstimateMB": 0
-      }
-    ],
-    "scaleResults": [
-      {
-        "symbolCount": 1000,
-        "graphNodes": 1000,
-        "bm25Docs": 200,
-        "heapDeltaMB": 1.24,
-        "rssDeltaMB": 0.22,
-        "growthRateMBPer10k": 12.37
-      },
-      {
-        "symbolCount": 10000,
-        "graphNodes": 10000,
-        "bm25Docs": 2000,
-        "heapDeltaMB": 14.12,
-        "rssDeltaMB": 5.99,
-        "growthRateMBPer10k": 14.12
-      },
-      {
-        "symbolCount": 50000,
-        "graphNodes": 50000,
-        "bm25Docs": 10000,
-        "heapDeltaMB": 33.13,
-        "rssDeltaMB": 39.93,
-        "growthRateMBPer10k": 6.63
-      },
-      {
-        "symbolCount": 100000,
-        "graphNodes": 100000,
-        "bm25Docs": 20000,
-        "heapDeltaMB": 41.83,
-        "rssDeltaMB": 65.19,
-        "growthRateMBPer10k": 4.18
-      }
-    ],
-    "baselineRssMB": 168.47,
-    "indexedRssMB": 145.92,
-    "mlActiveRssMB": 146.18,
-    "peakRssMB": 146.18,
-    "postUnloadRssMB": 146.18,
-    "isEnvelopePreserved": true
-  },
-  "sdgReport": {
-    "totalTestCases": 15,
-    "passedCases": 15,
-    "requiredEvidenceRecall": 100,
-    "sliceRecall": 100,
-    "slicePrecision": 95.6,
-    "falseNegativeRate": 0,
-    "falsePositiveRate": 20,
-    "falseExclusionsCount": 0,
-    "compressionViolations": 0,
-    "isCertifiedSafe": true
-  },
-  "taskReport": {
-    "measurementDate": "2026-09-01",
-    "totalTasks": 425,
-    "languages": [
-      {
-        "language": "TYPESCRIPT",
-        "totalTasks": 100,
-        "baselineTokens": 15502,
-        "tokonomicsTokens": 3027,
-        "tokenReductionPct": 80.5,
-        "baselineCompileRate": 71,
-        "tokonomicsCompileRate": 100,
-        "baselineTestRate": 64,
-        "tokonomicsTestRate": 100,
-        "baselineBehavioralRate": 42,
-        "tokonomicsBehavioralRate": 100,
-        "baselineTaskAcceptanceRate": 42,
-        "tokonomicsTaskAcceptanceRate": 100,
-        "taskAcceptanceDelta": 58,
-        "confidenceInterval95": [
-          96.3,
-          100
-        ]
-      },
-      {
-        "language": "PYTHON",
-        "totalTasks": 100,
-        "baselineTokens": 15502,
-        "tokonomicsTokens": 3027,
-        "tokenReductionPct": 80.5,
-        "baselineCompileRate": 71,
-        "tokonomicsCompileRate": 100,
-        "baselineTestRate": 64,
-        "tokonomicsTestRate": 100,
-        "baselineBehavioralRate": 42,
-        "tokonomicsBehavioralRate": 100,
-        "baselineTaskAcceptanceRate": 42,
-        "tokonomicsTaskAcceptanceRate": 100,
-        "taskAcceptanceDelta": 58,
-        "confidenceInterval95": [
-          96.3,
-          100
-        ]
-      },
-      {
-        "language": "GO",
-        "totalTasks": 75,
-        "baselineTokens": 15362,
-        "tokonomicsTokens": 2996,
-        "tokenReductionPct": 80.5,
-        "baselineCompileRate": 72,
-        "tokonomicsCompileRate": 100,
-        "baselineTestRate": 64,
-        "tokonomicsTestRate": 100,
-        "baselineBehavioralRate": 44,
-        "tokonomicsBehavioralRate": 100,
-        "baselineTaskAcceptanceRate": 44,
-        "tokonomicsTaskAcceptanceRate": 100,
-        "taskAcceptanceDelta": 56,
-        "confidenceInterval95": [
-          95.1,
-          100
-        ]
-      },
-      {
-        "language": "RUST",
-        "totalTasks": 75,
-        "baselineTokens": 15362,
-        "tokonomicsTokens": 2996,
-        "tokenReductionPct": 80.5,
-        "baselineCompileRate": 72,
-        "tokonomicsCompileRate": 100,
-        "baselineTestRate": 64,
-        "tokonomicsTestRate": 100,
-        "baselineBehavioralRate": 44,
-        "tokonomicsBehavioralRate": 100,
-        "baselineTaskAcceptanceRate": 44,
-        "tokonomicsTaskAcceptanceRate": 100,
-        "taskAcceptanceDelta": 56,
-        "confidenceInterval95": [
-          95.1,
-          100
-        ]
-      },
-      {
-        "language": "JAVA",
-        "totalTasks": 75,
-        "baselineTokens": 15362,
-        "tokonomicsTokens": 2996,
-        "tokenReductionPct": 80.5,
-        "baselineCompileRate": 72,
-        "tokonomicsCompileRate": 100,
-        "baselineTestRate": 64,
-        "tokonomicsTestRate": 100,
-        "baselineBehavioralRate": 44,
-        "tokonomicsBehavioralRate": 100,
-        "baselineTaskAcceptanceRate": 44,
-        "tokonomicsTaskAcceptanceRate": 100,
-        "taskAcceptanceDelta": 56,
-        "confidenceInterval95": [
-          95.1,
-          100
-        ]
-      }
-    ],
-    "overallBaselineAvgTokens": 15428,
-    "overallTokonomicsAvgTokens": 3011,
-    "overallTokenReductionPct": 80.5,
-    "overallEffectiveCostReductionPct": 85.5,
-    "overallBaselineCompileRate": 71.5,
-    "overallTokonomicsCompileRate": 100,
-    "overallCompileDelta": 28.5,
-    "overallBaselineUnitTestRate": 64,
-    "overallTokonomicsUnitTestRate": 100,
-    "overallUnitTestDelta": 36,
-    "overallBaselineBehavioralRate": 43.1,
-    "overallTokonomicsBehavioralRate": 100,
-    "overallBehavioralDelta": 56.9,
-    "overallBaselineTaskAcceptanceRate": 43.1,
-    "overallTokonomicsTaskAcceptanceRate": 100,
-    "overallTaskAcceptanceDelta": 56.9,
-    "overallTaskAcceptance95CI": [
-      99.1,
-      100
-    ]
-  },
-  "providerReport": {
-    "measurementDate": "2026-09-01",
-    "records": [
-      {
-        "provider": "Anthropic",
-        "model": "Claude 3.7 Sonnet",
-        "tokenizer": "Claude BPE / SentencePiece",
-        "pricingProfileVersion": "2025-02-19-v1",
-        "rawBaselineTokens": 24500,
-        "estimatedInputTokens": 3850,
-        "observedInputTokens": 3850,
-        "estimatedCachedTokens": 2048,
-        "observedCachedTokens": 2048,
-        "estimatedOutputTokens": 450,
-        "observedOutputTokens": 450,
-        "estimatedCostUSD": 0.01155,
-        "reconciledCostUSD": 0.01277,
-        "authoritativeLedgerCostUSD": 0.01277,
-        "cacheDiscountUSD": 0.00553,
-        "costEstimationErrorPercentage": 0,
-        "isPass": true
-      },
-      {
-        "provider": "Anthropic",
-        "model": "Claude 3.5 Sonnet",
-        "tokenizer": "Claude BPE",
-        "pricingProfileVersion": "2024-10-22-v2",
-        "rawBaselineTokens": 24500,
-        "estimatedInputTokens": 3850,
-        "observedInputTokens": 3850,
-        "estimatedCachedTokens": 2048,
-        "observedCachedTokens": 2048,
-        "estimatedOutputTokens": 450,
-        "observedOutputTokens": 450,
-        "estimatedCostUSD": 0.01155,
-        "reconciledCostUSD": 0.01277,
-        "authoritativeLedgerCostUSD": 0.01277,
-        "cacheDiscountUSD": 0.00553,
-        "costEstimationErrorPercentage": 0,
-        "isPass": true
-      },
-      {
-        "provider": "OpenAI",
-        "model": "GPT-4o",
-        "tokenizer": "o200k_base",
-        "pricingProfileVersion": "2024-11-20-v1",
-        "rawBaselineTokens": 22800,
-        "estimatedInputTokens": 3600,
-        "observedInputTokens": 3600,
-        "estimatedCachedTokens": 1500,
-        "observedCachedTokens": 1500,
-        "estimatedOutputTokens": 400,
-        "observedOutputTokens": 400,
-        "estimatedCostUSD": 0.009,
-        "reconciledCostUSD": 0.01113,
-        "authoritativeLedgerCostUSD": 0.01113,
-        "cacheDiscountUSD": 0.00188,
-        "costEstimationErrorPercentage": 0.04,
-        "isPass": true
-      },
-      {
-        "provider": "OpenAI",
-        "model": "o3-mini",
-        "tokenizer": "o200k_base",
-        "pricingProfileVersion": "2025-01-31-v1",
-        "rawBaselineTokens": 22800,
-        "estimatedInputTokens": 3600,
-        "observedInputTokens": 3600,
-        "estimatedCachedTokens": 1500,
-        "observedCachedTokens": 1500,
-        "estimatedOutputTokens": 400,
-        "observedOutputTokens": 400,
-        "estimatedCostUSD": 0.0072,
-        "reconciledCostUSD": 0.0096,
-        "authoritativeLedgerCostUSD": 0.0096,
-        "cacheDiscountUSD": 0,
-        "costEstimationErrorPercentage": 0,
-        "isPass": true
-      },
-      {
-        "provider": "Google",
-        "model": "Gemini 2.0 Flash",
-        "tokenizer": "Gemini SentencePiece",
-        "pricingProfileVersion": "2025-02-05-v1",
-        "rawBaselineTokens": 26000,
-        "estimatedInputTokens": 4100,
-        "observedInputTokens": 4100,
-        "estimatedCachedTokens": 2000,
-        "observedCachedTokens": 2000,
-        "estimatedOutputTokens": 500,
-        "observedOutputTokens": 500,
-        "estimatedCostUSD": 0.00513,
-        "reconciledCostUSD": 0.00575,
-        "authoritativeLedgerCostUSD": 0.00575,
-        "cacheDiscountUSD": 0.00188,
-        "costEstimationErrorPercentage": 0,
-        "isPass": true
-      },
-      {
-        "provider": "DeepSeek",
-        "model": "DeepSeek-V3",
-        "tokenizer": "DeepSeek BPE",
-        "pricingProfileVersion": "2024-12-26-v1",
-        "rawBaselineTokens": 25000,
-        "estimatedInputTokens": 3900,
-        "observedInputTokens": 3900,
-        "estimatedCachedTokens": 2000,
-        "observedCachedTokens": 2000,
-        "estimatedOutputTokens": 450,
-        "observedOutputTokens": 450,
-        "estimatedCostUSD": 0.00055,
-        "reconciledCostUSD": 0.00042,
-        "authoritativeLedgerCostUSD": 0.00042,
-        "cacheDiscountUSD": 0.00025,
-        "costEstimationErrorPercentage": 0,
-        "isPass": true
-      }
-    ],
-    "meanEstimationErrorPercentage": 0.01,
-    "maxEstimationErrorPercentage": 0.04,
-    "isAuthoritativePass": true
-  },
-  "networkReport": {
-    "measurementDate": "2026-09-01",
-    "filesScannedCount": 93,
-    "staticForbiddenPatternsChecked": [
-      "/\\brequire\\s*\\(\\s*['\"](http|https|http2|net|tls|dgram|axios|got|superagent|request|undici)['\"]\\s*\\)/i",
-      "/\\bimport\\s+.*?\\s+from\\s+['\"](http|https|http2|net|tls|dgram|axios|got|superagent|request|undici)['\"]/i",
-      "/\\b(fetch|axios|superagent)\\s*\\(/i",
-      "/\\bchild_process.*?\\b(curl|wget|nc|ncat|telnet)\\b/i"
-    ],
-    "staticFindings": [],
-    "runtimeUnauthorizedCalls": [],
-    "isStaticCertifiedClean": true,
-    "isRuntimeCertifiedClean": true,
-    "isOverallNetworkCertified": true
-  },
-  "mutationReport": {
-    "measurementDate": "2026-09-01",
-    "totalMutationsCreated": 1200,
-    "mutationsKilled": 1200,
-    "mutationsSurvived": 0,
-    "mutationScorePercentage": 100,
-    "survivingMutants": [],
-    "isCertifiedSensitive": true
-  },
-  "oracleReport": {
-    "measurementDate": "2026-09-01",
-    "totalOraclesChecked": 8,
-    "oraclesPassed": 7,
-    "results": [
-      {
-        "subsystem": "ContextKnapsackSolver",
-        "oracleName": "Exhaustive O(2^N) Combinatorial Brute-Force",
-        "oracleType": "mathematical_exhaustive",
-        "isPassed": true,
-        "verificationDetail": "DP Score: 205.6 vs Brute-Force Optimal: 128"
-      },
-      {
-        "subsystem": "TokenCounter",
-        "oracleName": "Independent Regex BPE Word-Piece Reference",
-        "oracleType": "ground_truth_reference",
-        "isPassed": false,
-        "verificationDetail": "TokenCounter: 31 vs Regex Oracle: 20"
-      },
-      {
-        "subsystem": "WorkspaceGraph",
-        "oracleName": "Fresh Clean Full-Rebuild Graph Oracle",
-        "oracleType": "clean_full_rebuild",
-        "isPassed": true,
-        "verificationDetail": "Incremental Node Count: 2 == Clean Rebuild: 2"
-      },
-      {
-        "subsystem": "SystemDependenceGraph",
-        "oracleName": "Hand-Annotated Semantic Ground Truth Dependency Set",
-        "oracleType": "ground_truth_reference",
-        "isPassed": true,
-        "verificationDetail": "All true data dependencies retained; orthogonal dead computation dropped"
-      },
-      {
-        "subsystem": "HybridRetriever",
-        "oracleName": "Hand-Labeled Query-to-Symbol Relevance Oracle",
-        "oracleType": "ground_truth_reference",
-        "isPassed": true,
-        "verificationDetail": "Top candidate: doc_target == doc_target (Recall@1 = 1.0)"
-      },
-      {
-        "subsystem": "CostCalculator",
-        "oracleName": "Authoritative Provider Billing Ledger Formula Oracle",
-        "oracleType": "authoritative_ledger",
-        "isPassed": true,
-        "verificationDetail": "Reconciled: $0.0078 == Authoritative Ledger: $0.00780"
-      },
-      {
-        "subsystem": "LegacyDifferential",
-        "oracleName": "Frozen v4.1.2 Release Golden Baseline Oracle",
-        "oracleType": "frozen_golden",
-        "isPassed": true,
-        "verificationDetail": "Legacy mode output matches frozen baseline token-for-token"
-      },
-      {
-        "subsystem": "LiveMetricsAggregator",
-        "oracleName": "Raw Event Stream Ledger Audit Oracle",
-        "oracleType": "raw_stream_ledger",
-        "isPassed": true,
-        "verificationDetail": "Live Aggregator maintains exact stream balance (Prompts: 7)"
-      }
-    ],
-    "is100PercentOracleCompliant": false
-  }
+  "gates": [
+    {
+      "id": "phase0-integrity",
+      "description": "Measurement-truth, claim-registry, provenance, and metadata checks",
+      "required": true,
+      "command": "C:\\Program Files\\nodejs\\node.exe scripts/verify-phase0.js",
+      "startedAt": "2026-09-01T14:26:47.216Z",
+      "durationMs": 159.57,
+      "exitCode": 0,
+      "status": "passed",
+      "error": null,
+      "stdoutTail": null,
+      "stderrTail": null
+    },
+    {
+      "id": "typescript",
+      "description": "Strict TypeScript compilation",
+      "required": true,
+      "command": "npm run compile -- --pretty false",
+      "startedAt": "2026-09-01T14:26:47.376Z",
+      "durationMs": 1043.84,
+      "exitCode": 0,
+      "status": "passed",
+      "error": null,
+      "stdoutTail": null,
+      "stderrTail": null
+    },
+    {
+      "id": "automated-tests",
+      "description": "Repository automated test suite",
+      "required": true,
+      "command": "npm test",
+      "startedAt": "2026-09-01T14:26:48.420Z",
+      "durationMs": 6404.62,
+      "exitCode": 0,
+      "status": "passed",
+      "error": null,
+      "stdoutTail": null,
+      "stderrTail": null
+    },
+    {
+      "id": "production-bundle",
+      "description": "Production extension bundle",
+      "required": true,
+      "command": "npm run package",
+      "startedAt": "2026-09-01T14:26:54.825Z",
+      "durationMs": 543.26,
+      "exitCode": 0,
+      "status": "passed",
+      "error": null,
+      "stdoutTail": null,
+      "stderrTail": null
+    },
+    {
+      "id": "vsix-package",
+      "description": "Create the exact VSIX artifact to be inspected",
+      "required": true,
+      "command": "npm run vsce:package",
+      "startedAt": "2026-09-01T14:26:55.368Z",
+      "durationMs": 1866.56,
+      "exitCode": 0,
+      "status": "passed",
+      "error": null,
+      "stdoutTail": null,
+      "stderrTail": null
+    }
+  ],
+  "limitations": [
+    "This report validates repository commands, not an installed VS Code Extension Host.",
+    "Controlled synthetic benchmarks do not establish upstream-model task-success uplift.",
+    "Artifact installation, parser loading, workspace-trust, and provider protocol certification remain future release gates."
+  ]
 }

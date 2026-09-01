@@ -37,7 +37,7 @@ async function run() {
     console.log(`• Average Compile Latency:  ${hybridMetrics.averageLatencyMs}ms`);
 
     console.log('\n====================================================================================');
-    console.log('🎉 PHASE 0 BASELINE ARCHITECTURE SAFETY HARNESS: 100% SUCCESS');
+    console.log('PHASE 0 CONTROLLED SYNTHETIC BENCHMARK COMPLETED');
     console.log('====================================================================================\n');
 }
 

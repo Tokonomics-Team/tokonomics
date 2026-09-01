@@ -26,7 +26,6 @@ async function main() {
     const entryContent = `
 import { runGovernorTests } from '../tests/governor.test';
 import { ReportGenerator } from '../validation/reports/reportGenerator';
-import { ValidationDashboard } from '../validation/dashboard/validationDashboard';
 import { LatencyBreakdownProfiler } from '../src/evaluation/latencyProfiler';
 import { MemoryProfiler } from '../src/evaluation/memoryProfiler';
 import { AdversarialSdgEvaluator } from '../src/evaluation/adversarialSdgCorpus';
@@ -50,16 +49,8 @@ export async function runAllValidationPhases() {
     const reportRes = await ReportGenerator.runCompleteValidationSuite();
 
     console.log('\\n>>> [4/4] EMITTING DASHBOARD & CANONICAL FINAL VALIDATION ARTIFACTS...');
-    console.log(ValidationDashboard.renderSummary({
-        totalTasks: 160,
-        tokenReductionPct: 80.5,
-        costReductionPct: 85.5,
-        baselineTaskSuccessPct: 65.6,
-        tokonomicsTaskSuccessPct: 100.0,
-        taskSuccessDeltaPct: 34.4,
-        p50LatencyMs: latencyReport.totalCompilerWarmP50Ms,
-        degradationsCount: 0
-    }));
+    console.log('Controlled synthetic validation summary: ' + reportRes.summary);
+    console.log('Measured compiler warm p50: ' + latencyReport.totalCompilerWarmP50Ms + 'ms');
 
     console.log('  ✓ Emitted JSON Report: ' + reportRes.reportJsonPath);
     console.log('  ✓ Emitted Markdown Report: ' + reportRes.reportMdPath);
@@ -84,7 +75,7 @@ export async function runAllValidationPhases() {
 
     const { runAllValidationPhases } = require(runnerBundlePath);
     await runAllValidationPhases();
-    console.log('\n🎉 ALL 28 VALIDATION PHASES COMPLETED WITH 100% PRODUCTION APPROVAL.\n');
+    console.log('\nControlled synthetic validation completed. This is not production approval.\n');
 }
 
 main().catch(err => {

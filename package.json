@@ -1,7 +1,7 @@
 {
   "name": "tokonomics",
   "displayName": "Tokonomics 5.1.1 — The Local Context Compiler & Real-Time Analytics",
-  "description": "The Local Context Compiler for VS Code. Cut AI coding token costs by 65-88%. 16-stage context compilation, real-time analytics dashboard, multi-language AST structural pruning, and prompt cache alignment for Claude, GPT-4o, Copilot, Gemini & DeepSeek.",
+  "description": "A local context-compilation and token-analysis extension for VS Code. Optimization results vary by task, model, and workspace.",
   "version": "5.1.1",
   "publisher": "tokonomics",
   "license": "SEE LICENSE IN LICENSE.txt",
@@ -53,14 +53,14 @@
   },
   "badges": [
     {
-      "url": "https://img.shields.io/badge/Privacy-100%25%20Local-success.svg",
+      "url": "https://img.shields.io/badge/Processing-Local%20Compiler-success.svg",
       "href": "https://tokonomics-team.github.io/tokonomics#privacy",
-      "description": "100% Local Execution"
+      "description": "Local context compilation; prompts are sent to the selected upstream model provider"
     },
     {
-      "url": "https://img.shields.io/badge/Token%20Savings-65%25%20--%2088%25-brightgreen.svg",
+      "url": "https://img.shields.io/badge/Benchmarks-Controlled%20Synthetic-yellow.svg",
       "href": "https://tokonomics-team.github.io/tokonomics#benchmarks",
-      "description": "Token Reduction"
+      "description": "Controlled synthetic benchmark results; production savings are not yet certified"
     }
   ],
   "capabilities": {
@@ -426,6 +426,7 @@
     "certify:fast": "node scripts/run-tests.js",
     "certify": "node scripts/certify.js",
     "certify:deep": "node scripts/certify-deep.js",
+    "verify:phase0": "node scripts/verify-phase0.js",
     "validate": "node scripts/validate.js",
     "validate:all": "node scripts/validate-all.js",
     "audit:clean-room": "node scripts/clean-room-audit.js",

@@ -1,14 +1,14 @@
-# 🧪 Tokonomics Final Non-Production Validation & Code-Accuracy Report
+# 🧪 Tokonomics Controlled Synthetic Validation Report
 
-> **Tokonomics Version**: `5.1.1`  
-> **Commit SHA**: `aadbff9`  
-> **Evaluation Date**: `2026-09-01`  
-> **Execution Duration**: `0.83s`  
-> **Production Decision**: **APPROVED FOR GLOBAL PRODUCTION ROLLOUT**
+> **Tokonomics Version**: `5.1.1`
+> **Commit SHA**: `ea24a265d2757e7faf4a2f3779fa57b3e44f1daa`
+> **Evaluation Date**: `2026-09-01`
+> **Execution Duration**: `0.84s`
+> **Production Decision**: **NOT EVALUATED — CONTROLLED SYNTHETIC HARNESS ONLY**
 
 ---
 
-## SECTION A — Production Correctness & Performance Overhead
+## SECTION A — Synthetic Harness Assertions & Performance Samples
 
 | Subsystem / Metric | Validation Standard | Observed Result | Status |
 | :--- | :--- | :---: | :---: |
@@ -22,7 +22,7 @@
 
 ---
 
-## SECTION B — Downstream Code Quality Preservation ($N=160$)
+## SECTION B — Predetermined Fixture Outcomes ($N=160$)
 
 | Metric | Baseline (Without Tokonomics) | Tokonomics (Compiler Enabled) | Net Delta |
 | :--- | :---: | :---: | :---: |
@@ -47,7 +47,7 @@
 
 ---
 
-## SECTION C — Optimization Impact & Layer-by-Layer Causal Attribution
+## SECTION C — Synthetic Transformation Samples & Layer Attribution
 
 - **Average Token Reduction**: **-99.2%** (11,512 $\to$ 91 tokens)
 - **Effective Cost Savings**: **-104.2%** (accounting for prefix cache read discounts)
@@ -96,9 +96,12 @@
 
 ---
 
-## SECTION D — Release Recommendation
+## SECTION D — Limitations
 
-Tokonomics **5.1.1** with the **Deterministic Context Governor** meets all production safety invariants:
+This harness uses predetermined fixed and buggy patches. It does not invoke an upstream model
+and cannot establish production task-success uplift, billed provider savings, or installed-VSIX
+behavior. The following statements describe assertions made by the synthetic fixtures, not a
+release recommendation:
 1. **Zero downstream code degradation**: $+20\%$ task success delta.
 2. **Deterministic safety**: High-risk tasks automatically downgrade optimization aggressiveness.
 3. **Fail-closed evidence gate**: Optimization is rejected if critical evidence is missing.

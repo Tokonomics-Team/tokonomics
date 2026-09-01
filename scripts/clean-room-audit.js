@@ -11,7 +11,7 @@ const fs = require('fs');
 
 async function main() {
     console.log('====================================================================================');
-    console.log('🏛️  TOKONOMICS MASTER CLEAN-ROOM FORENSIC AUDIT & CERTIFICATION HARNESS');
+    console.log('TOKONOMICS CONTROLLED SYNTHETIC FORENSIC AUDIT HARNESS');
     console.log('====================================================================================\n');
 
     const outTestDir = path.resolve(__dirname, '..', 'out_test');
@@ -74,7 +74,7 @@ export async function runCleanRoomAudit() {
     }
 
     console.log('\\n====================================================================================');
-    console.log('🎉 MASTER CLEAN-ROOM AUDIT COMPLETED — ALL 26 CORRECTIONS FULLY CERTIFIED');
+    console.log('CONTROLLED SYNTHETIC AUDIT COMPLETED — NOT RELEASE CERTIFICATION');
     console.log('====================================================================================\\n');
 }
 `;

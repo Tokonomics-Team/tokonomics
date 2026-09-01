@@ -77,7 +77,7 @@ export class ReportGenerator {
         const finalReport = {
             metadata: reproducibility,
             executionDurationSec: durationSec,
-            sectionA_ProductionCorrectness: {
+            sectionA_SyntheticHarnessAssertions: {
                 pipelineIntegrity: 'PASS (100% Contract Compliant)',
                 deterministicGovernorCorrectness: 'PASS (Deterministic Repeatability & Invariants Verified)',
                 governorOverheadMs: 0.02,
@@ -87,7 +87,7 @@ export class ReportGenerator {
                 networkIsolation: 'PASS (0 Static AST References & 0 Runtime Socket Calls)',
                 packageIsolation: 'PASS (validation/ strictly excluded from production bundle & VSIX)'
             },
-            sectionB_CodeQualityPreservation: {
+            sectionB_PredeterminedFixtureOutcomes: {
                 totalBenchmarkTasks: totalTasks,
                 trainingSplitTasks: ValidationTaskCorpus.getTasksBySplit('train').length,
                 validationSplitTasks: ValidationTaskCorpus.getTasksBySplit('validation').length,
@@ -102,7 +102,7 @@ export class ReportGenerator {
                 degradationIncidentsCount: degradations.length,
                 languages: languageValidation
             },
-            sectionC_OptimizationImpact: {
+            sectionC_CompilerTransformationSamples: {
                 baselineAverageTokens: Math.round(baseTokens),
                 tokonomicsAverageTokens: Math.round(tokTokens),
                 tokenReductionPct,
@@ -113,21 +113,22 @@ export class ReportGenerator {
                 repoComplexityTiers: repoComplexity,
                 adversarialScenariosTested: adversarialValidation.totalAdversarialScenarios
             },
-            finalProductionRecommendation: 'APPROVED_FOR_GLOBAL_ROLLOUT'
+            benchmarkClassification: 'CONTROLLED_SYNTHETIC_NOT_RELEASE_EVIDENCE',
+            finalProductionRecommendation: 'NOT_EVALUATED_BY_THIS_SYNTHETIC_HARNESS'
         };
 
         // 5. Emit Markdown Report
-        const mdContent = `# 🧪 Tokonomics Final Non-Production Validation & Code-Accuracy Report
+        const mdContent = `# 🧪 Tokonomics Controlled Synthetic Validation Report
 
-> **Tokonomics Version**: \`${reproducibility.tokonomicsVersion}\`  
-> **Commit SHA**: \`${reproducibility.repositoryCommitSha}\`  
-> **Evaluation Date**: \`${reproducibility.timestamp.split('T')[0]}\`  
-> **Execution Duration**: \`${durationSec}s\`  
-> **Production Decision**: **APPROVED FOR GLOBAL PRODUCTION ROLLOUT**
+> **Tokonomics Version**: \`${reproducibility.tokonomicsVersion}\`
+> **Commit SHA**: \`${reproducibility.repositoryCommitSha}\`
+> **Evaluation Date**: \`${reproducibility.timestamp.split('T')[0]}\`
+> **Execution Duration**: \`${durationSec}s\`
+> **Production Decision**: **NOT EVALUATED — CONTROLLED SYNTHETIC HARNESS ONLY**
 
 ---
 
-## SECTION A — Production Correctness & Performance Overhead
+## SECTION A — Synthetic Harness Assertions & Performance Samples
 
 | Subsystem / Metric | Validation Standard | Observed Result | Status |
 | :--- | :--- | :---: | :---: |
@@ -141,11 +142,11 @@ export class ReportGenerator {
 
 ---
 
-## SECTION B — Downstream Code Quality Preservation ($N=${totalTasks}$)
+## SECTION B — Predetermined Fixture Outcomes ($N=${totalTasks}$)
 
 | Metric | Baseline (Without Tokonomics) | Tokonomics (Compiler Enabled) | Net Delta |
 | :--- | :---: | :---: | :---: |
-| **Compile Success Rate** | ${finalReport.sectionB_CodeQualityPreservation.baselineCompileSuccessPct}% | **${finalReport.sectionB_CodeQualityPreservation.tokonomicsCompileSuccessPct}%** | +${Math.round((finalReport.sectionB_CodeQualityPreservation.tokonomicsCompileSuccessPct - finalReport.sectionB_CodeQualityPreservation.baselineCompileSuccessPct) * 10) / 10}% |
+| **Compile Success Rate** | ${finalReport.sectionB_PredeterminedFixtureOutcomes.baselineCompileSuccessPct}% | **${finalReport.sectionB_PredeterminedFixtureOutcomes.tokonomicsCompileSuccessPct}%** | +${Math.round((finalReport.sectionB_PredeterminedFixtureOutcomes.tokonomicsCompileSuccessPct - finalReport.sectionB_PredeterminedFixtureOutcomes.baselineCompileSuccessPct) * 10) / 10}% |
 | **Unit Test Pass Rate** | 64.0% | **100.0%** | +36.0% |
 | **Behavioral Correctness** | 43.1% | **100.0%** | +56.9% |
 | **Overall Task Success** | ${baseSuccessRate}% | **${tokSuccessRate}%** | **+${delta}%** |
@@ -159,7 +160,7 @@ ${languageValidation.map(l => `| **${l.language}** | \`${l.constructsTested.join
 
 ---
 
-## SECTION C — Optimization Impact & Layer-by-Layer Causal Attribution
+## SECTION C — Synthetic Transformation Samples & Layer Attribution
 
 - **Average Token Reduction**: **-${tokenReductionPct}%** (${Math.round(baseTokens).toLocaleString()} $\\to$ ${Math.round(tokTokens).toLocaleString()} tokens)
 - **Effective Cost Savings**: **-${costReductionPct}%** (accounting for prefix cache read discounts)
@@ -181,9 +182,12 @@ ${paretoFrontier.map(p => `| **${p.aggressivenessLevelPct}%** | -${p.tokenReduct
 
 ---
 
-## SECTION D — Release Recommendation
+## SECTION D — Limitations
 
-Tokonomics **5.1.1** with the **Deterministic Context Governor** meets all production safety invariants:
+This harness uses predetermined fixed and buggy patches. It does not invoke an upstream model
+and cannot establish production task-success uplift, billed provider savings, or installed-VSIX
+behavior. The following statements describe assertions made by the synthetic fixtures, not a
+release recommendation:
 1. **Zero downstream code degradation**: $+${delta}\\%$ task success delta.
 2. **Deterministic safety**: High-risk tasks automatically downgrade optimization aggressiveness.
 3. **Fail-closed evidence gate**: Optimization is rejected if critical evidence is missing.
