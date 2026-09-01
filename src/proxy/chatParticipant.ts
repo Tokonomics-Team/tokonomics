@@ -594,11 +594,27 @@ export function registerChatParticipant(
                 response.markdown(chunk);
             }
 
-            // Post-Inference Reconcile Event
+            // Post-Inference Reconcile Event using real model pricing and verified provider usage
             const outputTokens = TokenCounter.countTokens(completeResponseText);
             const responseUsage = (llmResponse as any)?.usage || (llmResponse as any)?.result?.usage;
-            const actualCachedTokens = responseUsage?.cachedTokens ?? 
-                (responseUsage?.cache_read_input_tokens ?? (compileResult.cachePlan?.isCacheEligible ? compileResult.cachePlan.staticPrefixTokens : 0));
+            const confirmedCachedTokens = responseUsage?.cachedTokens ?? 
+                (responseUsage?.cache_read_input_tokens ?? 0);
+
+            const modelId = targetModel.id || targetModel.name || 'claude-3-7-sonnet';
+            const costProj = CostCalculator.calculateProjectedCost(
+                originalTokens,
+                optimizedTokens,
+                compileResult.cachePlan?.staticPrefixTokens || 0,
+                modelId
+            );
+
+            const costReconciled = CostCalculator.calculateReconciledCost(
+                optimizedTokens,
+                confirmedCachedTokens,
+                outputTokens,
+                originalTokens,
+                modelId
+            );
 
             const reconciledEvent: PromptOptimizationEvent = {
                 id: `opt_rec_${Date.now()}`,
@@ -608,20 +624,20 @@ export function registerChatParticipant(
                 taskType: (diffAnalysis.intent === 'edit' ? 'refactor' : (diffAnalysis.intent === 'question' ? 'explain' : (diffAnalysis.intent || 'debug'))) as any,
                 taskConfidence: compileResult.contextQuality.predictedCQ / 100,
                 provider: (targetModel.vendor || 'anthropic') as any,
-                model: targetModel.id || 'claude-3-7-sonnet',
+                model: modelId,
                 rawInputTokens: originalTokens,
                 optimizedInputTokens: optimizedTokens,
                 savedTokens: savedTokens,
                 reductionPercentage: reductionPercentage,
                 cacheableTokens: compileResult.cachePlan?.staticPrefixTokens || 0,
-                cachedTokens: actualCachedTokens,
-                projectedRawCostUSD: (originalTokens / 1_000_000) * 3.00,
-                projectedOptimizedCostUSD: (optimizedTokens / 1_000_000) * 0.30,
-                projectedSavingsUSD: costSavedUSD,
+                cachedTokens: confirmedCachedTokens,
+                projectedRawCostUSD: costProj.rawCostUSD,
+                projectedOptimizedCostUSD: costProj.optimizedCostUSD,
+                projectedSavingsUSD: costProj.savingsUSD,
                 outputTokens: outputTokens,
-                actualRawCostUSD: (originalTokens / 1_000_000) * 3.00,
-                actualOptimizedCostUSD: (optimizedTokens / 1_000_000) * 0.30,
-                actualSavingsUSD: costSavedUSD,
+                actualRawCostUSD: costReconciled.actualRawCostUSD,
+                actualOptimizedCostUSD: costReconciled.actualOptimizedCostUSD,
+                actualSavingsUSD: costReconciled.actualSavingsUSD,
                 isCostReconciled: true,
                 predictedCQ: compileResult.contextQuality.predictedCQ,
                 evidenceCoverage: compileResult.contextQuality.breakdown.evidenceCoverage,
@@ -629,10 +645,7 @@ export function registerChatParticipant(
                 cqRating: compileResult.contextQuality.rating,
                 totalOptimizationLatencyMs: compileResult.trace.latencyMs,
                 stageMetrics: [
-                    { stageName: 'SufficiencyEngine', tokensBefore: originalTokens, tokensAfter: originalTokens, tokensSaved: 0, latencyMs: 0.02 },
-                    { stageName: 'ASTStructuralPruning', tokensBefore: originalTokens, tokensAfter: Math.round(originalTokens * 0.7), tokensSaved: Math.round(originalTokens * 0.3), latencyMs: 0.04 },
-                    { stageName: 'SDGSlicing', tokensBefore: Math.round(originalTokens * 0.7), tokensAfter: Math.round(originalTokens * 0.4), tokensSaved: Math.round(originalTokens * 0.3), latencyMs: 0.04 },
-                    { stageName: 'KnapsackDP', tokensBefore: Math.round(originalTokens * 0.4), tokensAfter: optimizedTokens, tokensSaved: Math.max(0, Math.round(originalTokens * 0.4) - optimizedTokens), latencyMs: 0.03 }
+                    { stageName: 'ContextKnapsackCompiler', tokensBefore: originalTokens, tokensAfter: optimizedTokens, tokensSaved: savedTokens, latencyMs: compileResult.trace.latencyMs }
                 ],
                 contextItemCount: rawMessages.length,
                 traceId: compileResult.trace.stage

@@ -13,6 +13,7 @@ import { ContextAnalyzer } from './contextAnalyzer';
 import { MessagePayload, TargetProvider, TokenOptimizationConfig } from '../types';
 import { OptimizationEventBus, PromptOptimizationEvent } from '../events/optimizationEvent';
 import { TokenCounter } from '../engine/tokenizer';
+import { CostCalculator } from '../cost/costCalculator';
 
 export class TokenOptimizerLanguageModelProvider {
     constructor(
@@ -113,13 +114,28 @@ export class TokenOptimizerLanguageModelProvider {
             progress.report({ index: 0, part: new vscode.LanguageModelTextPart(fragment) });
         }
 
-        // Post-Inference Reconcile Event from live Model Provider proxy turn
+        // Post-Inference Reconcile Event from live Model Provider proxy turn using authentic pricing
         const outputTokens = TokenCounter.countTokens(completeResponseText);
         const responseUsage = (response as any)?.usage || (response as any)?.result?.usage;
-        const actualCachedTokens = responseUsage?.cachedTokens ?? 
+        const confirmedCachedTokens = responseUsage?.cachedTokens ?? 
             (responseUsage?.cache_read_input_tokens ?? 0);
 
-        const costSavedUSD = (stats.originalTokens - stats.optimizedTokens) / 1_000_000 * 3.00;
+        const modelId = targetModel.id || targetModel.name || detectedFamily || 'claude-3-7-sonnet';
+        const costProj = CostCalculator.calculateProjectedCost(
+            stats.originalTokens,
+            stats.optimizedTokens,
+            0,
+            modelId
+        );
+
+        const costReconciled = CostCalculator.calculateReconciledCost(
+            stats.optimizedTokens,
+            confirmedCachedTokens,
+            outputTokens,
+            stats.originalTokens,
+            modelId
+        );
+
         const reconciledEvent: PromptOptimizationEvent = {
             id: `opt_rec_proxy_${Date.now()}`,
             timestamp: Date.now(),
@@ -128,20 +144,20 @@ export class TokenOptimizerLanguageModelProvider {
             taskType: 'general',
             taskConfidence: 0.95,
             provider: (targetModel.vendor || effectiveProvider) as any,
-            model: targetModel.id || detectedFamily || 'auto',
+            model: modelId,
             rawInputTokens: stats.originalTokens,
             optimizedInputTokens: stats.optimizedTokens,
             savedTokens: stats.originalTokens - stats.optimizedTokens,
             reductionPercentage: stats.reductionPercentage,
             cacheableTokens: 0,
-            cachedTokens: actualCachedTokens,
-            projectedRawCostUSD: (stats.originalTokens / 1_000_000) * 3.00,
-            projectedOptimizedCostUSD: (stats.optimizedTokens / 1_000_000) * 0.30,
-            projectedSavingsUSD: costSavedUSD,
+            cachedTokens: confirmedCachedTokens,
+            projectedRawCostUSD: costProj.rawCostUSD,
+            projectedOptimizedCostUSD: costProj.optimizedCostUSD,
+            projectedSavingsUSD: costProj.savingsUSD,
             outputTokens: outputTokens,
-            actualRawCostUSD: (stats.originalTokens / 1_000_000) * 3.00,
-            actualOptimizedCostUSD: (stats.optimizedTokens / 1_000_000) * 0.30,
-            actualSavingsUSD: costSavedUSD,
+            actualRawCostUSD: costReconciled.actualRawCostUSD,
+            actualOptimizedCostUSD: costReconciled.actualOptimizedCostUSD,
+            actualSavingsUSD: costReconciled.actualSavingsUSD,
             isCostReconciled: true,
             predictedCQ: 95.0,
             evidenceCoverage: 0.95,
