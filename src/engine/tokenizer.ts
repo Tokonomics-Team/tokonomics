@@ -1,6 +1,7 @@
 /**
- * High-Performance BPE-Calibrated Tokenizer & Token Counter
- * Optimized for ultra-low latency (< 0.05ms) with zero memory leaks.
+ * High-Performance Statistical Token Estimation & Token Counter
+ * Uses character-density and regex heuristics calibrated against cl100k/o200k ratios
+ * for sub-millisecond (< 0.05ms) compile-time context sizing without binary WASM dependencies.
  */
 
 export class TokenCounter {
