@@ -22,8 +22,20 @@ export interface OptimizationTrace {
 }
 
 export class TraceLogger {
+    private static instance: TraceLogger;
     private traces: OptimizationTrace[] = [];
     private maxTraces: number = 50;
+
+    /**
+     * Singleton accessor to ensure traces recorded during compilation
+     * are universally available to slash commands and UI explainers.
+     */
+    public static getInstance(): TraceLogger {
+        if (!TraceLogger.instance) {
+            TraceLogger.instance = new TraceLogger();
+        }
+        return TraceLogger.instance;
+    }
 
     public recordTrace(trace: OptimizationTrace): void {
         this.traces.push(trace);

@@ -52,7 +52,7 @@ export interface ContextCompileResult {
 }
 
 export class PipelineOrchestrator {
-    private traceLogger: TraceLogger = new TraceLogger();
+    private traceLogger: TraceLogger = TraceLogger.getInstance();
     private knapsackSolver: ContextKnapsackSolver = new ContextKnapsackSolver();
     private cqEvaluator: ContextQualityEvaluator = new ContextQualityEvaluator();
     private sdgSlicer: SystemDependenceGraph = new SystemDependenceGraph();
@@ -70,6 +70,14 @@ export class PipelineOrchestrator {
 
     public getTraceLogger(): TraceLogger {
         return this.traceLogger;
+    }
+
+    public getRamManager(): RamContextManager | undefined {
+        return this.ramManager;
+    }
+
+    public setRamManager(ram: RamContextManager): void {
+        this.ramManager = ram;
     }
 
     /**
@@ -105,6 +113,18 @@ export class PipelineOrchestrator {
                 evidence: governorDecision.riskReasons.length > 0 ? governorDecision.riskReasons : ['IntentExtractor', 'EvidencePolicyMatrix']
             }
         ];
+
+        // 1b. In-Memory RAM Context Accelerator Invariant
+        if (this.ramManager) {
+            const stats = this.ramManager.getStats();
+            decisions.push({
+                itemId: 'ram_context_accelerator',
+                action: 'include',
+                reason: `RAM accelerator active (${stats.skeletonsCached} cached AST skeletons, ${stats.symbolsIndexed} indexed symbols, ${stats.hitRatePercentage}% hit rate)`,
+                confidence: 1.0,
+                evidence: ['RamContextManager', 'BM25SymbolIndex', 'ASTMemoization']
+            });
+        }
         let cqReport: ContextQualityReport;
         let cachePlanResult: CachePlanResult | undefined;
 

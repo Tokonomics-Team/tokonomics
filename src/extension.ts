@@ -54,19 +54,20 @@ export async function activate(context: vscode.ExtensionContext) {
     const cacheAligner = new CacheAlignerEngine();
     const metricsTracker = new MetricsTracker(context.globalState);
     const localHistoryStore = LocalHistoryStore.getInstance(context.globalState);
-    const pipelineOrchestrator = new PipelineOrchestrator(astEngine, undefined, cacheAligner, metricsTracker);
+
+    // Initialize RAM Context Manager first with user-configured budget (matching package.json default: true)
+    const ramManager = new RamContextManager(astEngine, {
+        ramBudgetMB: optConf.get<number>('ramBudgetMB', 64),
+        enableBackgroundWarming: optConf.get<boolean>('enableBackgroundRamWarming', true),
+        enableSemanticIndex: optConf.get<boolean>('enableRamSemanticIndex', true)
+    }, workspaceRoot);
+
+    const pipelineOrchestrator = new PipelineOrchestrator(astEngine, ramManager, cacheAligner, metricsTracker);
     const contextAnalyzer = new ContextAnalyzer(astEngine, cacheAligner, metricsTracker, pipelineOrchestrator);
     const fileWatchIndex = new FileWatchIndex(workspaceRoot);
     const cacheMaxSize = optConf.get<number>('responseCacheMaxSize', 100);
     const responseCache = new ResponseCache(cacheMaxSize);
     const reviewPrompter = new ReviewPrompter(context.globalState);
-
-    // Initialize RAM Context Manager with user-configured budget
-    const ramManager = new RamContextManager(astEngine, {
-        ramBudgetMB: optConf.get<number>('ramBudgetMB', 64),
-        enableBackgroundWarming: optConf.get<boolean>('enableBackgroundRamWarming', false),
-        enableSemanticIndex: optConf.get<boolean>('enableRamSemanticIndex', true)
-    }, workspaceRoot);
 
     // 2. Setup Document Watchers for Incremental Indexing & RAM Cache Invalidation
     context.subscriptions.push(
@@ -103,7 +104,7 @@ export async function activate(context: vscode.ExtensionContext) {
                 const conf = vscode.workspace.getConfiguration('tokenOptimizer');
                 ramManager.updateConfig({
                     ramBudgetMB: conf.get<number>('ramBudgetMB', 64),
-                    enableBackgroundWarming: conf.get<boolean>('enableBackgroundRamWarming', false),
+                    enableBackgroundWarming: conf.get<boolean>('enableBackgroundRamWarming', true),
                     enableSemanticIndex: conf.get<boolean>('enableRamSemanticIndex', true)
                 });
             }
@@ -116,8 +117,8 @@ export async function activate(context: vscode.ExtensionContext) {
         })
     );
 
-    // Background RAM Pre-Warming (Only if explicitly enabled by user)
-    if (workspaceRoot && optConf.get<boolean>('enableBackgroundRamWarming', false)) {
+    // Background RAM Pre-Warming (Enabled by default per package.json manifest)
+    if (workspaceRoot && optConf.get<boolean>('enableBackgroundRamWarming', true)) {
         setTimeout(() => {
             ramManager.warmWorkspace(workspaceRoot).then(res => {
                 console.log(`[Tokonomics] RAM Pre-Warm complete: ${res.skeletonsCached} skeletons, ${res.symbolsIndexed} symbols in ${res.durationMs}ms`);
@@ -313,8 +314,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(
         vscode.commands.registerCommand('tokenOptimizer.explainTrace', async () => {
-            const orchestrator = new PipelineOrchestrator(astEngine, ramManager, cacheAligner, metricsTracker);
-            const traces = orchestrator.getTraceLogger().getTraces();
+            const traces = pipelineOrchestrator.getTraceLogger().getTraces();
             const traceText = traces.length > 0
                 ? JSON.stringify(traces[traces.length - 1], null, 2)
                 : 'No recent context compilation traces recorded in this session.';

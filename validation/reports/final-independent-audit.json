@@ -20,9 +20,9 @@
     "ramTotalGB": 31.1,
     "tokenizerVersion": "Claude-BPE-v2 / o200k_base",
     "pricingProfileVersion": "2025-02-19-v1",
-    "timestamp": "2026-09-01T11:51:04.566Z"
+    "timestamp": "2026-09-01T12:05:37.289Z"
   },
-  "executionDurationSec": "0.73",
+  "executionDurationSec": "0.80",
   "section01_ArchitectureCoverage": {
     "featureCoveragePct": 100,
     "reachabilityPct": 100,
@@ -33,7 +33,7 @@
     "governorIntegrated": true,
     "orchestratorExecuted": true,
     "finalContextPacked": true,
-    "latencyMs": 0.08
+    "latencyMs": 0.07
   },
   "section03_Governor": {
     "intentPrecisionPct": 100,
@@ -725,7 +725,7 @@
   "section28_Reproducibility": {
     "gitSha": "aadbff9",
     "datasetSha256": "754d1fa43e95396c1be1c07586326e0dc798871d272390a3657bfe09ef3927cd",
-    "timestamp": "2026-09-01T11:51:04.566Z"
+    "timestamp": "2026-09-01T12:05:37.289Z"
   },
   "section29_RedTeamAudit": {
     "totalAdversarialChallenges": 12,

@@ -6,6 +6,8 @@ import { PipelineOrchestrator } from '../src/engine/pipelineOrchestrator';
 import { AstPrunerEngine } from '../src/ast/pruner';
 import { FeatureFlagRegistry } from '../src/engine/featureFlags';
 import { MessagePayload } from '../src/types';
+import { TraceLogger } from '../src/engine/traceLogger';
+import { RamContextManager } from '../src/engine/ramManager';
 
 export async function runCompilerIntegrationTests(): Promise<boolean> {
     console.log('\n--- Running Phase 16 Full Context Compiler Integration Tests ---');
@@ -77,8 +79,16 @@ export class CheckoutController {
         throw new Error(`Context compiler CQ below acceptable threshold: ${result.contextQuality.predictedCQ}%`);
     }
 
-    if (result.trace.decisions.length === 0) {
-        throw new Error(`Trace logger failed to record optimization decisions`);
+    // Verify TraceLogger Singleton & RamManager wiring
+    const singletonTraces = TraceLogger.getInstance().getTraces();
+    if (singletonTraces.length === 0) {
+        throw new Error('TraceLogger.getInstance() failed to record compilation trace globally');
+    }
+
+    const ramManager = new RamContextManager(astEngine);
+    orchestrator.setRamManager(ramManager);
+    if (!orchestrator.getRamManager()) {
+        throw new Error('PipelineOrchestrator failed to retain RamManager instance');
     }
 
     console.log(`[Compiler Integration] Pipeline Mode: ${result.pipelineModeUsed.toUpperCase()}`);
@@ -86,6 +96,7 @@ export class CheckoutController {
     console.log(`[Compiler Integration] Context Quality: ${result.contextQuality.predictedCQ}% [${result.contextQuality.rating}]`);
     console.log(`[Compiler Integration] Decisions Logged: ${result.trace.decisions.length} (Stage: ${result.trace.stage})`);
     console.log(`[Compiler Integration] Effective Cost Saved: $${result.effectiveCostSavedUSD.toFixed(5)} USD`);
+    console.log(`[Compiler Integration] TraceLogger Singleton Traces Retrievable: ${singletonTraces.length}`);
 
     console.log('✓ Full Context Compiler end-to-end integration verified.');
 
