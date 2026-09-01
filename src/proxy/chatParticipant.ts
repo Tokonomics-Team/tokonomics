@@ -596,6 +596,10 @@ export function registerChatParticipant(
 
             // Post-Inference Reconcile Event
             const outputTokens = TokenCounter.countTokens(completeResponseText);
+            const responseUsage = (llmResponse as any)?.usage || (llmResponse as any)?.result?.usage;
+            const actualCachedTokens = responseUsage?.cachedTokens ?? 
+                (responseUsage?.cache_read_input_tokens ?? (compileResult.cachePlan?.isCacheEligible ? compileResult.cachePlan.staticPrefixTokens : 0));
+
             const reconciledEvent: PromptOptimizationEvent = {
                 id: `opt_rec_${Date.now()}`,
                 timestamp: Date.now(),
@@ -610,7 +614,7 @@ export function registerChatParticipant(
                 savedTokens: savedTokens,
                 reductionPercentage: reductionPercentage,
                 cacheableTokens: compileResult.cachePlan?.staticPrefixTokens || 0,
-                cachedTokens: compileResult.cachePlan?.isCacheEligible ? compileResult.cachePlan.staticPrefixTokens : 0,
+                cachedTokens: actualCachedTokens,
                 projectedRawCostUSD: (originalTokens / 1_000_000) * 3.00,
                 projectedOptimizedCostUSD: (optimizedTokens / 1_000_000) * 0.30,
                 projectedSavingsUSD: costSavedUSD,
