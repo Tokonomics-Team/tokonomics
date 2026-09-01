@@ -1,31 +1,31 @@
 # Tokonomics Development Validation Report
 
-> Decision: **VALIDATION_PASSED_DIRTY_WORKTREE**
+> Decision: **VALIDATION_PASSED_NOT_RELEASE_CERTIFIED**
 > Classification: **development-validation**
 > Release certified: **No**
-> Generated: `2026-09-01T14:26:57.347Z`
+> Generated: `2026-09-01T14:28:41.616Z`
 
 ## Reproducibility
 
-- Commit: `ea24a265d2757e7faf4a2f3779fa57b3e44f1daa`
+- Commit: `4359933c62ad57703c602db8b88f28b3da84f9d0`
 - Branch: `main`
-- Clean before validation: **no**
+- Clean before validation: **yes**
 - Package: `tokonomics@5.1.1`
 - Lock metadata consistent: **yes**
 - Dataset SHA-256: `0347d021aa250511b865a987c4fdf4dee8586335e5f48fdba4a79efdc6fed1d2`
 - Node: `v24.19.0`
 - Platform: `win32/x64`
-- Artifact: `tokonomics-5.1.1.vsix` (822503 bytes, SHA-256 `57785f30162b5c8687ac7273e0618cc618c2a3605b1c35c4281cf609df6ea76a`)
+- Artifact: `tokonomics-5.1.1.vsix` (822503 bytes, SHA-256 `51052d79fa6046cba2bd4792c9ab64b051b57d30001312890e6474fc152f01e6`)
 
 ## Executed gates
 
 | Gate | Description | Required | Result | Duration (ms) |
 |---|---|---:|---:|---:|
-| phase0-integrity | Measurement-truth, claim-registry, provenance, and metadata checks | yes | PASS | 159.57 |
-| typescript | Strict TypeScript compilation | yes | PASS | 1043.84 |
-| automated-tests | Repository automated test suite | yes | PASS | 6404.62 |
-| production-bundle | Production extension bundle | yes | PASS | 543.26 |
-| vsix-package | Create the exact VSIX artifact to be inspected | yes | PASS | 1866.56 |
+| phase0-integrity | Measurement-truth, claim-registry, provenance, and metadata checks | yes | PASS | 160.64 |
+| typescript | Strict TypeScript compilation | yes | PASS | 1059.95 |
+| automated-tests | Repository automated test suite | yes | PASS | 6392.63 |
+| production-bundle | Production extension bundle | yes | PASS | 592.22 |
+| vsix-package | Create the exact VSIX artifact to be inspected | yes | PASS | 1905.89 |
 
 ## Limitations
 
