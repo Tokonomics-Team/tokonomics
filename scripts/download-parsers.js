@@ -1,3 +1,11 @@
+/**
+ * Optional Developer Utility: Download Tree-Sitter WASM Grammars
+ * 
+ * Note: Tokonomics' default production engine is the pure TypeScript Stateful AST Slicer,
+ * which requires zero binary/WASM files and runs across 14 languages out of the box.
+ * This script is an optional developer tool for experimental WASM grammar testing.
+ */
+
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
