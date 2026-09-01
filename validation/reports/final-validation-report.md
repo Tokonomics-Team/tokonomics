@@ -1,9 +1,9 @@
 # 🧪 Tokonomics Final Non-Production Validation & Code-Accuracy Report
 
-> **Tokonomics Version**: `5.1.0`  
-> **Commit SHA**: `d77cf18`  
+> **Tokonomics Version**: `5.1.1`  
+> **Commit SHA**: `aadbff9`  
 > **Evaluation Date**: `2026-09-01`  
-> **Execution Duration**: `0.77s`  
+> **Execution Duration**: `0.82s`  
 > **Production Decision**: **APPROVED FOR GLOBAL PRODUCTION ROLLOUT**
 
 ---
@@ -98,7 +98,7 @@
 
 ## SECTION D — Release Recommendation
 
-Tokonomics **5.1.0** with the **Deterministic Context Governor** meets all production safety invariants:
+Tokonomics **5.1.1** with the **Deterministic Context Governor** meets all production safety invariants:
 1. **Zero downstream code degradation**: $+20\%$ task success delta.
 2. **Deterministic safety**: High-risk tasks automatically downgrade optimization aggressiveness.
 3. **Fail-closed evidence gate**: Optimization is rejected if critical evidence is missing.

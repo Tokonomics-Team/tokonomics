@@ -183,7 +183,7 @@ ${paretoFrontier.map(p => `| **${p.aggressivenessLevelPct}%** | -${p.tokenReduct
 
 ## SECTION D — Release Recommendation
 
-Tokonomics **5.1.0** with the **Deterministic Context Governor** meets all production safety invariants:
+Tokonomics **5.1.1** with the **Deterministic Context Governor** meets all production safety invariants:
 1. **Zero downstream code degradation**: $+${delta}\\%$ task success delta.
 2. **Deterministic safety**: High-risk tasks automatically downgrade optimization aggressiveness.
 3. **Fail-closed evidence gate**: Optimization is rejected if critical evidence is missing.

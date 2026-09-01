@@ -29,8 +29,8 @@ export class ReproducibilityRecorder {
         const ramGB = Math.round((os.totalmem() / (1024 * 1024 * 1024)) * 10) / 10;
 
         return {
-            repositoryCommitSha: 'd77cf18',
-            tokonomicsVersion: '5.1.0',
+            repositoryCommitSha: 'aadbff9',
+            tokonomicsVersion: '5.1.1',
             benchmarkDatasetVersion: '2026-v2.1-multilang',
             modelProvider: 'Anthropic / OpenAI / Google / DeepSeek',
             modelVersion: 'Claude-3.7-Sonnet-20250219 / GPT-4o-20241120',

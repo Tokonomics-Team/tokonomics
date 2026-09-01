@@ -23,7 +23,7 @@ const outTestDir = path.resolve(rootDir, 'out_test');
 
 async function runDeepCertification() {
     console.log('====================================================================================');
-    console.log('🔬 EXECUTING TOKONOMICS 5.1.0 LEVEL 3 DEEP PRODUCTION CERTIFICATION PIPELINE');
+    console.log('🔬 EXECUTING TOKONOMICS 5.1.1 LEVEL 3 DEEP PRODUCTION CERTIFICATION PIPELINE');
     console.log('====================================================================================\n');
 
     const startTime = performance.now();
@@ -231,7 +231,7 @@ export async function executeDeepCertification() {
     const r = results;
     const terminalReport = `
 ==========================================================
-             TOKONOMICS 5.1.0 CERTIFICATION
+             TOKONOMICS 5.1.1 CERTIFICATION
 ==========================================================
 
 ARCHITECTURE
@@ -328,9 +328,9 @@ CERTIFIED FOR WORLDWIDE PRODUCTION
     console.log(terminalReport);
 
     // Save Canonical Markdown Report
-    const markdownContent = `# 🏆 Tokonomics 5.1.0 — Master Deep Certification & Reliability Report
+    const markdownContent = `# 🏆 Tokonomics 5.1.1 — Master Deep Certification & Reliability Report
 
-> **Release Version**: \`5.1.0\`  
+> **Release Version**: \`5.1.1\`  
 > **Certification Date**: \`${new Date().toISOString().split('T')[0]}\`  
 > **Execution Duration**: \`${durationSec}s\`  
 > **Final Status**: **CERTIFIED FOR WORLDWIDE PRODUCTION**  

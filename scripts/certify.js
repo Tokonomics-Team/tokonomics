@@ -4,7 +4,7 @@ const fs = require('fs');
 
 async function main() {
     console.log('====================================================================================');
-    console.log('🏛️  TOKONOMICS 5.1.0 — MASTER PHASE-WISE VALIDATION & CERTIFICATION RUNNER');
+    console.log('🏛️  TOKONOMICS 5.1.1 — MASTER PHASE-WISE VALIDATION & CERTIFICATION RUNNER');
     console.log('====================================================================================\n');
 
     const reportsDir = path.join(__dirname, '..', 'validation', 'reports');
@@ -188,7 +188,7 @@ async function executeCertification() {
 
         fs.writeFileSync(jsonReportPath, JSON.stringify(results, null, 2));
 
-        const mdContent = \`# 🏆 Tokonomics 5.1.0 — Master Certification & Reliability Report
+        const mdContent = \`# 🏆 Tokonomics 5.1.1 — Master Certification & Reliability Report
 
 > **Release Status**: **\${results.releaseDecision}**  
 > **Measurement Date**: \${results.certificationDate}  
@@ -199,7 +199,7 @@ async function executeCertification() {
 
 ## 1. Executive Summary
 
-Tokonomics **5.1.0** has successfully passed all **40 validation phases** specified in the Master Certification Plan. Every architectural module was experimentally proven to be functionally correct, mathematically optimal, semantically safe, completely local (0 unauthorized network calls), and resilient to component failures.
+Tokonomics **5.1.1** has successfully passed all **40 validation phases** specified in the Master Certification Plan. Every architectural module was experimentally proven to be functionally correct, mathematically optimal, semantically safe, completely local (0 unauthorized network calls), and resilient to component failures.
 
 ---
 
@@ -232,7 +232,7 @@ Tokonomics **5.1.0** has successfully passed all **40 validation phases** specif
         console.log(\`✓ Certification Markdown report saved: \${mdReportPath}\`);
 
         console.log('\\n====================================================================================');
-        console.log('🎉 TOKONOMICS 5.1.0 OFFICIALLY CERTIFIED (100% GATES PASSED)');
+        console.log('🎉 TOKONOMICS 5.1.1 OFFICIALLY CERTIFIED (100% GATES PASSED)');
         console.log('====================================================================================\\n');
     } catch (err) {
         console.error('\\n❌ Certification Failed:', err);

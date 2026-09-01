@@ -1,8 +1,8 @@
 {
   "name": "tokonomics",
-  "displayName": "Tokonomics 5.1.0 — The Local Context Compiler & Real-Time Analytics",
+  "displayName": "Tokonomics 5.1.1 — The Local Context Compiler & Real-Time Analytics",
   "description": "The Local Context Compiler for VS Code. Cut AI coding token costs by 65-88%. 16-stage context compilation, real-time analytics dashboard, multi-language AST structural pruning, and prompt cache alignment for Claude, GPT-4o, Copilot, Gemini & DeepSeek.",
-  "version": "5.1.0",
+  "version": "5.1.1",
   "publisher": "tokonomics",
   "license": "SEE LICENSE IN LICENSE.txt",
   "icon": "assets/icon.png",
@@ -237,6 +237,26 @@
     "configuration": {
       "title": "Enterprise AI Token Optimizer",
       "properties": {
+        "tokenOptimizer.enableContextGovernor": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable deterministic task intent classification, risk-aware context optimization, and safety overrides."
+        },
+        "tokenOptimizer.governorAggressiveness": {
+          "type": "string",
+          "enum": [
+            "conservative",
+            "balanced",
+            "aggressive"
+          ],
+          "default": "balanced",
+          "description": "Default optimization aggressiveness before risk-level override."
+        },
+        "tokenOptimizer.enforceEvidenceSafetyGate": {
+          "type": "boolean",
+          "default": true,
+          "description": "Mathematically enforce RequiredEvidence ⊆ ProvidedEvidence, failing closed on missing critical evidence."
+        },
         "tokenOptimizer.enableAstPruning": {
           "type": "boolean",
           "default": true,
@@ -409,9 +429,9 @@
     "validate": "node scripts/validate.js",
     "validate:all": "node scripts/validate-all.js",
     "download-parsers": "node scripts/download-parsers.js",
-    "vsce:package": "npx @vscode/vsce package --no-dependencies --out tokonomics-5.1.0.vsix",
+    "vsce:package": "npx @vscode/vsce package --no-dependencies --out tokonomics-5.1.1.vsix",
     "publish:vsce": "npx @vscode/vsce publish --no-dependencies",
-    "publish:ovsx": "npx ovsx publish tokonomics-5.1.0.vsix",
+    "publish:ovsx": "npx ovsx publish tokonomics-5.1.1.vsix",
     "publish:all": "npm run publish:vsce && npm run publish:ovsx",
     "sync:public": "powershell -ExecutionPolicy Bypass -File ./scripts/sync-public-repo.ps1"
   },
