@@ -1,7 +1,11 @@
 /**
- * VS Code Language Model Chat Provider Proxy
- * Registers 'token-optimizer-proxy' to transparently intercept, optimize,
- * and dispatch prompts to upstream LLMs with 100% Dynamic Model & Provider Auto-Detection.
+ * VS Code Language Model Chat Provider
+ * Exposes a selectable 'token-optimizer-proxy' model under vendor 'tokonomics' via vscode.lm.
+ * Allows other VS Code extensions and multi-agent workflows to programmatically select
+ * and route prompt context through Tokonomics optimization algorithms.
+ * 
+ * Note: To use Tokonomics directly in VS Code Chat, developers use the @tokonomics
+ * Chat Participant, which compiles context and dispatches to upstream Copilot / LM models.
  */
 
 import * as vscode from 'vscode';
@@ -77,7 +81,7 @@ export class TokenOptimizerLanguageModelProvider {
 
         if (!targetModel) {
             // If no underlying Copilot/LM is active, emit a helpful diagnostic message
-            const summary = `⚡ [Token Optimizer]: Prompt optimized from ${stats.originalTokens} to ${stats.optimizedTokens} tokens (${stats.reductionPercentage}% saved for [${effectiveProvider.toUpperCase()}]). No downstream Copilot model detected in current environment.`;
+            const summary = `⚡ [Tokonomics]: Prompt optimized from ${stats.originalTokens} to ${stats.optimizedTokens} tokens (${stats.reductionPercentage}% saved for [${effectiveProvider.toUpperCase()}]). No downstream language model detected in current environment.`;
             progress.report({ index: 0, part: new vscode.LanguageModelTextPart(summary) });
             return;
         }
@@ -125,8 +129,8 @@ export class TokenOptimizerLanguageModelProvider {
     }
 
     /**
-     * Automatically inspects active language models in the editor environment
-     * and infers the target cloud provider and model family with zero manual configuration.
+     * Inspects active language models in the editor environment
+     * and delegates downstream execution to available upstream models.
      */
     private async resolveUpstreamModelAndProvider(config: TokenOptimizationConfig): Promise<{
         targetModel: vscode.LanguageModelChat | null;
@@ -147,7 +151,7 @@ export class TokenOptimizerLanguageModelProvider {
                 }
             }
 
-            // 2. Dynamic auto-discovery: query all available models in the active window
+            // 2. Query available upstream models in the active window
             const allModels = await vscode.lm.selectChatModels();
             if (allModels && allModels.length > 0) {
                 // Filter out self-proxy to prevent recursive infinite loops
@@ -163,7 +167,7 @@ export class TokenOptimizerLanguageModelProvider {
                 }
             }
         } catch (e) {
-            console.warn('[TokenOptimizer] Auto-detection fallback:', e);
+            console.warn('[Tokonomics] LM provider resolution fallback:', e);
         }
 
         return {
