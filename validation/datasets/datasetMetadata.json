@@ -1,0 +1,49 @@
+{
+  "benchmarkName": "Tokonomics Multilingual Task Benchmark Corpus",
+  "benchmarkVersion": "2026-v2.1",
+  "classification": "Controlled Synthetic Benchmark",
+  "classificationRationale": "Corpus contains programmatically verified multi-file engineering scenarios with deterministic unit and acceptance test suites authored for compiler validation.",
+  "totalTasks": 160,
+  "repositoryCount": 8,
+  "repositorySizeCategory": "Medium-to-Large (10k-50k simulated SLOC per workspace fixture)",
+  "holdoutSplitRatio": {
+    "training": "40% (N=64)",
+    "validation": "30% (N=48)",
+    "holdout": "30% (N=48)"
+  },
+  "languages": [
+    "typescript",
+    "javascript",
+    "python",
+    "go",
+    "rust",
+    "cpp",
+    "java",
+    "csharp"
+  ],
+  "taskTypes": [
+    "debug",
+    "feature",
+    "refactor",
+    "test",
+    "explain",
+    "review",
+    "architecture",
+    "search"
+  ],
+  "acceptanceTestSources": [
+    "Official TypeScript Compiler API (ts.transpileModule)",
+    "Node.js VM Sandboxed Assertions (node:vm)",
+    "Domain-Specific Algorithmic Invariant Oracles"
+  ],
+  "matrixDistribution": {
+    "typescript": { "debug": 6, "feature": 5, "refactor": 5, "test": 4 },
+    "javascript": { "debug": 5, "feature": 5, "refactor": 5, "test": 5 },
+    "python": { "debug": 5, "feature": 5, "refactor": 5, "test": 5 },
+    "go": { "debug": 5, "feature": 5, "refactor": 5, "test": 5 },
+    "rust": { "debug": 5, "feature": 5, "refactor": 5, "test": 5 },
+    "cpp": { "debug": 5, "feature": 5, "refactor": 5, "test": 5 },
+    "java": { "debug": 5, "feature": 5, "refactor": 5, "test": 5 },
+    "csharp": { "debug": 5, "feature": 5, "refactor": 5, "test": 5 }
+  }
+}

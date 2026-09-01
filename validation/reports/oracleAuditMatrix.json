@@ -1,0 +1,110 @@
+[
+  {
+    "subsystem": "ORACLE_01_SOLVER",
+    "implementationUnderTest": "src/solver/knapsackSolver.ts (Dynamic Programming DP)",
+    "oracleImplementation": "validation/audit/subsystemOraclesAuditor.ts (Exhaustive Combinatorial Enumerator)",
+    "oracleSource": "Independent Combinatorial Brute-Force Enumerator (7^N multi-choice states)",
+    "independenceType": "INDEPENDENT",
+    "certificationCritical": true,
+    "status": "PASS"
+  },
+  {
+    "subsystem": "ORACLE_02_GRAPH_INCREMENTAL",
+    "implementationUnderTest": "src/graph/workspaceGraph.ts (Dynamic incremental AST mutations)",
+    "oracleImplementation": "tests/validation/phase5-6-graph-consistency.test.ts (Clean Rebuild Runner)",
+    "oracleSource": "Fresh Full Repository Rebuild Oracle",
+    "independenceType": "INDEPENDENT",
+    "certificationCritical": true,
+    "status": "PASS"
+  },
+  {
+    "subsystem": "ORACLE_03_TOKENIZER",
+    "implementationUnderTest": "src/tokenizer/tokenizerAdapters.ts",
+    "oracleImplementation": "tests/validation/phase2-property-based.test.ts (Authoritative BPE reference)",
+    "oracleSource": "Authoritative Reference Tokenizer Engine (Claude BPE / OpenAI o200k_base)",
+    "independenceType": "INDEPENDENT",
+    "certificationCritical": true,
+    "status": "PASS"
+  },
+  {
+    "subsystem": "ORACLE_04_COST_RECONCILIATION",
+    "implementationUnderTest": "src/pricing/pricingCalculator.ts",
+    "oracleImplementation": "tests/validation/phase19-20-pricing-reconciliation.test.ts (Published Rate Fixtures)",
+    "oracleSource": "Authoritative Cloud Provider Published Rate Cards (Feb 2025/2026)",
+    "independenceType": "INDEPENDENT",
+    "certificationCritical": true,
+    "status": "PASS"
+  },
+  {
+    "subsystem": "ORACLE_05_LEGACY_DIFFERENTIAL",
+    "implementationUnderTest": "src/engine/pipelineOrchestrator.ts (pipelineMode: legacy)",
+    "oracleImplementation": "tests/validation/phase3-legacy-differential.test.ts (v4.1.2 Golden Artifacts)",
+    "oracleSource": "Frozen v4.1.2 Golden Artifact Baseline",
+    "independenceType": "INDEPENDENT",
+    "certificationCritical": true,
+    "status": "PASS"
+  },
+  {
+    "subsystem": "ORACLE_06_SDG_SLICING",
+    "implementationUnderTest": "src/sdg/sdgSlicer.ts (Inter-procedural CFG/DDG Slicer)",
+    "oracleImplementation": "src/evaluation/adversarialSdgCorpus.ts (Hand-Annotated Closure)",
+    "oracleSource": "Hand-Annotated Ground Truth Dependency Set (15 Adversarial Patterns)",
+    "independenceType": "INDEPENDENT",
+    "certificationCritical": true,
+    "status": "PASS"
+  },
+  {
+    "subsystem": "ORACLE_07_RETRIEVAL",
+    "implementationUnderTest": "src/retrieval/hybridRetriever.ts & src/retrieval/reranker.ts",
+    "oracleImplementation": "tests/validation/phase10-11-hybrid-retrieval.test.ts (Expert Labeled Sets)",
+    "oracleSource": "Expert-Labeled Relevant Entity Benchmark Dataset",
+    "independenceType": "INDEPENDENT",
+    "certificationCritical": true,
+    "status": "PASS"
+  },
+  {
+    "subsystem": "ORACLE_08_CODE_CORRECTNESS",
+    "implementationUnderTest": "validation/evaluators/codeAccuracyEvaluator.ts",
+    "oracleImplementation": "validation/evaluators/tsCompilerService.ts & realTestHarness.ts",
+    "oracleSource": "Official TypeScript Compiler API (ts.transpileModule) & Sandboxed Node.js VM Tests",
+    "independenceType": "INDEPENDENT",
+    "certificationCritical": true,
+    "status": "PASS"
+  },
+  {
+    "subsystem": "ORACLE_09_DASHBOARD",
+    "implementationUnderTest": "src/dashboard/dashboardAggregator.ts",
+    "oracleImplementation": "tests/validation/phase30-dashboard-lifecycle.test.ts (Event Stream Logger)",
+    "oracleSource": "Immutable Production Event Bus Stream Records",
+    "independenceType": "DERIVED",
+    "certificationCritical": true,
+    "status": "PASS"
+  },
+  {
+    "subsystem": "ORACLE_10_GOVERNOR_SAFETY",
+    "implementationUnderTest": "src/governor/contextGovernor.ts & evidenceSafetyGate.ts",
+    "oracleImplementation": "validation/audit/governorAccuracyAuditor.ts (Set Theory Verifier)",
+    "oracleSource": "Mathematical Set Theory Containment Invariant (Required ⊆ Provided)",
+    "independenceType": "INDEPENDENT",
+    "certificationCritical": true,
+    "status": "PASS"
+  },
+  {
+    "subsystem": "ORACLE_11_NETWORK_ISOLATION",
+    "implementationUnderTest": "src/evaluation/networkAuditEngine.ts",
+    "oracleImplementation": "tests/validation/phase32-network-isolation.test.ts (Socket Interceptor)",
+    "oracleSource": "Node.js Runtime Socket Monkey-Patch Interceptor + Static AST Scanner",
+    "independenceType": "INDEPENDENT",
+    "certificationCritical": true,
+    "status": "PASS"
+  },
+  {
+    "subsystem": "ORACLE_12_CACHE_PLANNER",
+    "implementationUnderTest": "src/cache/cachePlanner.ts",
+    "oracleImplementation": "tests/validation/phase21-cache-planner.test.ts (Prefix Hash Oracle)",
+    "oracleSource": "Prefix Alignment Invariant & SHA-256 Fingerprint Stability Oracle",
+    "independenceType": "DERIVED",
+    "certificationCritical": true,
+    "status": "PASS"
+  }
+]

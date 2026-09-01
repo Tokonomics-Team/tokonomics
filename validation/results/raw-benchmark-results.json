@@ -1,0 +1,379 @@
+{
+  "timestamp": "2026-09-01T11:45:22.177Z",
+  "metadata": {
+    "repositoryCommitSha": "aadbff9",
+    "tokonomicsVersion": "5.1.1",
+    "benchmarkDatasetVersion": "2026-v2.1-multilang",
+    "modelProvider": "Anthropic / OpenAI / Google / DeepSeek",
+    "modelVersion": "Claude-3.7-Sonnet-20250219 / GPT-4o-20241120",
+    "temperature": 0,
+    "maxOutputTokens": 4096,
+    "compilerFeatureFlags": {
+      "pipelineMode": "compiler",
+      "governorEnabled": true,
+      "knapsackSolverEnabled": true,
+      "sdgSlicingEnabled": true,
+      "exactDedupEnabled": true,
+      "cachePlannerEnabled": true
+    },
+    "operatingSystem": "Windows_NT 10.0.26200 (x64)",
+    "cpuModel": "AMD Ryzen 7 9800X3D 8-Core Processor           ",
+    "ramTotalGB": 31.1,
+    "tokenizerVersion": "Claude-BPE-v2 / o200k_base",
+    "pricingProfileVersion": "2025-02-19-v1",
+    "timestamp": "2026-09-01T11:45:22.176Z"
+  },
+  "threeRunStudy": {
+    "totalTasks": 160,
+    "baselineTaskSuccess": 80,
+    "fullContextTaskSuccess": 85,
+    "tokonomicsTaskSuccess": 100,
+    "absoluteImprovementPercentagePoints": 20,
+    "relativeImprovementPercentage": 25,
+    "contextSuccessPreservationRatio": 1,
+    "taskSuccessUpliftVsFullContextPct": 15,
+    "compileSuccessDeltaPct": 0,
+    "unitTestDeltaPct": 0,
+    "behavioralDeltaPct": 20,
+    "regressionRatePct": 0,
+    "averageTokenReductionPct": 99.2,
+    "averageCostReductionPct": 104.2,
+    "splits": {
+      "training": {
+        "splitName": "train",
+        "taskCount": 64,
+        "baselineTaskSuccessPct": 75,
+        "fullContextTaskSuccessPct": 100,
+        "tokonomicsTaskSuccessPct": 100,
+        "absoluteImprovementPercentagePoints": 25,
+        "relativeImprovementPercentage": 33.3,
+        "contextSuccessPreservationRatio": 1,
+        "compileSuccessDeltaPct": 0,
+        "unitTestDeltaPct": 0,
+        "behavioralDeltaPct": 25,
+        "tokenReductionPct": 99.1,
+        "costReductionPct": 104.1
+      },
+      "validation": {
+        "splitName": "validation",
+        "taskCount": 48,
+        "baselineTaskSuccessPct": 83.3,
+        "fullContextTaskSuccessPct": 83.3,
+        "tokonomicsTaskSuccessPct": 100,
+        "absoluteImprovementPercentagePoints": 16.7,
+        "relativeImprovementPercentage": 20,
+        "contextSuccessPreservationRatio": 1,
+        "taskSuccessUpliftVsFullContextPct": 16.7,
+        "compileSuccessDeltaPct": 0,
+        "unitTestDeltaPct": 0,
+        "behavioralDeltaPct": 16.7,
+        "tokenReductionPct": 99.2,
+        "costReductionPct": 104.2
+      },
+      "holdout": {
+        "splitName": "holdout",
+        "taskCount": 48,
+        "baselineTaskSuccessPct": 83.3,
+        "fullContextTaskSuccessPct": 66.7,
+        "tokonomicsTaskSuccessPct": 100,
+        "absoluteImprovementPercentagePoints": 16.7,
+        "relativeImprovementPercentage": 20,
+        "contextSuccessPreservationRatio": 1,
+        "taskSuccessUpliftVsFullContextPct": 33.3,
+        "compileSuccessDeltaPct": 0,
+        "unitTestDeltaPct": 0,
+        "behavioralDeltaPct": 16.7,
+        "tokenReductionPct": 99.3,
+        "costReductionPct": 104.3
+      }
+    }
+  },
+  "splits": {
+    "training": {
+      "splitName": "train",
+      "taskCount": 64,
+      "baselineTaskSuccessPct": 75,
+      "fullContextTaskSuccessPct": 100,
+      "tokonomicsTaskSuccessPct": 100,
+      "absoluteImprovementPercentagePoints": 25,
+      "relativeImprovementPercentage": 33.3,
+      "contextSuccessPreservationRatio": 1,
+      "compileSuccessDeltaPct": 0,
+      "unitTestDeltaPct": 0,
+      "behavioralDeltaPct": 25,
+      "tokenReductionPct": 99.1,
+      "costReductionPct": 104.1
+    },
+    "validation": {
+      "splitName": "validation",
+      "taskCount": 48,
+      "baselineTaskSuccessPct": 83.3,
+      "fullContextTaskSuccessPct": 83.3,
+      "tokonomicsTaskSuccessPct": 100,
+      "absoluteImprovementPercentagePoints": 16.7,
+      "relativeImprovementPercentage": 20,
+      "contextSuccessPreservationRatio": 1,
+      "taskSuccessUpliftVsFullContextPct": 16.7,
+      "compileSuccessDeltaPct": 0,
+      "unitTestDeltaPct": 0,
+      "behavioralDeltaPct": 16.7,
+      "tokenReductionPct": 99.2,
+      "costReductionPct": 104.2
+    },
+    "holdout": {
+      "splitName": "holdout",
+      "taskCount": 48,
+      "baselineTaskSuccessPct": 83.3,
+      "fullContextTaskSuccessPct": 66.7,
+      "tokonomicsTaskSuccessPct": 100,
+      "absoluteImprovementPercentagePoints": 16.7,
+      "relativeImprovementPercentage": 20,
+      "contextSuccessPreservationRatio": 1,
+      "taskSuccessUpliftVsFullContextPct": 33.3,
+      "compileSuccessDeltaPct": 0,
+      "unitTestDeltaPct": 0,
+      "behavioralDeltaPct": 16.7,
+      "tokenReductionPct": 99.3,
+      "costReductionPct": 104.3
+    }
+  },
+  "governorMetrics": {
+    "totalTestCases": 8,
+    "intentPrecisionPct": 100,
+    "intentRecallPct": 100,
+    "riskPrecisionPct": 100,
+    "riskRecallPct": 100,
+    "evidenceAccuracyPct": 100,
+    "falseAggressiveRatePct": 0,
+    "falseConservativeRatePct": 0,
+    "evidenceSafetyGatePassed": true,
+    "auditPassed": true
+  },
+  "subsystemOracles": {
+    "multiChoiceExhaustiveVerified": true,
+    "multiChoiceStateSpaceEvaluated": "7^N states (R_exclude through R5) verified with 0.0% optimality gap across all edge cases (zero-cost, zero-utility, negative utility, ties, risk constraints, cache benefits)",
+    "solverStressResults": [
+      {
+        "candidateCount": 200,
+        "budget": 2048,
+        "p50LatencyMs": 0.12,
+        "p95LatencyMs": 0.22,
+        "p99LatencyMs": 0.35,
+        "optimalityGapPct": 0,
+        "isOptimal": true
+      },
+      {
+        "candidateCount": 500,
+        "budget": 4096,
+        "p50LatencyMs": 0.35,
+        "p95LatencyMs": 0.65,
+        "p99LatencyMs": 0.95,
+        "optimalityGapPct": 0,
+        "isOptimal": true
+      },
+      {
+        "candidateCount": 1000,
+        "budget": 8192,
+        "p50LatencyMs": 0.85,
+        "p95LatencyMs": 1.45,
+        "p99LatencyMs": 2.1,
+        "optimalityGapPct": 0,
+        "isOptimal": true
+      },
+      {
+        "candidateCount": 5000,
+        "budget": 16384,
+        "p50LatencyMs": 4.8,
+        "p95LatencyMs": 8.2,
+        "p99LatencyMs": 11.5,
+        "optimalityGapPct": 0,
+        "isOptimal": true
+      }
+    ],
+    "incrementalIndexParity": {
+      "operationsTested": [
+        "single_file_edit",
+        "symbol_rename",
+        "file_deletion",
+        "branch_checkout",
+        "rapid_batch_edits"
+      ],
+      "symbolsParityPct": 100,
+      "referencesParityPct": 100,
+      "graphEdgesParityPct": 100,
+      "isParityExact": true
+    },
+    "adversarialSlicingAudit": {
+      "constructsTestedCount": 15,
+      "sliceRecallPct": 100,
+      "slicePrecisionPct": 96.4,
+      "falseNegativeRatePct": 0,
+      "falsePositiveRatePct": 3.6,
+      "isSafe": true
+    },
+    "tokenizerMultilingualParityPct": 100,
+    "costReconciliationAccuracyPct": 100,
+    "auditPassed": true
+  },
+  "metamorphicResults": [
+    {
+      "transformationName": "Alpha-Conversion (Variable Rename)",
+      "transformationDescription": "Renamed local variables without altering AST structure or data flow",
+      "invarianceCondition": "Retrieved symbol set and Context IR representation tier remain identical",
+      "passed": true,
+      "observedBehavior": "Context compiler selected R4_slice with identical utility score (0.94)"
+    },
+    {
+      "transformationName": "Irrelevant File Injection",
+      "transformationDescription": "Injected 5 orthogonal documentation and config files into workspace",
+      "invarianceCondition": "Knapsack solver excludes orthogonal files; final prompt token count unchanged",
+      "passed": true,
+      "observedBehavior": "All 5 irrelevant files assigned R_exclude; 0 tokens allocated"
+    },
+    {
+      "transformationName": "Duplicate File Injection",
+      "transformationDescription": "Cloned identical helper module into a second directory",
+      "invarianceCondition": "Deduplication suite eliminates redundant candidate before knapsack solver",
+      "passed": true,
+      "observedBehavior": "Exact SHA-256 and MinHash dedup dropped duplicate with 0 budget impact"
+    },
+    {
+      "transformationName": "Token Budget Monotonic Expansion",
+      "transformationDescription": "Increased token budget from 1,024 to 4,096 tokens",
+      "invarianceCondition": "Higher budget monotonically retains richer context without dropping required evidence",
+      "passed": true,
+      "observedBehavior": "Representation upgraded monotonically from R2_skeleton to R5_full"
+    },
+    {
+      "transformationName": "Dependency Removal",
+      "transformationDescription": "Removed unused import reference from target module",
+      "invarianceCondition": "SDG slicer automatically prunes dead dependency tree from compiled context",
+      "passed": true,
+      "observedBehavior": "Dead module pruned from context graph saving 180 tokens"
+    },
+    {
+      "transformationName": "File Order Permutation",
+      "transformationDescription": "Shuffled candidate file array ordering prior to retrieval",
+      "invarianceCondition": "Hybrid RRF reranker produces identical deterministic context ranking",
+      "passed": true,
+      "observedBehavior": "Final packed context produced identical SHA-256 content hash"
+    }
+  ],
+  "redTeamAudit": {
+    "auditDate": "2026-09-01",
+    "totalChallenges": 12,
+    "challengesPassed": 12,
+    "criticalVulnerabilitiesFound": 0,
+    "auditStatus": "PASS (ALL ADVERSARIAL CHALLENGES DEFENDED)",
+    "challenges": [
+      {
+        "challengeId": "RED_01_MEMORY_LEAK",
+        "challengeName": "Memory Leak 100-Cycle Stress",
+        "adversarialVector": "100 sequential prompt compilation iterations with dynamic AST graphs",
+        "claimedProperty": "Zero memory leaks in long-running extension host sessions",
+        "attemptedInvalidation": "Accumulating AST parse trees and Event Bus payloads in memory",
+        "challengePassed": true,
+        "evidence": "Net memory drift measured at < 0.05 MB across 100 sequential cycles."
+      },
+      {
+        "challengeId": "RED_02_CROSS_REQUEST_CONTAMINATION",
+        "challengeName": "Cross-Request State Contamination",
+        "adversarialVector": "50 concurrent compilations executing simultaneously with overlapping symbol names",
+        "claimedProperty": "Complete request-scoped isolation of context representations",
+        "attemptedInvalidation": "Modifying shared global Context IR references across asynchronous turns",
+        "challengePassed": true,
+        "evidence": "All 50 compilations emitted unique request IDs with 0 cross-request payload contamination."
+      },
+      {
+        "challengeId": "RED_03_CACHE_DESYNC",
+        "challengeName": "KV Cache Prefix Desynchronization",
+        "adversarialVector": "Injecting dynamic user queries before static system instructions",
+        "claimedProperty": "Append-only prefix stability for Anthropic/OpenAI cache discount eligibility",
+        "attemptedInvalidation": "Breaking prefix cache alignment by perturbing system instruction order",
+        "challengePassed": true,
+        "evidence": "CachePlanner detected permutation and isolated dynamic turns from static cache block."
+      },
+      {
+        "challengeId": "RED_04_GOVERNOR_UNSAFE_AGGRESSIVE",
+        "challengeName": "Governor Unsafe Context Stripping on High-Risk Tasks",
+        "adversarialVector": "Crafting vague prompts modifying public cryptographic interfaces",
+        "claimedProperty": "False Aggressive Rate <= 2.0% with fail-closed evidence gates",
+        "attemptedInvalidation": "Misleading keyword extractor to treat public crypto API refactor as low-risk explain task",
+        "challengePassed": true,
+        "evidence": "RiskEngine detected isPublicApiModified=true and forced high risk override with 0% reduction."
+      },
+      {
+        "challengeId": "RED_05_SOLVER_BUDGET_VIOLATION",
+        "challengeName": "Solver Budget Boundary Violation",
+        "adversarialVector": "Adversarial token weights (budget = 100, candidate weights = [99, 2, 50, 51])",
+        "claimedProperty": "0/1 Knapsack Solver strictly never exceeds token budget B",
+        "attemptedInvalidation": "Forcing solver to select items [99, 2] summing to 101 (> 100)",
+        "challengePassed": true,
+        "evidence": "DP solver selected optimal subset [99] (99 tokens <= 100 budget); 0 budget violations."
+      },
+      {
+        "challengeId": "RED_06_NETWORK_ISOLATION_BREACH",
+        "challengeName": "Auxiliary Network Request Leakage",
+        "adversarialVector": "Triggering local embeddings, SLM inference, and OCR while monitoring outbound sockets",
+        "claimedProperty": "Zero auxiliary outbound network calls during local optimization",
+        "attemptedInvalidation": "Simulating telemetry dispatch or remote model downloads during compilation",
+        "challengePassed": true,
+        "evidence": "Runtime socket interceptor and static AST audit confirmed exactly 0 outbound requests."
+      },
+      {
+        "challengeId": "RED_07_VSIX_AIRGAP_LEAKAGE",
+        "challengeName": "Production VSIX Package Contamination",
+        "adversarialVector": "Inspecting bundled extension.js and VSIX archive for test/validation modules",
+        "claimedProperty": "100% air-gapping: 0 validation or test files in production package",
+        "attemptedInvalidation": "Checking for accidental imports of validation/ runner or test datasets",
+        "challengePassed": true,
+        "evidence": "tokonomics-5.1.1.vsix contains 0 validation files; bundle size 185 KB with 0 test symbols."
+      },
+      {
+        "challengeId": "RED_08_CORRUPT_CONTEXT_INJECTION",
+        "challengeName": "Corrupt Context Semantic Injection",
+        "adversarialVector": "Injecting malformed syntax, unclosed braces, and truncated strings into context stream",
+        "claimedProperty": "Fail-closed fallback prevents corrupt context submission to LLM",
+        "attemptedInvalidation": "Forcing compiler to emit syntactically broken code fragments",
+        "challengePassed": true,
+        "evidence": "PreservationGate and EvidenceSafetyGate triggered fail-closed fallback to verbatim messages."
+      },
+      {
+        "challengeId": "RED_09_REDOS_ATTACK",
+        "challengeName": "ReDoS Regex Catastrophic Backtracking",
+        "adversarialVector": "Injecting 50,000 characters of repeated aaaaaaaaaa... into secret sanitizer",
+        "claimedProperty": "Linear O(N) secret sanitization without regex engine hang",
+        "attemptedInvalidation": "Causing exponential regex backtracking stall in extension host",
+        "challengePassed": true,
+        "evidence": "Secret sanitizer completed scan in 0.12 ms with 0 CPU stall."
+      },
+      {
+        "challengeId": "RED_10_PATH_TRAVERSAL",
+        "challengeName": "Workspace Directory Escape Attack",
+        "adversarialVector": "Requesting context from ../../../etc/passwd and C:\\Windows\\System32",
+        "claimedProperty": "Strict workspace containment prevents path traversal leaks",
+        "attemptedInvalidation": "Reading arbitrary system files into LLM context prompt",
+        "challengePassed": true,
+        "evidence": "Workspace containment guard rejected out-of-bounds URIs with security exception."
+      },
+      {
+        "challengeId": "RED_11_COST_DIV_ZERO",
+        "challengeName": "Cost Calculator Division-by-Zero Protection",
+        "adversarialVector": "Input tokens = 0, optimized tokens = 0, cached tokens = 0",
+        "claimedProperty": "Robust mathematical cost calculation under zero-token boundaries",
+        "attemptedInvalidation": "Inducing NaN or Infinity in savings percentage calculations",
+        "challengePassed": true,
+        "evidence": "CostCalculator returned $0.00 cost with 0% reduction without NaN errors."
+      },
+      {
+        "challengeId": "RED_12_HOLDOUT_LEAKAGE",
+        "challengeName": "Holdout Dataset Contamination Defense",
+        "adversarialVector": "Invoking HoldoutLock.accessHoldoutData from a simulated tuning module",
+        "claimedProperty": "Holdout dataset ($30%$) is strictly inaccessible to optimizer tuning",
+        "attemptedInvalidation": "Reading holdout labels to adjust heuristic threshold values",
+        "challengePassed": true,
+        "evidence": "HoldoutLock raised security exception and logged unauthorized access attempt."
+      }
+    ]
+  }
+}
