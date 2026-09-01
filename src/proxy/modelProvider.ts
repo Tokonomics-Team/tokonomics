@@ -35,8 +35,9 @@ export class TokenOptimizerLanguageModelProvider {
     ): Promise<void> {
         const config = this.getOptimizationConfig();
 
-        // 1. Dynamic Automatic Model Discovery & Upstream Model Detection
-        const { targetModel, detectedProvider, detectedFamily } = await this.resolveUpstreamModelAndProvider(config);
+        // 1. Dynamic Automatic Model Discovery & Upstream Model Detection (Preserving requested model preference)
+        const requestedFamilyOrId = options?.family || options?.model || (model && model.family !== 'auto' ? model.family : undefined);
+        const { targetModel, detectedProvider, detectedFamily } = await this.resolveUpstreamModelAndProvider(config, requestedFamilyOrId);
 
         // Effective provider (uses detected provider if config is 'auto')
         const effectiveProvider: TargetProvider = config.targetProvider === 'auto' 
@@ -97,8 +98,9 @@ export class TokenOptimizerLanguageModelProvider {
             return vscode.LanguageModelChatMessage.User(m.content);
         });
 
-        // Send request to target model and stream back response
-        const response = await targetModel.sendRequest(upstreamMessages, {}, token);
+        // Forward request to target backing model, fully preserving caller options (tools, tool calling, model options)
+        const forwardOptions = options ? { ...options } : {};
+        const response = await targetModel.sendRequest(upstreamMessages, forwardOptions, token);
 
         for await (const fragment of response.text) {
             if (token.isCancellationRequested) {
@@ -130,41 +132,51 @@ export class TokenOptimizerLanguageModelProvider {
 
     /**
      * Inspects active language models in the editor environment
-     * and delegates downstream execution to available upstream models.
+     * and delegates downstream execution to the best matching upstream model.
      */
-    private async resolveUpstreamModelAndProvider(config: TokenOptimizationConfig): Promise<{
+    private async resolveUpstreamModelAndProvider(
+        config: TokenOptimizationConfig,
+        requestedFamilyOrId?: string
+    ): Promise<{
         targetModel: vscode.LanguageModelChat | null;
         detectedProvider: TargetProvider;
         detectedFamily: string;
     }> {
         try {
-            // 1. If a specific family is configured (not 'auto'), try that first
-            if (config.targetUpstreamModelFamily && config.targetUpstreamModelFamily !== 'auto') {
-                const specificModels = await vscode.lm.selectChatModels({ family: config.targetUpstreamModelFamily });
-                if (specificModels && specificModels.length > 0) {
-                    const model = specificModels[0];
-                    return {
-                        targetModel: model,
-                        detectedProvider: this.inferProviderFromModel(model),
-                        detectedFamily: model.family || config.targetUpstreamModelFamily
-                    };
-                }
-            }
-
-            // 2. Query available upstream models in the active window
+            // 1. Query available upstream models in the active window (excluding self to avoid recursion)
             const allModels = await vscode.lm.selectChatModels();
-            if (allModels && allModels.length > 0) {
-                // Filter out self-proxy to prevent recursive infinite loops
-                const upstreamModels = allModels.filter(m => m.id !== 'token-optimizer-proxy');
-                if (upstreamModels.length > 0) {
-                    const primaryModel = upstreamModels[0];
-                    const provider = this.inferProviderFromModel(primaryModel);
-                    return {
-                        targetModel: primaryModel,
-                        detectedProvider: provider,
-                        detectedFamily: primaryModel.family || primaryModel.name || 'auto'
-                    };
+            const upstreamModels = (allModels || []).filter(m => 
+                m.id !== 'token-optimizer-proxy' && 
+                (m as any).vendor !== 'tokonomics'
+            );
+
+            if (upstreamModels.length > 0) {
+                // 2. If caller or config requested a specific family/model, prioritize that
+                const targetPreference = (requestedFamilyOrId || config.targetUpstreamModelFamily || '').toLowerCase();
+                if (targetPreference && targetPreference !== 'auto') {
+                    const matchedModel = upstreamModels.find(m => {
+                        const mId = (m.id || '').toLowerCase();
+                        const mName = (m.name || '').toLowerCase();
+                        const mFamily = (m.family || '').toLowerCase();
+                        return mId.includes(targetPreference) || mName.includes(targetPreference) || mFamily.includes(targetPreference);
+                    });
+                    if (matchedModel) {
+                        return {
+                            targetModel: matchedModel,
+                            detectedProvider: this.inferProviderFromModel(matchedModel),
+                            detectedFamily: matchedModel.family || matchedModel.name || targetPreference
+                        };
+                    }
                 }
+
+                // 3. Fallback: Select the primary flagship model available
+                const primaryModel = upstreamModels[0];
+                const provider = this.inferProviderFromModel(primaryModel);
+                return {
+                    targetModel: primaryModel,
+                    detectedProvider: provider,
+                    detectedFamily: primaryModel.family || primaryModel.name || 'auto'
+                };
             }
         } catch (e) {
             console.warn('[Tokonomics] LM provider resolution fallback:', e);
