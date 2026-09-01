@@ -2,7 +2,7 @@
 
 > **Release Version**: `5.1.0`  
 > **Certification Date**: `2026-09-01`  
-> **Execution Duration**: `1.74s`  
+> **Execution Duration**: `1.62s`  
 > **Final Status**: **CERTIFIED FOR WORLDWIDE PRODUCTION**  
 
 ---
@@ -50,15 +50,15 @@ TOKEN/COST
 PERFORMANCE
    Total optimization
       cold p50               0.26 ms
-      warm p50               0.09 ms
-      warm p95               0.34 ms
-      warm p99               0.5 ms
+      warm p50               0.1 ms
+      warm p95               0.3 ms
+      warm p99               0.96 ms
 
 MEMORY
-   Baseline RSS              144.05 MB
-   Indexed RSS               145.95 MB
-   ML RSS                    146.2 MB
-   Peak RSS                  146.2 MB
+   Baseline RSS              111.21 MB
+   Indexed RSS               129.35 MB
+   ML RSS                    129.6 MB
+   Peak RSS                  129.6 MB
 
 LOCAL EXECUTION
    Unauthorized traffic       0
@@ -110,16 +110,16 @@ CERTIFIED FOR WORLDWIDE PRODUCTION
 | Compiler Stage | Cold Latency (ms) | Warm p50 (ms) | Warm p90 (ms) | Warm p95 (ms) | Warm p99 (ms) | Mean (ms) |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
 | **Activation** | 0.01 | 0 | 0 | 0 | 0.01 | 0 |
-| **Lexical Retrieval (BM25)** | 0.17 | 0.07 | 0.11 | 0.13 | 0.15 | 0.08 |
-| **Dense Vector Search** | 0.21 | 0.04 | 0.08 | 0.17 | 0.21 | 0.05 |
-| **Reranking & MMR Diversity** | 0.69 | 0.03 | 0.05 | 0.05 | 0.12 | 0.03 |
-| **Deduplication Suite** | 0.02 | 0.01 | 0.01 | 0.01 | 0.01 | 0.01 |
+| **Lexical Retrieval (BM25)** | 0.48 | 0.04 | 0.1 | 0.1 | 0.14 | 0.05 |
+| **Dense Vector Search** | 0.13 | 0.03 | 0.07 | 0.08 | 0.28 | 0.04 |
+| **Reranking & MMR Diversity** | 0.26 | 0.03 | 0.1 | 0.15 | 0.21 | 0.04 |
+| **Deduplication Suite** | 0.02 | 0.01 | 0.01 | 0.01 | 0.07 | 0.01 |
 | **Sufficiency Stopping Rules** | 0.01 | 0 | 0 | 0 | 0 | 0 |
-| **SDG Program Slicing** | 0.03 | 0.01 | 0.01 | 0.02 | 0.09 | 0.01 |
-| **Context Knapsack Solver** | 1.73 | 0.81 | 0.96 | 1.12 | 1.2 | 0.83 |
-| **Semantic Compression** | 0.03 | 0 | 0.01 | 0.01 | 0.01 | 0 |
-| **Cache Planner** | 0.01 | 0 | 0 | 0 | 0 | 0 |
-| **Total Optimization Pipeline** | 0.26 | 0.09 | 0.28 | 0.34 | 0.5 | 0.14 |
+| **SDG Program Slicing** | 0.03 | 0.01 | 0.01 | 0.06 | 0.13 | 0.02 |
+| **Context Knapsack Solver** | 1.92 | 0.85 | 1.26 | 1.29 | 1.39 | 0.91 |
+| **Semantic Compression** | 0.03 | 0 | 0.01 | 0.03 | 0.07 | 0.01 |
+| **Cache Planner** | 0.01 | 0 | 0 | 0 | 0.01 | 0 |
+| **Total Optimization Pipeline** | 0.26 | 0.1 | 0.22 | 0.3 | 0.96 | 0.14 |
 
 ---
 
@@ -128,20 +128,20 @@ CERTIFIED FOR WORLDWIDE PRODUCTION
 ### Memory Snapshots Across Milestones
 | Milestone | JS Heap Used (MB) | JS Heap Total (MB) | Process RSS (MB) | ArrayBuffers (MB) | Model Buffers (MB) |
 | :--- | :---: | :---: | :---: | :---: | :---: |
-| `baseline` | 26.87 | 87.85 | 144.05 | 1.05 | 0 |
-| `after_indexing` | 39.5 | 90.55 | 145.95 | 0.15 | 0 |
-| `after_embedding_model_load` | 40.58 | 90.77 | 146.2 | 0.15 | 1.5 |
-| `after_slm_load` | 40.58 | 90.77 | 146.2 | 0.15 | 2 |
-| `peak_compilation` | 40.84 | 90.77 | 146.2 | 0.15 | 2 |
-| `after_model_unload` | 40.85 | 90.77 | 146.2 | 0.15 | 0 |
+| `baseline` | 28.48 | 86.03 | 111.21 | 1.49 | 0 |
+| `after_indexing` | 36.69 | 89.22 | 129.35 | 0.15 | 0 |
+| `after_embedding_model_load` | 37.7 | 89.45 | 129.6 | 0.15 | 1.5 |
+| `after_slm_load` | 37.7 | 89.45 | 129.6 | 0.15 | 2 |
+| `peak_compilation` | 37.96 | 89.45 | 129.6 | 0.15 | 2 |
+| `after_model_unload` | 37.97 | 89.45 | 129.6 | 0.15 | 0 |
 
 ### Scale Stress Growth
 | Symbol / Document Count | Graph Nodes | BM25 Documents | Heap Delta (MB) | Process RSS Delta (MB) | Growth Rate (MB / 10k) |
 | :--- | :---: | :---: | :---: | :---: | :---: |
-| **1,000** | 1,000 | 200 | +1.24 | +0.01 | 12.38 MB |
-| **10,000** | 10,000 | 2,000 | +14.11 | +5.36 | 14.11 MB |
-| **50,000** | 50,000 | 10,000 | +25.48 | +35.32 | 5.1 MB |
-| **1,00,000** | 1,00,000 | 20,000 | +45.73 | +78.16 | 4.57 MB |
+| **1,000** | 1,000 | 200 | +1.24 | +0.13 | 12.37 MB |
+| **10,000** | 10,000 | 2,000 | +14.08 | +12.36 | 14.08 MB |
+| **50,000** | 50,000 | 10,000 | +10.2 | +36.2 | 2.04 MB |
+| **1,00,000** | 1,00,000 | 20,000 | +93.14 | +105.37 | 9.31 MB |
 
 ---
 

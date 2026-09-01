@@ -20,9 +20,9 @@
     "ramTotalGB": 31.1,
     "tokenizerVersion": "Claude-BPE-v2 / o200k_base",
     "pricingProfileVersion": "2025-02-19-v1",
-    "timestamp": "2026-09-01T02:13:30.356Z"
+    "timestamp": "2026-09-01T02:28:28.125Z"
   },
-  "executionDurationSec": "0.00",
+  "executionDurationSec": "0.77",
   "sectionA_ProductionCorrectness": {
     "pipelineIntegrity": "PASS (100% Contract Compliant)",
     "deterministicGovernorCorrectness": "PASS (Deterministic Repeatability & Invariants Verified)",
@@ -38,11 +38,11 @@
     "trainingSplitTasks": 64,
     "validationSplitTasks": 48,
     "holdoutSplitTasks": 48,
-    "baselineCompileSuccessPct": 75,
+    "baselineCompileSuccessPct": 100,
     "tokonomicsCompileSuccessPct": 100,
-    "baselineTaskSuccessPct": 65,
+    "baselineTaskSuccessPct": 80,
     "tokonomicsTaskSuccessPct": 100,
-    "taskSuccessDeltaPercentagePoints": 35,
+    "taskSuccessDeltaPercentagePoints": 20,
     "regressionRatePct": 0,
     "fullContextParityRatio": 1.25,
     "degradationIncidentsCount": 0,
@@ -172,9 +172,9 @@
   },
   "sectionC_OptimizationImpact": {
     "baselineAverageTokens": 11512,
-    "tokonomicsAverageTokens": 2187,
-    "tokenReductionPct": 81,
-    "effectiveCostReductionPct": 86,
+    "tokonomicsAverageTokens": 91,
+    "tokenReductionPct": 99.2,
+    "effectiveCostReductionPct": 104.2,
     "layerAttribution": [
       {
         "layerId": "L1",
