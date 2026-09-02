@@ -146,22 +146,25 @@ export async function runPhase2ProtocolCompilerTests(): Promise<void> {
     assert.deepStrictEqual(providerPayload.messages, chatPayload.messages, 'chat and provider entry points must render the same canonical text payload');
 
     const lateCancelToken = { isCancellationRequested: false };
-    const lateCancelLatest = bus.getLatestEvent();
     mock.setNextModelResponseParts([new mock.LanguageModelTextPart('partial'), new mock.LanguageModelTextPart('must not stream')]);
     await proxy.provideLanguageModelChatResponse(
         { family: 'auto' },
         [{ role: mock.LanguageModelChatMessageRole.User, content: [new mock.LanguageModelTextPart('cancel during streaming')] }],
         { toolMode: 1 }, { report: () => { lateCancelToken.isCancellationRequested = true; } } as any, lateCancelToken as any
     );
-    assert.strictEqual(bus.getLatestEvent(), lateCancelLatest, 'stream cancellation must not commit metrics or lifecycle events');
+    const cancellationEvent = bus.getLatestEvent();
+    assert.strictEqual(cancellationEvent?.state, 'OPTIMIZATION_FAILED', 'stream cancellation must be recorded as a terminal failure');
+    assert.strictEqual(cancellationEvent?.errorCode, 'CANCELLED');
+    assert.strictEqual(cancellationEvent?.costStatus, 'unavailable');
 
     mock.setNextModelResponseParts([{ futureResponsePart: true }]);
-    const unknownLatest = bus.getLatestEvent();
     await assert.rejects(() => proxy.provideLanguageModelChatResponse(
         { family: 'auto' }, [{ role: mock.LanguageModelChatMessageRole.User, content: [new mock.LanguageModelTextPart('future response test')] }],
         { toolMode: 1 }, { report: () => undefined } as any, { isCancellationRequested: false } as any
     ), (error: unknown) => error instanceof ProtocolError && error.code === 'UNSUPPORTED_OUTPUT_PART');
-    assert.strictEqual(bus.getLatestEvent(), unknownLatest, 'unsupported output must not commit a successful lifecycle');
+    const protocolFailure = bus.getLatestEvent();
+    assert.strictEqual(protocolFailure?.state, 'OPTIMIZATION_FAILED', 'unsupported output must not commit a successful lifecycle');
+    assert.strictEqual(protocolFailure?.errorCode, 'UNSUPPORTED_OUTPUT_PART');
 
     console.log('Phase 2 canonical compiler and protocol conformance tests passed.');
 }

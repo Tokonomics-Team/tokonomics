@@ -22,6 +22,7 @@ import { LocalHistoryStore } from './history/localHistoryStore';
 import { FeatureFlagRegistry } from './engine/featureFlags';
 import { CanonicalRequestCompiler } from './protocol/canonicalCompiler';
 import { VersionedWorkspaceIndex } from './workspace/workspaceIndex';
+import { RequestLedger } from './events/requestLedger';
 
 let statusBarManager: StatusBarManager | undefined;
 
@@ -54,6 +55,7 @@ export async function activate(context: vscode.ExtensionContext) {
     });
 
     const cacheAligner = new CacheAlignerEngine();
+    RequestLedger.getInstance().configurePersistence(context.globalState);
     const metricsTracker = new MetricsTracker(context.globalState);
     const localHistoryStore = LocalHistoryStore.getInstance(context.globalState);
 
@@ -243,6 +245,8 @@ export async function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.commands.registerCommand('tokenOptimizer.resetMetrics', () => {
             metricsTracker.reset();
+            RequestLedger.getInstance().clear();
+            LiveMetricsAggregator.getInstance().resetSession();
             localHistoryStore.clear();
             responseCache.clear();
             logger.clear();
@@ -315,8 +319,10 @@ export async function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.commands.registerCommand('tokenOptimizer.liveStats', async () => {
             const summary = LiveMetricsAggregator.getInstance().getAggregateSummary('session');
+            const cost = summary.savedCostUSD === null ? 'cost unavailable'
+                : `${summary.reconciledPrompts < summary.costedPrompts ? '~' : ''}$${summary.savedCostUSD.toFixed(3)}`;
             vscode.window.showInformationMessage(
-                `⚡ Tokonomics Live Session: ${summary.totalPrompts} prompts | ${summary.savedTokens.toLocaleString()} tokens saved (-${summary.averageReductionPercentage}%) | ~$${summary.savedCostUSD.toFixed(3)} saved | CQ: ${summary.averagePredictedCQ}%`
+                `⚡ Tokonomics Live Session: ${summary.totalPrompts} prompts | ${summary.savedTokens.toLocaleString()} tokens saved (-${summary.averageReductionPercentage}%) | ${cost} saved | CQ: ${summary.averagePredictedCQ === null ? 'unavailable' : `${summary.averagePredictedCQ}%`}`
             );
         })
     );
@@ -333,19 +339,19 @@ export async function activate(context: vscode.ExtensionContext) {
                 `### ⚡ Active Session`,
                 `- **Prompts:** ${s.totalPrompts}`,
                 `- **Tokens Saved:** ${s.savedTokens.toLocaleString()} (-${s.averageReductionPercentage}%)`,
-                `- **Estimated Savings:** ~$${s.savedCostUSD.toFixed(3)} USD`,
-                `- **Average Context Quality:** ${s.averagePredictedCQ}%`,
-                `- **Average Latency:** ${s.averageOptimizationLatencyMs}ms`,
+                `- **Cost Savings:** ${s.savedCostUSD === null ? 'Unavailable' : `${s.reconciledPrompts < s.costedPrompts ? '~' : ''}$${s.savedCostUSD.toFixed(3)} USD`}`,
+                `- **Average Context Quality:** ${s.averagePredictedCQ === null ? 'Unavailable' : `${s.averagePredictedCQ}%`}`,
+                `- **Average Latency:** ${s.averageOptimizationLatencyMs === null ? 'Unavailable' : `${s.averageOptimizationLatencyMs}ms`}`,
                 ``,
                 `### 📅 Today`,
                 `- **Prompts:** ${t.totalPrompts}`,
                 `- **Tokens Saved:** ${t.savedTokens.toLocaleString()} (-${t.averageReductionPercentage}%)`,
-                `- **Estimated Savings:** ~$${t.savedCostUSD.toFixed(3)} USD`,
+                `- **Cost Savings:** ${t.savedCostUSD === null ? 'Unavailable' : `${t.reconciledPrompts < t.costedPrompts ? '~' : ''}$${t.savedCostUSD.toFixed(3)} USD`}`,
                 ``,
                 `### 🏛️ Lifetime`,
                 `- **Prompts:** ${l.totalPrompts}`,
                 `- **Tokens Saved:** ${l.savedTokens.toLocaleString()} (-${l.averageReductionPercentage}%)`,
-                `- **Estimated Savings:** ~$${l.savedCostUSD.toFixed(3)} USD`
+                `- **Cost Savings:** ${l.savedCostUSD === null ? 'Unavailable' : `${l.reconciledPrompts < l.costedPrompts ? '~' : ''}$${l.savedCostUSD.toFixed(3)} USD`}`
             ].join('\n');
 
             const doc = await vscode.workspace.openTextDocument({ content: report, language: 'markdown' });

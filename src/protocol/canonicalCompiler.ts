@@ -5,6 +5,7 @@ import { CanonicalMessage, VsCodeProtocolAdapter } from './canonicalProtocol';
 import { WorkspaceSnapshot } from '../workspace/workspaceIndex';
 import { EvidenceSignal } from '../retrieval/evidenceTypes';
 import { CanonicalPayloadTokenEstimator } from '../tokenizer/canonicalPayload';
+import { OptimizationEventBus } from '../events/optimizationEvent';
 
 export interface CanonicalCompileRequest {
     messages: CanonicalMessage[];
@@ -75,5 +76,20 @@ export class CanonicalRequestCompiler {
 
     public commit(result: CanonicalCompileResult): void {
         this.orchestrator.commitCompilation(result.compilation);
+    }
+
+    /** Record a terminal downstream failure without committing successful metrics. */
+    public fail(result: CanonicalCompileResult, errorCode: string): void {
+        if (result.compilation.committed) return;
+        const safeCode = errorCode.toUpperCase().replace(/[^A-Z0-9_]/g, '_').slice(0, 64) || 'UNKNOWN_ERROR';
+        OptimizationEventBus.getInstance().emit({
+            ...result.compilation.event,
+            timestamp: Date.now(),
+            state: 'OPTIMIZATION_FAILED',
+            isCostReconciled: false,
+            costStatus: 'unavailable',
+            errorCode: safeCode,
+            traceId: `${result.requestId}:failed:${safeCode}`
+        });
     }
 }

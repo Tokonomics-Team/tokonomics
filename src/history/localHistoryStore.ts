@@ -16,8 +16,9 @@ export interface PromptMetadataRecord {
     optimizedInputTokens: number;
     savedTokens: number;
     reductionPercentage: number;
-    savedCostUSD: number;
+    savedCostUSD: number | null;
     isCostReconciled: boolean;
+    costStatus?: 'projected' | 'reconciled' | 'unavailable';
     predictedCQ: number;
     evidenceCoverage: number;
     totalLatencyMs: number;
@@ -54,7 +55,8 @@ export class LocalHistoryStore {
     private subscribeToEventBus(): void {
         const bus = OptimizationEventBus.getInstance();
         this.unsubscribeFromBus = bus.subscribe((event: PromptOptimizationEvent) => {
-            if (event.state === 'OPTIMIZATION_COMPLETED' || event.state === 'COST_RECONCILED') {
+            if (event.state === 'OPTIMIZATION_COMPLETED' || event.state === 'COST_RECONCILED' ||
+                event.state === 'PROMPT_COMPLETED' || event.state === 'OPTIMIZATION_FAILED') {
                 this.saveEvent(event);
             }
         });
@@ -72,8 +74,12 @@ export class LocalHistoryStore {
             optimizedInputTokens: event.optimizedInputTokens,
             savedTokens: event.savedTokens,
             reductionPercentage: event.reductionPercentage,
-            savedCostUSD: event.isCostReconciled ? (event.actualSavingsUSD || 0) : event.projectedSavingsUSD,
+            savedCostUSD: event.costStatus === 'reconciled' && Number.isFinite(event.actualSavingsUSD)
+                ? event.actualSavingsUSD!
+                : event.costStatus === 'projected' && Number.isFinite(event.projectedSavingsUSD)
+                    ? event.projectedSavingsUSD : null,
             isCostReconciled: event.isCostReconciled,
+            costStatus: event.costStatus,
             predictedCQ: event.predictedCQ,
             evidenceCoverage: event.evidenceCoverage,
             totalLatencyMs: event.totalOptimizationLatencyMs,

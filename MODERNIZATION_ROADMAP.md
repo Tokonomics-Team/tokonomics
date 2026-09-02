@@ -471,6 +471,24 @@ Make every displayed value traceable to one real request lifecycle.
 - Dashboard totals reconcile with ledger totals.
 - No placeholder values remain in user-visible metrics.
 
+### Implementation status (2026-09-02)
+
+Implemented locally. The extension now uses an immutable, persistent request ledger;
+latest-record exactly-once projections; real activation-session, local-calendar-day,
+rolling-168-hour, and retained-lifetime windows; explicit projected, reconciled, and
+unavailable economics; verified cache-read accounting; terminal cancellation/error
+records; and hash-only decision traces. Dashboard, status-bar, `/live`, `/stats`, local
+history, and audit export consume the same canonical event contract. Fabricated empty
+CQ, coverage, latency, chart, model, waterfall, cache, and cost values were removed.
+
+The normative definitions and verification matrix are documented in
+`PHASE_7_OBSERVABILITY_CONTRACT.md`. Automated Phase 7 tests cover exactly-once
+reconciliation, immutable append semantics, local-midnight and rolling-window expiry,
+unavailable values, cache/cost truth, privacy, and failure accounting.
+
+Phase 8 remains blocked until the repository owner reviews this implementation and
+explicitly approves the next phase.
+
 ## Phase 8 - Performance, concurrency, and resilience
 
 ### Objective

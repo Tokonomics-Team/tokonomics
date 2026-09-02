@@ -366,24 +366,14 @@ export class PipelineOrchestrator {
                 latencyMs: durationMs
             }
         ];
-        if (cachePlanResult && cachePlanResult.staticPrefixTokens > 0) {
-            stageMetrics.push({
-                stageName: 'CacheAlignment',
-                tokensBefore: optimizedTokens,
-                tokensAfter: optimizedTokens,
-                tokensSaved: 0,
-                latencyMs: 0.01
-            });
-        }
-
         // Emit Authoritative Real-Time Optimization Event
         const event: PromptOptimizationEvent = {
             id: requestId,
             timestamp: Date.now(),
             sessionId: request.sessionId || 'session_active',
             state: 'OPTIMIZATION_COMPLETED',
-            taskType: 'debug',
-            taskConfidence: cqReport.breakdown.evidenceCoverage,
+            taskType: governorDecision.taskType,
+            taskConfidence: governorDecision.confidence,
             provider: request.targetProvider || 'anthropic',
             model: request.targetModel || 'auto',
             rawInputTokens: originalTokens,
@@ -407,7 +397,22 @@ export class PipelineOrchestrator {
             totalOptimizationLatencyMs: durationMs,
             stageMetrics,
             contextItemCount: request.messages.length,
-            traceId: `${requestId}:compile`
+            traceId: `${requestId}:compile`,
+            snapshotGeneration: request.workspaceSnapshot?.generation,
+            cacheState: cachePlanResult?.isCacheEligible ? 'eligible' : 'ineligible',
+            fallbackReasons: contentRestored ? Object.freeze(['preservation_gate_restored_original_content']) : Object.freeze([]),
+            selectionTrace: Object.freeze(budgetPlan.renderedAssignments.map(assignment => Object.freeze({
+                selectionHash: createHash('sha256').update(assignment.entityId).digest('hex'),
+                resolution: assignment.level,
+                tokenCount: assignment.tokenCount,
+                contentHash: assignment.renderedTextHash
+            }))),
+            budgetTrace: {
+                inputLimit: budgetPlan.inputTokenLimit,
+                outputReserve: budgetPlan.outputReserve,
+                finalInputTokens: budgetPlan.finalInputTokens,
+                projectedTotalTokens: budgetPlan.projectedTotalTokens
+            }
         };
         this.throwIfCancelled(request.cancellation);
         const result: ContextCompileResult = {

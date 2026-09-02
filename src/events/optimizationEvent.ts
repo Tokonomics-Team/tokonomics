@@ -4,6 +4,8 @@
  * the Dashboard, Status Bar, History, and Diagnostics.
  */
 
+import { RequestLedger } from './requestLedger';
+
 export type OptimizationLifecycleState =
     | 'PROMPT_RECEIVED'
     | 'OPTIMIZATION_STARTED'
@@ -31,7 +33,7 @@ export interface PromptOptimizationEvent {
     state: OptimizationLifecycleState;
 
     // Task and model metadata
-    taskType: 'debug' | 'refactor' | 'explain' | 'test' | 'generate' | 'general';
+    taskType: 'debug' | 'feature' | 'refactor' | 'explain' | 'test' | 'review' | 'architecture' | 'search' | 'completion' | 'generate' | 'general';
     taskConfidence: number;
     provider: string;
     model: string;
@@ -75,6 +77,13 @@ export interface PromptOptimizationEvent {
     contextItemCount: number;
 
     traceId: string;
+    snapshotGeneration?: number;
+    cacheState?: 'ineligible' | 'eligible' | 'response_hit' | 'provider_read' | 'provider_write' | 'none';
+    fallbackReasons?: readonly string[];
+    selectionTrace?: readonly { selectionHash: string; resolution: string; tokenCount: number; contentHash: string }[];
+    redactionCount?: number;
+    budgetTrace?: { inputLimit: number; outputReserve: number; finalInputTokens: number; projectedTotalTokens: number };
+    errorCode?: string;
 }
 
 export type EventLifecycleListener = (event: PromptOptimizationEvent) => void;
@@ -83,8 +92,7 @@ export class OptimizationEventBus {
     private static instance: OptimizationEventBus;
     private listeners: Map<string, Set<EventLifecycleListener>> = new Map();
     private globalListeners: Set<EventLifecycleListener> = new Set();
-    private eventHistory: PromptOptimizationEvent[] = [];
-    private maxHistory: number = 100;
+    private readonly ledger = RequestLedger.getInstance();
 
     public static getInstance(): OptimizationEventBus {
         if (!OptimizationEventBus.instance) {
@@ -112,11 +120,8 @@ export class OptimizationEventBus {
     }
 
     public emit(event: PromptOptimizationEvent): void {
-        // Maintain in-memory ring buffer
-        this.eventHistory.push(event);
-        if (this.eventHistory.length > this.maxHistory) {
-            this.eventHistory.shift();
-        }
+        const appended = this.ledger.append(event);
+        if (!appended) return;
 
         // Asynchronous non-blocking dispatch
         const dispatch = () => {
@@ -150,15 +155,15 @@ export class OptimizationEventBus {
     }
 
     public getRecentEvents(limit: number = 20): PromptOptimizationEvent[] {
-        return this.eventHistory.slice(-limit);
+        return this.ledger.getEntries().slice(-limit).map(entry => entry.event as PromptOptimizationEvent);
     }
 
     public getLatestEvent(): PromptOptimizationEvent | undefined {
-        return this.eventHistory[this.eventHistory.length - 1];
+        return this.ledger.getLatestEvent() as PromptOptimizationEvent | undefined;
     }
 
     public clear(): void {
-        this.eventHistory = [];
+        this.ledger.clear();
         this.listeners.clear();
         this.globalListeners.clear();
     }

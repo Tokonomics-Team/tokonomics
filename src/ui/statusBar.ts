@@ -7,6 +7,7 @@ import * as vscode from 'vscode';
 import { MetricsTracker } from '../metrics/tracker';
 import { DashboardWebviewPanel } from './dashboardWebview';
 import { OptimizationEventBus, PromptOptimizationEvent } from '../events/optimizationEvent';
+import { LiveMetricsAggregator } from '../metrics/liveAggregator';
 
 export class StatusBarManager {
     private statusBarItem: vscode.StatusBarItem;
@@ -29,7 +30,9 @@ export class StatusBarManager {
         const bus = OptimizationEventBus.getInstance();
         this.unsubscribeFromBus = bus.subscribe((event: PromptOptimizationEvent) => {
             if (event.state === 'OPTIMIZATION_COMPLETED' || event.state === 'COST_RECONCILED') {
-                this.flashSavings(event.savedTokens, event.isCostReconciled ? (event.actualSavingsUSD || 0) : event.projectedSavingsUSD);
+                const saved = event.costStatus === 'reconciled' ? event.actualSavingsUSD
+                    : event.costStatus === 'projected' ? event.projectedSavingsUSD : undefined;
+                this.flashSavings(event.savedTokens, saved, event.costStatus === 'projected');
             }
         });
     }
@@ -37,12 +40,13 @@ export class StatusBarManager {
     /**
      * Briefly flashes ephemeral savings feedback on prompt completion
      */
-    public flashSavings(savedTokens: number, savedUSD: number): void {
+    public flashSavings(savedTokens: number, savedUSD?: number, projected: boolean = false): void {
         if (this.flashTimeout) {
             clearTimeout(this.flashTimeout);
         }
 
-        const costStr = savedUSD >= 0.001 ? `$${savedUSD.toFixed(3)}` : `~$${savedUSD.toFixed(4)}`;
+        const costStr = savedUSD === undefined ? 'cost unavailable'
+            : `${projected ? '~' : ''}$${savedUSD.toFixed(savedUSD >= 0.001 ? 3 : 4)}`;
         this.statusBarItem.text = `$(zap) ${savedTokens.toLocaleString()} tokens saved | $(tag) ${costStr}`;
         this.statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.prominentBackground');
 
@@ -53,8 +57,8 @@ export class StatusBarManager {
     }
 
     public update(): void {
-        const metrics = this.metricsTracker.getCumulativeMetrics();
-        if (metrics.totalRequests === 0) {
+        const metrics = LiveMetricsAggregator.getInstance().getAggregateSummary('lifetime');
+        if (metrics.totalPrompts === 0) {
             this.statusBarItem.text = `$(zap) Tokonomics: Active`;
             this.statusBarItem.tooltip = new vscode.MarkdownString(
                 `### ⚡ Tokonomics Context Compiler\n\n` +
@@ -63,13 +67,15 @@ export class StatusBarManager {
                 `*Click to open the Real-Time Local Dashboard.*`
             );
         } else {
-            this.statusBarItem.text = `$(zap) ${metrics.overallReductionPercentage}% Saved ($${metrics.totalCostSavedUsd.toFixed(2)})`;
+            const cost = metrics.savedCostUSD === null ? 'cost unavailable'
+                : `${metrics.reconciledPrompts < metrics.costedPrompts ? '~' : ''}$${metrics.savedCostUSD.toFixed(2)}`;
+            this.statusBarItem.text = `$(zap) ${metrics.averageReductionPercentage}% Saved (${cost})`;
             this.statusBarItem.tooltip = new vscode.MarkdownString(
                 `### ⚡ Tokonomics Real-Time Live Savings\n\n` +
-                `- **Total Prompts Processed:** ${metrics.totalRequests}\n` +
-                `- **Tokens Pruned:** ${metrics.totalSavedTokens.toLocaleString()} (${metrics.overallReductionPercentage}% reduction)\n` +
-                `- **Estimated Dollar Savings:** $${metrics.totalCostSavedUsd.toFixed(3)} USD\n` +
-                `- **Cache Hit Ratio:** ~${Math.round(metrics.cacheHitRatioEstimated * 100)}%\n\n` +
+                `- **Total Prompts Processed:** ${metrics.totalPrompts}\n` +
+                `- **Tokens Pruned:** ${metrics.savedTokens.toLocaleString()} (${metrics.averageReductionPercentage}% reduction)\n` +
+                `- **Cost Savings:** ${cost}\n` +
+                `- **Verified Cache Read Ratio:** ${metrics.cacheHitRatio === null ? 'Unavailable' : `${Math.round(metrics.cacheHitRatio * 100)}%`}\n\n` +
                 `*Click to open Tokonomics Live Dashboard*`
             );
         }

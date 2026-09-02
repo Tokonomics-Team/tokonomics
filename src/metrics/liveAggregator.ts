@@ -1,179 +1,156 @@
-/**
- * Tokonomics Live Metrics Aggregator & In-Memory Ring Buffer
- * Real-time incremental O(1) multi-window metrics accumulator.
- */
+/** Ledger-derived, exactly-once multi-window metrics projections. */
 
-import { PromptOptimizationEvent, OptimizationEventBus } from '../events/optimizationEvent';
+import { PromptOptimizationEvent } from '../events/optimizationEvent';
+import { RequestLedger } from '../events/requestLedger';
 
 export type MetricTimeWindow = 'session' | 'today' | '7_days' | 'lifetime';
 
 export interface AggregateMetricsSummary {
     timeWindow: MetricTimeWindow;
     totalPrompts: number;
+    completedPrompts: number;
+    failedPrompts: number;
     rawTokens: number;
     optimizedTokens: number;
     savedTokens: number;
     averageReductionPercentage: number;
-    rawCostUSD: number;
-    optimizedCostUSD: number;
-    savedCostUSD: number;
-    cacheHitRatio: number;
-    averagePredictedCQ: number;
-    averageEvidenceCoverage: number;
-    averageOptimizationLatencyMs: number;
-}
-
-interface WindowBucket {
-    prompts: number;
-    rawTokens: number;
-    optimizedTokens: number;
-    savedTokens: number;
-    rawCostUSD: number;
-    optimizedCostUSD: number;
-    savedCostUSD: number;
-    totalCachedTokens: number;
-    totalCQScore: number;
-    totalEvidenceCoverage: number;
-    totalLatencyMs: number;
+    rawCostUSD: number | null;
+    optimizedCostUSD: number | null;
+    savedCostUSD: number | null;
+    costedPrompts: number;
+    reconciledPrompts: number;
+    cacheHitRatio: number | null;
+    averagePredictedCQ: number | null;
+    averageEvidenceCoverage: number | null;
+    averageOptimizationLatencyMs: number | null;
+    generatedAt: number;
 }
 
 export class LiveMetricsAggregator {
     private static instance: LiveMetricsAggregator;
-    private sessionBucket: WindowBucket;
-    private todayBucket: WindowBucket;
-    private sevenDaysBucket: WindowBucket;
-    private lifetimeBucket: WindowBucket;
+    private sessionStartTime: number;
 
-    private sessionStartTime = Date.now();
-    private todayStartTime = new Date().setHours(0, 0, 0, 0);
-    private ringBuffer: PromptOptimizationEvent[] = [];
-    private readonly maxRingBufferSize = 100;
-    private unsubscribeFromBus?: () => void;
-
-    constructor() {
-        this.sessionBucket = this.createEmptyBucket();
-        this.todayBucket = this.createEmptyBucket();
-        this.sevenDaysBucket = this.createEmptyBucket();
-        this.lifetimeBucket = this.createEmptyBucket();
-
-        this.subscribeToEventBus();
+    constructor(
+        private readonly ledger: RequestLedger = RequestLedger.getInstance(),
+        private readonly clock: () => number = () => Date.now(),
+        sessionStartTime?: number
+    ) {
+        this.sessionStartTime = sessionStartTime ?? this.clock();
     }
 
     public static getInstance(): LiveMetricsAggregator {
-        if (!LiveMetricsAggregator.instance) {
-            LiveMetricsAggregator.instance = new LiveMetricsAggregator();
-        }
+        if (!LiveMetricsAggregator.instance) LiveMetricsAggregator.instance = new LiveMetricsAggregator();
         return LiveMetricsAggregator.instance;
     }
 
-    private createEmptyBucket(): WindowBucket {
-        return {
-            prompts: 0,
-            rawTokens: 0,
-            optimizedTokens: 0,
-            savedTokens: 0,
-            rawCostUSD: 0,
-            optimizedCostUSD: 0,
-            savedCostUSD: 0,
-            totalCachedTokens: 0,
-            totalCQScore: 0,
-            totalEvidenceCoverage: 0,
-            totalLatencyMs: 0
-        };
-    }
+    /** Compatibility ingestion for tests and non-bus producers; ledger dedupes repeats. */
+    public recordEvent(event: PromptOptimizationEvent): void { this.ledger.append(event); }
 
-    private subscribeToEventBus(): void {
-        const bus = OptimizationEventBus.getInstance();
-        this.unsubscribeFromBus = bus.subscribe((event: PromptOptimizationEvent) => {
-            // Only aggregate completed / reconciled events
-            if (event.state === 'OPTIMIZATION_COMPLETED' || event.state === 'COST_RECONCILED') {
-                this.recordEvent(event);
+    public getAggregateSummary(window: MetricTimeWindow = 'session'): AggregateMetricsSummary {
+        const now = this.clock();
+        const since = this.windowStart(window, now);
+        const events = this.ledger.getLatestRequestEvents().filter(event => event.timestamp >= since && event.timestamp <= now);
+        let completedPrompts = 0;
+        let failedPrompts = 0;
+        let rawTokens = 0;
+        let optimizedTokens = 0;
+        let savedTokens = 0;
+        let rawCostUSD = 0;
+        let optimizedCostUSD = 0;
+        let savedCostUSD = 0;
+        let costedPrompts = 0;
+        let reconciledPrompts = 0;
+        let cachedTokens = 0;
+        let cacheInputTokens = 0;
+        const cq: number[] = [];
+        const coverage: number[] = [];
+        const latencies: number[] = [];
+
+        for (const event of events) {
+            if (event.state === 'OPTIMIZATION_FAILED') failedPrompts++;
+            else completedPrompts++;
+            if (Number.isFinite(event.rawInputTokens) && Number.isFinite(event.optimizedInputTokens)) {
+                rawTokens += event.rawInputTokens;
+                optimizedTokens += event.optimizedInputTokens;
+                savedTokens += event.savedTokens;
             }
+            const cost = costTuple(event);
+            if (cost) {
+                rawCostUSD += cost.raw;
+                optimizedCostUSD += cost.optimized;
+                savedCostUSD += cost.saved;
+                costedPrompts++;
+                if (event.costStatus === 'reconciled') reconciledPrompts++;
+            }
+            if (event.costStatus === 'reconciled' && Number.isFinite(event.cachedTokens) && Number.isFinite(event.optimizedInputTokens)) {
+                cachedTokens += event.cachedTokens || 0;
+                cacheInputTokens += event.optimizedInputTokens;
+            }
+            if (Number.isFinite(event.predictedCQ)) cq.push(event.predictedCQ);
+            if (Number.isFinite(event.evidenceCoverage)) coverage.push(event.evidenceCoverage);
+            if (Number.isFinite(event.totalOptimizationLatencyMs)) latencies.push(event.totalOptimizationLatencyMs);
+        }
+
+        return Object.freeze({
+            timeWindow: window,
+            totalPrompts: events.length,
+            completedPrompts,
+            failedPrompts,
+            rawTokens,
+            optimizedTokens,
+            savedTokens,
+            averageReductionPercentage: round(rawTokens > 0 ? (savedTokens / rawTokens) * 100 : 0, 1),
+            rawCostUSD: costedPrompts ? round(rawCostUSD, 5) : null,
+            optimizedCostUSD: costedPrompts ? round(optimizedCostUSD, 5) : null,
+            savedCostUSD: costedPrompts ? round(savedCostUSD, 5) : null,
+            costedPrompts,
+            reconciledPrompts,
+            cacheHitRatio: cacheInputTokens > 0 ? round(cachedTokens / cacheInputTokens, 4) : null,
+            averagePredictedCQ: average(cq, 1),
+            averageEvidenceCoverage: average(coverage, 3),
+            averageOptimizationLatencyMs: average(latencies, 3),
+            generatedAt: now
         });
     }
 
-    public recordEvent(event: PromptOptimizationEvent): void {
-        // Add to ring buffer
-        this.ringBuffer.push(event);
-        if (this.ringBuffer.length > this.maxRingBufferSize) {
-            this.ringBuffer.shift();
-        }
-
-        const now = Date.now();
-        const costRaw = event.isCostReconciled ? (event.actualRawCostUSD || 0) : event.projectedRawCostUSD;
-        const costOpt = event.isCostReconciled ? (event.actualOptimizedCostUSD || 0) : event.projectedOptimizedCostUSD;
-        const costSaved = event.isCostReconciled ? (event.actualSavingsUSD || 0) : event.projectedSavingsUSD;
-
-        const updateBucket = (b: WindowBucket) => {
-            b.prompts++;
-            b.rawTokens += event.rawInputTokens;
-            b.optimizedTokens += event.optimizedInputTokens;
-            b.savedTokens += event.savedTokens;
-            b.rawCostUSD += costRaw;
-            b.optimizedCostUSD += costOpt;
-            b.savedCostUSD += costSaved;
-            b.totalCachedTokens += (event.cachedTokens || 0);
-            b.totalCQScore += event.predictedCQ;
-            b.totalEvidenceCoverage += event.evidenceCoverage;
-            b.totalLatencyMs += event.totalOptimizationLatencyMs;
-        };
-
-        // 1. Session bucket
-        updateBucket(this.sessionBucket);
-
-        // 2. Today bucket (check rollover)
-        if (now - this.todayStartTime > 24 * 60 * 60 * 1000) {
-            this.todayBucket = this.createEmptyBucket();
-            this.todayStartTime = new Date().setHours(0, 0, 0, 0);
-        }
-        updateBucket(this.todayBucket);
-
-        // 3. 7-days bucket
-        updateBucket(this.sevenDaysBucket);
-
-        // 4. Lifetime bucket
-        updateBucket(this.lifetimeBucket);
-    }
-
-    public getAggregateSummary(window: MetricTimeWindow = 'session'): AggregateMetricsSummary {
-        let b: WindowBucket;
-        switch (window) {
-            case 'session': b = this.sessionBucket; break;
-            case 'today': b = this.todayBucket; break;
-            case '7_days': b = this.sevenDaysBucket; break;
-            case 'lifetime': b = this.lifetimeBucket; break;
-        }
-
-        const avgRedPct = b.rawTokens > 0 ? ((b.rawTokens - b.optimizedTokens) / b.rawTokens) * 100 : 0;
-        const cacheHitRatio = b.optimizedTokens > 0 ? (b.totalCachedTokens / b.optimizedTokens) : 0;
-        const avgCQ = b.prompts > 0 ? b.totalCQScore / b.prompts : 95.0;
-        const avgCoverage = b.prompts > 0 ? b.totalEvidenceCoverage / b.prompts : 0.95;
-        const avgLatency = b.prompts > 0 ? b.totalLatencyMs / b.prompts : 0.25;
-
-        return {
-            timeWindow: window,
-            totalPrompts: b.prompts,
-            rawTokens: b.rawTokens,
-            optimizedTokens: b.optimizedTokens,
-            savedTokens: b.savedTokens,
-            averageReductionPercentage: Math.round(avgRedPct * 10) / 10,
-            rawCostUSD: Math.round(b.rawCostUSD * 1000) / 1000,
-            optimizedCostUSD: Math.round(b.optimizedCostUSD * 1000) / 1000,
-            savedCostUSD: Math.round(b.savedCostUSD * 1000) / 1000,
-            cacheHitRatio: Math.round(cacheHitRatio * 1000) / 1000,
-            averagePredictedCQ: Math.round(avgCQ * 10) / 10,
-            averageEvidenceCoverage: Math.round(avgCoverage * 1000) / 1000,
-            averageOptimizationLatencyMs: Math.round(avgLatency * 100) / 100
-        };
-    }
-
     public getRecentEvents(limit: number = 50): PromptOptimizationEvent[] {
-        return this.ringBuffer.slice(-limit);
+        return this.ledger.getRecentRequestEvents(limit).map(event => event as PromptOptimizationEvent);
     }
 
-    public dispose(): void {
-        if (this.unsubscribeFromBus) {
-            this.unsubscribeFromBus();
-        }
+    public resetSession(): void { this.sessionStartTime = this.clock(); }
+    public dispose(): void { /* Ledger ownership is external. */ }
+
+    public static localDayStart(timestamp: number): number {
+        const value = new Date(timestamp);
+        value.setHours(0, 0, 0, 0);
+        return value.getTime();
     }
+
+    private windowStart(window: MetricTimeWindow, now: number): number {
+        if (window === 'session') return this.sessionStartTime;
+        if (window === 'today') return LiveMetricsAggregator.localDayStart(now);
+        if (window === '7_days') return now - 7 * 24 * 60 * 60 * 1000;
+        return Number.NEGATIVE_INFINITY;
+    }
+}
+
+function costTuple(event: Readonly<PromptOptimizationEvent>): { raw: number; optimized: number; saved: number } | undefined {
+    if (event.costStatus === 'reconciled' &&
+        Number.isFinite(event.actualRawCostUSD) && Number.isFinite(event.actualOptimizedCostUSD) && Number.isFinite(event.actualSavingsUSD)) {
+        return { raw: event.actualRawCostUSD!, optimized: event.actualOptimizedCostUSD!, saved: event.actualSavingsUSD! };
+    }
+    if (event.costStatus === 'projected' &&
+        Number.isFinite(event.projectedRawCostUSD) && Number.isFinite(event.projectedOptimizedCostUSD) && Number.isFinite(event.projectedSavingsUSD)) {
+        return { raw: event.projectedRawCostUSD, optimized: event.projectedOptimizedCostUSD, saved: event.projectedSavingsUSD };
+    }
+    return undefined;
+}
+
+function average(values: readonly number[], decimals: number): number | null {
+    return values.length ? round(values.reduce((sum, value) => sum + value, 0) / values.length, decimals) : null;
+}
+
+function round(value: number, decimals: number): number {
+    const factor = Math.pow(10, decimals);
+    return Math.round(value * factor) / factor;
 }

@@ -6,7 +6,7 @@
  *   - Multi-Window Executive Summary (Session, Today, 7 Days, Lifetime)
  *   - Live Active Prompt Pulse Card (OPTIMIZING -> OPTIMIZED -> ACTUAL RECONCILED)
  *   - Live Dynamic SVG Token & Cost Efficiency Stream Charts
- *   - Dual Waterfall Visualizer (Stage Token Reductions + 7-tier Cost Attribution)
+ *   - Evidence-backed stage token waterfall and request-level cost status
  *   - Live Prompt Ledger Table with instant event row insertion
  *   - Deep Optimization Inspector Modal (Intent, Retrieved/Excluded Evidence, CQ breakdown, Stage Deltas)
  *   - Side-by-Side Diff Trigger & Active File Audit
@@ -22,6 +22,9 @@ import { TokenCounter } from '../engine/tokenizer';
 import { TokenIgnoreFilter } from '../ignore/tokenIgnore';
 import { DashboardController } from './dashboardController';
 import { LiveMetricsAggregator, MetricTimeWindow } from '../metrics/liveAggregator';
+import { RequestLedger } from '../events/requestLedger';
+import { AggregateMetricsSummary } from '../metrics/liveAggregator';
+import { PromptOptimizationEvent } from '../events/optimizationEvent';
 
 export interface WorkspaceScanResult {
     totalFiles: number;
@@ -77,11 +80,19 @@ export class DashboardWebviewPanel {
         this.panel.webview.onDidReceiveMessage(async (message) => {
             if (message.command === 'resetMetrics') {
                 this.metricsTracker.reset();
+                RequestLedger.getInstance().clear();
+                LiveMetricsAggregator.getInstance().resetSession();
                 this.cachedWorkspaceScan = null;
                 this.updateContent();
                 vscode.window.showInformationMessage('Tokonomics metrics have been reset.');
             } else if (message.command === 'exportAuditLog') {
-                const data = JSON.stringify(this.metricsTracker.getCumulativeMetrics(), null, 2);
+                const ledger = RequestLedger.getInstance();
+                const data = JSON.stringify({
+                    schema: 'tokonomics.dashboard-export.v1',
+                    exportedAt: Date.now(),
+                    summary: LiveMetricsAggregator.getInstance().getAggregateSummary('lifetime'),
+                    requests: ledger.getLatestRequestEvents().map(event => ledger.getDecisionTrace(event.id))
+                }, null, 2);
                 const doc = await vscode.workspace.openTextDocument({ content: data, language: 'json' });
                 await vscode.window.showTextDocument(doc);
             } else if (message.command === 'comparePrunedDiff') {
@@ -309,14 +320,38 @@ export class DashboardWebviewPanel {
             .replace(/'/g, '&#039;');
     }
 
+    private serializeForScript(value: unknown): string {
+        return JSON.stringify(value)
+            .replace(/</g, '\\u003c')
+            .replace(/>/g, '\\u003e')
+            .replace(/&/g, '\\u0026')
+            .replace(/\u2028/g, '\\u2028')
+            .replace(/\u2029/g, '\\u2029');
+    }
+
     private getHtml(
-        summary: any,
-        recentEvents: any[],
+        summary: AggregateMetricsSummary,
+        recentEvents: PromptOptimizationEvent[],
         activeFile: ActiveFileDiagnosis | null,
         workspaceScan: WorkspaceScanResult
     ): string {
         const latestEvent = recentEvents[recentEvents.length - 1];
         const nonce = this.getNonce();
+        const money = (value: number | null | undefined, projected = false) => value === null || value === undefined
+            ? 'Unavailable' : `${projected ? '~' : ''}$${value.toFixed(4)}`;
+        const metric = (value: number | null | undefined, suffix: string) => value === null || value === undefined
+            ? 'Unavailable' : `${value}${suffix}`;
+        const stageWaterfall = latestEvent?.stageMetrics?.length
+            ? latestEvent.stageMetrics.map(stage => {
+                const percentage = stage.tokensBefore > 0 ? Math.max(0, Math.min(100, (stage.tokensSaved / stage.tokensBefore) * 100)) : 0;
+                return `<div class="waterfall-bar"><span>${this.escapeHtml(stage.stageName)}</span><div class="waterfall-fill-container"><div class="waterfall-fill" style="width: ${percentage.toFixed(1)}%; background: var(--cyan);"></div></div><strong style="color: var(--cyan);">-${this.escapeHtml(stage.tokensSaved)} tokens</strong></div>`;
+            }).join('')
+            : '<div class="card-sub">Unavailable — no stage metrics have been recorded.</div>';
+        const costEvidence = latestEvent?.costStatus === 'reconciled'
+            ? `<div class="card-sub">Provider-reconciled request savings: ${money(latestEvent.actualSavingsUSD)}. Per-stage financial attribution is unavailable.</div>`
+            : latestEvent?.costStatus === 'projected'
+                ? `<div class="card-sub">Projected request savings: ${money(latestEvent.projectedSavingsUSD, true)}. Per-stage financial attribution is unavailable.</div>`
+                : '<div class="card-sub">Cost unavailable — no verified usage or versioned price is attached to this request.</div>';
 
         return `<!DOCTYPE html>
 <html lang="en">
@@ -447,18 +482,18 @@ export class DashboardWebviewPanel {
         </div>
         <div class="card">
             <div class="card-label">💰 Net Cloud Savings</div>
-            <div class="card-val" id="sumSavedCost" style="color: var(--green);">$${this.escapeHtml(summary.savedCostUSD.toFixed(3))}</div>
-            <div class="card-sub" id="sumPrompts">${this.escapeHtml(summary.totalPrompts)} Prompts Optimized</div>
+            <div class="card-val" id="sumSavedCost" style="color: var(--green);">${this.escapeHtml(money(summary.savedCostUSD, summary.reconciledPrompts < summary.costedPrompts))}</div>
+            <div class="card-sub" id="sumPrompts">${this.escapeHtml(summary.completedPrompts)} completed · ${this.escapeHtml(summary.failedPrompts)} failed</div>
         </div>
         <div class="card">
             <div class="card-label">🎯 Context Quality (CQ)</div>
-            <div class="card-val" id="sumCQ" style="color: var(--purple);">${this.escapeHtml(summary.averagePredictedCQ)}%</div>
-            <div class="card-sub">Statistical Calibration ($r = 0.841$)</div>
+            <div class="card-val" id="sumCQ" style="color: var(--purple);">${this.escapeHtml(metric(summary.averagePredictedCQ, '%'))}</div>
+            <div class="card-sub">Ledger-derived prediction; unavailable when not recorded</div>
         </div>
         <div class="card">
             <div class="card-label">⚡ Compilation Latency</div>
-            <div class="card-val" id="sumLatency" style="color: var(--orange);">${this.escapeHtml(summary.averageOptimizationLatencyMs)}ms</div>
-            <div class="card-sub">Sub-millisecond P95 execution</div>
+            <div class="card-val" id="sumLatency" style="color: var(--orange);">${this.escapeHtml(metric(summary.averageOptimizationLatencyMs, 'ms'))}</div>
+            <div class="card-sub">Measured compiler latency average</div>
         </div>
     </div>
 
@@ -467,33 +502,33 @@ export class DashboardWebviewPanel {
         <div class="pulse-header">
             <div style="font-weight: 700; color: #fff;">🟢 Most Recent Optimization Turn</div>
             <span class="badge-status ${latestEvent?.isCostReconciled ? 'badge-reconciled' : 'badge-estimated'}" id="pulseStatus">
-                ${latestEvent ? (latestEvent.isCostReconciled ? 'Actual Reconciled' : 'Projected (Estimated)') : 'Active & Ready'}
+                ${latestEvent ? (latestEvent.costStatus === 'reconciled' ? 'Actual Reconciled' : latestEvent.costStatus === 'projected' ? 'Projected (Estimated)' : 'Cost Unavailable') : 'No Requests'}
             </span>
         </div>
         <div class="pulse-grid">
             <div class="pulse-item">
                 <div class="pulse-label">Target Model</div>
-                <div class="pulse-val" id="pulseModel">${this.escapeHtml(latestEvent?.model || 'claude-3-7-sonnet')}</div>
+                <div class="pulse-val" id="pulseModel">${this.escapeHtml(latestEvent?.model || 'Unavailable')}</div>
             </div>
             <div class="pulse-item">
                 <div class="pulse-label">Task Intent</div>
-                <div class="pulse-val" id="pulseTask">${this.escapeHtml(latestEvent?.taskType?.toUpperCase() || 'DEBUG')}</div>
+                <div class="pulse-val" id="pulseTask">${this.escapeHtml(latestEvent?.taskType?.toUpperCase() || 'Unavailable')}</div>
             </div>
             <div class="pulse-item">
                 <div class="pulse-label">Token Delta</div>
-                <div class="pulse-val" id="pulseTokens">${this.escapeHtml(latestEvent ? `${latestEvent.rawInputTokens.toLocaleString()} ➔ ${latestEvent.optimizedInputTokens.toLocaleString()}` : '0 ➔ 0')}</div>
+                <div class="pulse-val" id="pulseTokens">${this.escapeHtml(latestEvent ? `${latestEvent.rawInputTokens.toLocaleString()} ➔ ${latestEvent.optimizedInputTokens.toLocaleString()}` : 'Unavailable')}</div>
             </div>
             <div class="pulse-item">
                 <div class="pulse-label">Tokens Saved</div>
-                <div class="pulse-val" id="pulseSaved" style="color: var(--cyan);">${this.escapeHtml(latestEvent ? `${latestEvent.savedTokens.toLocaleString()} (-${latestEvent.reductionPercentage}%)` : '0 tokens')}</div>
+                <div class="pulse-val" id="pulseSaved" style="color: var(--cyan);">${this.escapeHtml(latestEvent ? `${latestEvent.savedTokens.toLocaleString()} (-${latestEvent.reductionPercentage}%)` : 'Unavailable')}</div>
             </div>
             <div class="pulse-item">
                 <div class="pulse-label">Cost Saved</div>
-                <div class="pulse-val" id="pulseCost" style="color: var(--green);">${this.escapeHtml(latestEvent ? (latestEvent.isCostReconciled ? `$${latestEvent.actualSavingsUSD?.toFixed(4)}` : `~$${latestEvent.projectedSavingsUSD?.toFixed(4)}`) : '$0.000')}</div>
+                <div class="pulse-val" id="pulseCost" style="color: var(--green);">${this.escapeHtml(latestEvent?.costStatus === 'reconciled' ? money(latestEvent.actualSavingsUSD) : latestEvent?.costStatus === 'projected' ? money(latestEvent.projectedSavingsUSD, true) : 'Unavailable')}</div>
             </div>
             <div class="pulse-item">
                 <div class="pulse-label">Quality Score</div>
-                <div class="pulse-val" id="pulseCQ" style="color: var(--purple);">${this.escapeHtml(latestEvent ? `${latestEvent.predictedCQ}% [${latestEvent.cqRating}]` : '96.4%')}</div>
+                <div class="pulse-val" id="pulseCQ" style="color: var(--purple);">${this.escapeHtml(latestEvent ? `${latestEvent.predictedCQ}% [${latestEvent.cqRating}]` : 'Unavailable')}</div>
             </div>
         </div>
     </div>
@@ -508,8 +543,8 @@ export class DashboardWebviewPanel {
             </div>
             <div class="chart-container">
                 <svg id="tokenStreamChart" class="live-chart" viewBox="0 0 400 100" preserveAspectRatio="none">
-                    <path id="rawTokenPath" d="M0,30 L80,25 L160,35 L240,20 L320,30 L400,25" fill="none" stroke="var(--red)" stroke-width="2" opacity="0.75" />
-                    <path id="optTokenPath" d="M0,85 L80,88 L160,82 L240,90 L320,85 L400,88" fill="none" stroke="var(--cyan)" stroke-width="2.5" />
+                    <path id="rawTokenPath" d="" fill="none" stroke="var(--red)" stroke-width="2" opacity="0.75" />
+                    <path id="optTokenPath" d="" fill="none" stroke="var(--cyan)" stroke-width="2.5" />
                 </svg>
             </div>
         </div>
@@ -522,8 +557,8 @@ export class DashboardWebviewPanel {
             </div>
             <div class="chart-container">
                 <svg id="costStreamChart" class="live-chart" viewBox="0 0 400 100" preserveAspectRatio="none">
-                    <path id="rawCostPath" d="M0,20 L80,25 L160,18 L240,30 L320,22 L400,20" fill="none" stroke="var(--orange)" stroke-width="2" opacity="0.75" />
-                    <path id="optCostPath" d="M0,80 L80,82 L160,85 L240,78 L320,82 L400,80" fill="none" stroke="var(--green)" stroke-width="2.5" />
+                    <path id="rawCostPath" d="" fill="none" stroke="var(--orange)" stroke-width="2" opacity="0.75" />
+                    <path id="optCostPath" d="" fill="none" stroke="var(--green)" stroke-width="2.5" />
                 </svg>
             </div>
         </div>
@@ -537,69 +572,16 @@ export class DashboardWebviewPanel {
                 <span>🌊 Stage-by-Stage Token Reduction Waterfall</span>
                 <span style="font-size: 10px; color: var(--cyan);">Authoritative Compiler Stages</span>
             </div>
-            <div class="waterfall-bar">
-                <span>AST Structural Pruning</span>
-                <div class="waterfall-fill-container"><div class="waterfall-fill" style="width: 42%; background: var(--cyan);"></div></div>
-                <strong style="color: var(--cyan);">-42%</strong>
-            </div>
-            <div class="waterfall-bar">
-                <span>System Dependence Slicing (SDG)</span>
-                <div class="waterfall-fill-container"><div class="waterfall-fill" style="width: 25%; background: var(--purple);"></div></div>
-                <strong style="color: var(--purple);">-25%</strong>
-            </div>
-            <div class="waterfall-bar">
-                <span>4-Tier Deduplication Suite</span>
-                <div class="waterfall-fill-container"><div class="waterfall-fill" style="width: 15%; background: var(--green);"></div></div>
-                <strong style="color: var(--green);">-15%</strong>
-            </div>
-            <div class="waterfall-bar">
-                <span>0-1 Knapsack Budget Solver</span>
-                <div class="waterfall-fill-container"><div class="waterfall-fill" style="width: 8%; background: var(--orange);"></div></div>
-                <strong style="color: var(--orange);">-8%</strong>
-            </div>
+            ${stageWaterfall}
         </div>
 
         <!-- 7-Tier Cost Attribution Waterfall -->
         <div class="section-box">
             <div class="section-title">
-                <span>💰 7-Tier Financial Savings Attribution</span>
-                <span style="font-size: 10px; color: var(--green);">Cloud Cache & Token Reductions</span>
+                <span>💰 Request Cost Evidence</span>
+                <span style="font-size: 10px; color: var(--green);">Projected and reconciled remain distinct</span>
             </div>
-            <div class="waterfall-bar">
-                <span>1. Context Structural Pruning</span>
-                <div class="waterfall-fill-container"><div class="waterfall-fill" style="width: 45%; background: var(--green);"></div></div>
-                <strong style="color: var(--green);">45%</strong>
-            </div>
-            <div class="waterfall-bar">
-                <span>2. Retrieval & Semantic Reranking</span>
-                <div class="waterfall-fill-container"><div class="waterfall-fill" style="width: 18%; background: var(--cyan);"></div></div>
-                <strong style="color: var(--cyan);">18%</strong>
-            </div>
-            <div class="waterfall-bar">
-                <span>3. 4-Tier Deduplication</span>
-                <div class="waterfall-fill-container"><div class="waterfall-fill" style="width: 12%; background: var(--purple);"></div></div>
-                <strong style="color: var(--purple);">12%</strong>
-            </div>
-            <div class="waterfall-bar">
-                <span>4. Representation Downgrades</span>
-                <div class="waterfall-fill-container"><div class="waterfall-fill" style="width: 8%; background: var(--orange);"></div></div>
-                <strong style="color: var(--orange);">8%</strong>
-            </div>
-            <div class="waterfall-bar">
-                <span>5. Text Compression</span>
-                <div class="waterfall-fill-container"><div class="waterfall-fill" style="width: 5%; background: #e3b341;"></div></div>
-                <strong style="color: #e3b341;">5%</strong>
-            </div>
-            <div class="waterfall-bar">
-                <span>6. Prefix Cache Alignment (90% Off)</span>
-                <div class="waterfall-fill-container"><div class="waterfall-fill" style="width: 10%; background: #388bfd;"></div></div>
-                <strong style="color: #388bfd;">10%</strong>
-            </div>
-            <div class="waterfall-bar">
-                <span>7. Tool & MCP Schema Compact</span>
-                <div class="waterfall-fill-container"><div class="waterfall-fill" style="width: 2%; background: #db61a2;"></div></div>
-                <strong style="color: #db61a2;">2%</strong>
-            </div>
+            ${costEvidence}
         </div>
     </div>
 
@@ -623,14 +605,14 @@ export class DashboardWebviewPanel {
             </thead>
             <tbody id="ledgerBody">
                 ${recentEvents.slice().reverse().map(e => `
-                <tr onclick="inspectEvent('${this.escapeHtml(e.id)}')">
+                <tr class="ledger-row" data-request-id="${this.escapeHtml(e.id)}">
                     <td>${new Date(e.timestamp).toLocaleTimeString()}</td>
-                    <td><strong style="color: #fff;">${this.escapeHtml(e.taskType?.toUpperCase() || 'DEBUG')}</strong></td>
-                    <td>${this.escapeHtml(e.model || 'claude-3-7-sonnet')}</td>
+                    <td><strong style="color: #fff;">${this.escapeHtml(e.taskType?.toUpperCase() || 'Unavailable')}</strong></td>
+                    <td>${this.escapeHtml(e.model || 'Unavailable')}</td>
                     <td>${this.escapeHtml(e.rawInputTokens.toLocaleString())} ➔ ${this.escapeHtml(e.optimizedInputTokens.toLocaleString())}</td>
                     <td style="color: var(--cyan); font-weight: 700;">-${this.escapeHtml(e.reductionPercentage)}%</td>
-                    <td style="color: var(--green); font-weight: 700;">${e.isCostReconciled ? `$${e.actualSavingsUSD?.toFixed(4)}` : `~$${e.projectedSavingsUSD?.toFixed(4)}`}</td>
-                    <td><span class="badge-status ${e.isCostReconciled ? 'badge-reconciled' : 'badge-estimated'}">${e.isCostReconciled ? 'Reconciled' : 'Estimated'}</span></td>
+                    <td style="color: var(--green); font-weight: 700;">${this.escapeHtml(e.costStatus === 'reconciled' ? money(e.actualSavingsUSD) : e.costStatus === 'projected' ? money(e.projectedSavingsUSD, true) : 'Unavailable')}</td>
+                    <td><span class="badge-status ${e.costStatus === 'reconciled' ? 'badge-reconciled' : 'badge-estimated'}">${e.costStatus === 'reconciled' ? 'Reconciled' : e.costStatus === 'projected' ? 'Projected' : 'Unavailable'}</span></td>
                 </tr>
                 `).join('')}
             </tbody>
@@ -667,16 +649,18 @@ export class DashboardWebviewPanel {
 
     <script nonce="${nonce}">
         const vscode = acquireVsCodeApi();
-        let eventsCache = ${JSON.stringify(recentEvents)};
+        let eventsCache = ${this.serializeForScript(recentEvents)};
 
         // Real-Time Event Stream Listener
         window.addEventListener('message', event => {
             const msg = event.data;
             if (msg.type === 'EVENT') {
                 const e = msg.payload;
-                eventsCache.push(e);
+                const existing = eventsCache.findIndex(item => item.id === e.id);
+                if (existing >= 0) eventsCache[existing] = e;
+                else eventsCache.push(e);
                 updatePulseCard(e);
-                prependLedgerRow(e);
+                upsertLedgerRow(e);
                 updateLiveCharts();
             } else if (msg.type === 'SUMMARY_UPDATE') {
                 updateSummaryCards(msg.payload);
@@ -685,105 +669,107 @@ export class DashboardWebviewPanel {
                 if (msg.payload.summary) updateSummaryCards(msg.payload.summary);
                 if (msg.payload.latestEvent) updatePulseCard(msg.payload.latestEvent);
                 updateLiveCharts();
+            } else if (msg.type === 'TRACE_DETAIL') {
+                document.getElementById('inspectorContent').innerText = JSON.stringify(msg.payload, null, 2);
+            } else if (msg.type === 'ERROR') {
+                document.getElementById('inspectorContent').innerText = msg.payload.message || 'Trace unavailable.';
             }
         });
 
         function updateSummaryCards(s) {
             document.getElementById('sumSavedTokens').innerText = s.savedTokens.toLocaleString();
             document.getElementById('sumReductionPct').innerText = '-' + s.averageReductionPercentage + '% Net Reduction';
-            document.getElementById('sumSavedCost').innerText = '$' + s.savedCostUSD.toFixed(3);
-            document.getElementById('sumPrompts').innerText = s.totalPrompts + ' Prompts Optimized';
-            document.getElementById('sumCQ').innerText = s.averagePredictedCQ + '%';
-            document.getElementById('sumLatency').innerText = s.averageOptimizationLatencyMs + 'ms';
+            document.getElementById('sumSavedCost').innerText = s.savedCostUSD === null ? 'Unavailable' : (s.reconciledPrompts < s.costedPrompts ? '~$' : '$') + s.savedCostUSD.toFixed(4);
+            document.getElementById('sumPrompts').innerText = s.completedPrompts + ' completed · ' + s.failedPrompts + ' failed';
+            document.getElementById('sumCQ').innerText = s.averagePredictedCQ === null ? 'Unavailable' : s.averagePredictedCQ + '%';
+            document.getElementById('sumLatency').innerText = s.averageOptimizationLatencyMs === null ? 'Unavailable' : s.averageOptimizationLatencyMs + 'ms';
         }
 
         function updatePulseCard(e) {
-            document.getElementById('pulseModel').innerText = e.model || 'claude-3-7-sonnet';
-            document.getElementById('pulseTask').innerText = (e.taskType || 'DEBUG').toUpperCase();
+            document.getElementById('pulseModel').innerText = e.model || 'Unavailable';
+            document.getElementById('pulseTask').innerText = e.taskType ? e.taskType.toUpperCase() : 'Unavailable';
             document.getElementById('pulseTokens').innerText = e.rawInputTokens.toLocaleString() + ' ➔ ' + e.optimizedInputTokens.toLocaleString();
             document.getElementById('pulseSaved').innerText = e.savedTokens.toLocaleString() + ' (-' + e.reductionPercentage + '%)';
-            document.getElementById('pulseCost').innerText = e.isCostReconciled ? '$' + (e.actualSavingsUSD || 0).toFixed(4) : '~$' + (e.projectedSavingsUSD || 0).toFixed(4);
-            document.getElementById('pulseCQ').innerText = e.predictedCQ + '% [' + (e.cqRating || 'EXCELLENT') + ']';
+            document.getElementById('pulseCost').innerText = e.costStatus === 'reconciled' && Number.isFinite(e.actualSavingsUSD)
+                ? '$' + e.actualSavingsUSD.toFixed(4)
+                : e.costStatus === 'projected' && Number.isFinite(e.projectedSavingsUSD) ? '~$' + e.projectedSavingsUSD.toFixed(4) : 'Unavailable';
+            document.getElementById('pulseCQ').innerText = Number.isFinite(e.predictedCQ) ? e.predictedCQ + '% [' + e.cqRating + ']' : 'Unavailable';
             
             const badge = document.getElementById('pulseStatus');
-            badge.className = 'badge-status ' + (e.isCostReconciled ? 'badge-reconciled' : 'badge-estimated');
-            badge.innerText = e.isCostReconciled ? 'Actual Reconciled' : 'Projected (Estimated)';
+            badge.className = 'badge-status ' + (e.costStatus === 'reconciled' ? 'badge-reconciled' : 'badge-estimated');
+            badge.innerText = e.costStatus === 'reconciled' ? 'Actual Reconciled' : e.costStatus === 'projected' ? 'Projected (Estimated)' : 'Cost Unavailable';
         }
 
-        function prependLedgerRow(e) {
+        function upsertLedgerRow(e) {
             const tbody = document.getElementById('ledgerBody');
+            const old = Array.from(tbody.querySelectorAll('tr')).find(row => row.dataset.requestId === e.id);
+            if (old) old.remove();
             const tr = document.createElement('tr');
+            tr.dataset.requestId = e.id;
             tr.onclick = () => inspectEvent(e.id);
             tr.innerHTML = \`
-                <td>\${new Date(e.timestamp).toLocaleTimeString()}</td>
-                <td><strong style="color: #fff;">\${(e.taskType || 'DEBUG').toUpperCase()}</strong></td>
-                <td>\${e.model || 'claude-3-7-sonnet'}</td>
+                <td>\${escapeText(new Date(e.timestamp).toLocaleTimeString())}</td>
+                <td><strong style="color: #fff;">\${escapeText(e.taskType ? e.taskType.toUpperCase() : 'Unavailable')}</strong></td>
+                <td>\${escapeText(e.model || 'Unavailable')}</td>
                 <td>\${e.rawInputTokens.toLocaleString()} ➔ \${e.optimizedInputTokens.toLocaleString()}</td>
                 <td style="color: var(--cyan); font-weight: 700;">-\${e.reductionPercentage}%</td>
-                <td style="color: var(--green); font-weight: 700;">\${e.isCostReconciled ? '$' + (e.actualSavingsUSD || 0).toFixed(4) : '~$' + (e.projectedSavingsUSD || 0).toFixed(4)}</td>
-                <td><span class="badge-status \${e.isCostReconciled ? 'badge-reconciled' : 'badge-estimated'}">\${e.isCostReconciled ? 'Reconciled' : 'Estimated'}</span></td>
+                <td style="color: var(--green); font-weight: 700;">\${e.costStatus === 'reconciled' && Number.isFinite(e.actualSavingsUSD) ? '$' + e.actualSavingsUSD.toFixed(4) : e.costStatus === 'projected' && Number.isFinite(e.projectedSavingsUSD) ? '~$' + e.projectedSavingsUSD.toFixed(4) : 'Unavailable'}</td>
+                <td><span class="badge-status \${e.costStatus === 'reconciled' ? 'badge-reconciled' : 'badge-estimated'}">\${e.costStatus === 'reconciled' ? 'Reconciled' : e.costStatus === 'projected' ? 'Projected' : 'Unavailable'}</span></td>
             \`;
             tbody.insertBefore(tr, tbody.firstChild);
         }
 
+        function escapeText(value) {
+            return String(value).replace(/[&<>"']/g, character => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            })[character]);
+        }
+
         function updateLiveCharts() {
-            if (!eventsCache || eventsCache.length === 0) return;
-            const recent = eventsCache.slice(-8);
-            if (recent.length < 2) return;
+            const tokenEvents = (eventsCache || []).filter(e => Number.isFinite(e.rawInputTokens) && Number.isFinite(e.optimizedInputTokens)).slice(-8);
+            const tokenPaths = buildPaths(tokenEvents.map(e => [e.rawInputTokens, e.optimizedInputTokens]));
+            document.getElementById('rawTokenPath').setAttribute('d', tokenPaths.first);
+            document.getElementById('optTokenPath').setAttribute('d', tokenPaths.second);
 
-            const maxTokens = Math.max(...recent.map(e => e.rawInputTokens || 1000));
-            const maxCost = Math.max(...recent.map(e => e.projectedRawCostUSD || 0.05));
+            const costPairs = (eventsCache || []).map(e => e.costStatus === 'reconciled'
+                ? [e.actualRawCostUSD, e.actualOptimizedCostUSD]
+                : e.costStatus === 'projected' ? [e.projectedRawCostUSD, e.projectedOptimizedCostUSD] : undefined)
+                .filter(pair => pair && pair.every(Number.isFinite)).slice(-8);
+            const costPaths = buildPaths(costPairs);
+            document.getElementById('rawCostPath').setAttribute('d', costPaths.first);
+            document.getElementById('optCostPath').setAttribute('d', costPaths.second);
+        }
 
-            let rawPts = [];
-            let optPts = [];
-            let rawCostPts = [];
-            let optCostPts = [];
-
-            recent.forEach((e, idx) => {
-                const x = Math.round((idx / (recent.length - 1)) * 400);
-                const rawY = Math.max(10, Math.round(90 - ((e.rawInputTokens / maxTokens) * 75)));
-                const optY = Math.max(10, Math.round(90 - ((e.optimizedInputTokens / maxTokens) * 75)));
-                rawPts.push(x + ',' + rawY);
-                optPts.push(x + ',' + optY);
-
-                const rcY = Math.max(10, Math.round(90 - (((e.projectedRawCostUSD || 0.01) / maxCost) * 75)));
-                const ocY = Math.max(10, Math.round(90 - (((e.projectedOptimizedCostUSD || 0.001) / maxCost) * 75)));
-                rawCostPts.push(x + ',' + rcY);
-                optCostPts.push(x + ',' + ocY);
+        function buildPaths(pairs) {
+            if (pairs.length < 2) return { first: '', second: '' };
+            const maximum = Math.max(...pairs.flat(), 0);
+            if (maximum <= 0) return { first: '', second: '' };
+            const first = [];
+            const second = [];
+            pairs.forEach((pair, index) => {
+                const x = Math.round((index / (pairs.length - 1)) * 400);
+                first.push(x + ',' + Math.max(10, Math.round(90 - ((pair[0] / maximum) * 75))));
+                second.push(x + ',' + Math.max(10, Math.round(90 - ((pair[1] / maximum) * 75))));
             });
-
-            document.getElementById('rawTokenPath').setAttribute('d', 'M' + rawPts.join(' L'));
-            document.getElementById('optTokenPath').setAttribute('d', 'M' + optPts.join(' L'));
-            document.getElementById('rawCostPath').setAttribute('d', 'M' + rawCostPts.join(' L'));
-            document.getElementById('optCostPath').setAttribute('d', 'M' + optCostPts.join(' L'));
+            return { first: 'M' + first.join(' L'), second: 'M' + second.join(' L') };
         }
 
         function inspectEvent(id) {
             const ev = eventsCache.find(x => x.id === id);
             if (ev) {
-                document.getElementById('inspIntent').innerHTML = 
-                    'Task Type: <strong>' + (ev.taskType || 'DEBUG').toUpperCase() + '</strong> (Confidence: ' + (ev.taskConfidence || 0.95) + ')<br/>' +
-                    'Model: <strong>' + (ev.model || 'claude-3-7-sonnet') + '</strong> | Provider: ' + (ev.provider || 'anthropic') + '<br/>' +
-                    'Cacheable Prefix: <strong>' + (ev.cacheableTokens || 0) + ' tokens</strong> | Cached: ' + (ev.cachedTokens || 0) + ' tokens';
-
-                document.getElementById('inspCQ').innerHTML = 
-                    'Context Quality (CQ): <strong>' + ev.predictedCQ + '% [' + (ev.cqRating || 'EXCELLENT') + ']</strong><br/>' +
-                    'Evidence Coverage: <strong>' + (Math.round((ev.evidenceCoverage || 0.95) * 100)) + '%</strong> | Slice Confidence: <strong>0.98</strong><br/>' +
-                    'Statistical Calibration: Pearson r = 0.841 | Sub-millisecond Execution';
-
-                if (ev.optimizationStageMetrics && ev.optimizationStageMetrics.length > 0) {
-                    document.getElementById('inspStages').innerHTML = ev.optimizationStageMetrics.map(m => 
-                        '• <strong>' + m.stageName + '</strong>: ' + m.tokensBefore + ' ➔ ' + m.tokensAfter + ' tokens (-' + m.tokensSaved + ' tok in ' + m.latencyMs + 'ms)'
-                    ).join('<br/>');
-                } else {
-                    document.getElementById('inspStages').innerHTML = 
-                        '• <strong>AST Structural Pruning</strong>: ' + ev.rawInputTokens + ' ➔ ' + Math.round(ev.rawInputTokens * 0.58) + ' (-42%)<br/>' +
-                        '• <strong>System Dependence Slicing</strong>: ' + Math.round(ev.rawInputTokens * 0.58) + ' ➔ ' + Math.round(ev.rawInputTokens * 0.33) + ' (-25%)<br/>' +
-                        '• <strong>4-Tier Deduplication</strong>: ' + Math.round(ev.rawInputTokens * 0.33) + ' ➔ ' + Math.round(ev.rawInputTokens * 0.18) + ' (-15%)<br/>' +
-                        '• <strong>Knapsack Budget Solver</strong>: ' + Math.round(ev.rawInputTokens * 0.18) + ' ➔ ' + ev.optimizedInputTokens + ' (-8%)';
-                }
-
-                document.getElementById('inspectorContent').innerText = JSON.stringify(ev, null, 2);
+                document.getElementById('inspIntent').innerText =
+                    'Task Type: ' + (ev.taskType ? ev.taskType.toUpperCase() : 'Unavailable') +
+                    ' | Confidence: ' + (Number.isFinite(ev.taskConfidence) ? ev.taskConfidence : 'Unavailable') + '\n' +
+                    'Model: ' + (ev.model || 'Unavailable') + ' | Provider: ' + (ev.provider || 'Unavailable') + '\n' +
+                    'Cache state: ' + (ev.cacheState || 'Unavailable') + ' | Cached tokens: ' + (Number.isFinite(ev.cachedTokens) ? ev.cachedTokens : 'Unavailable');
+                document.getElementById('inspCQ').innerText = Number.isFinite(ev.predictedCQ)
+                    ? 'Context Quality: ' + ev.predictedCQ + '% [' + ev.cqRating + ']\nEvidence Coverage: ' + Math.round(ev.evidenceCoverage * 100) + '% | Slice Confidence: ' + ev.sliceConfidence
+                    : 'Context quality unavailable.';
+                document.getElementById('inspStages').innerText = ev.stageMetrics && ev.stageMetrics.length
+                    ? ev.stageMetrics.map(m => '• ' + m.stageName + ': ' + m.tokensBefore + ' ➔ ' + m.tokensAfter + ' tokens (-' + m.tokensSaved + ' in ' + m.latencyMs + 'ms)').join('\n')
+                    : 'Stage metrics unavailable.';
+                document.getElementById('inspectorContent').innerText = 'Loading privacy-safe ledger trace…';
+                vscode.postMessage({ action: 'REQUEST_TRACE', requestId: id });
                 document.getElementById('inspectorModal').style.display = 'flex';
             }
         }
@@ -811,6 +797,9 @@ export class DashboardWebviewPanel {
         document.getElementById('btnScanWorkspace').addEventListener('click', () => vscode.postMessage({ command: 'scanWorkspace' }));
         document.getElementById('btnExport').addEventListener('click', () => vscode.postMessage({ command: 'exportAuditLog' }));
         document.getElementById('btnReset').addEventListener('click', () => vscode.postMessage({ command: 'resetMetrics' }));
+        document.querySelectorAll('.ledger-row').forEach(row => {
+            row.addEventListener('click', () => inspectEvent(row.dataset.requestId));
+        });
         
         updateLiveCharts();
     </script>

@@ -94,12 +94,14 @@ export function registerChatParticipant(
         // 2. /live Command: Real-Time Stream Summary
         if (command === 'live') {
             const summary = LiveMetricsAggregator.getInstance().getAggregateSummary('session');
+            const financialSavings = summary.savedCostUSD === null ? 'Unavailable'
+                : `${summary.reconciledPrompts < summary.costedPrompts ? '~' : ''}$${summary.savedCostUSD.toFixed(3)} USD`;
             response.markdown(`### ⚡ Tokonomics Live Session Efficiency Stream\n\n` +
-                `- **Prompts Optimized:** ${summary.totalPrompts}\n` +
+                `- **Requests Observed:** ${summary.totalPrompts} (${summary.completedPrompts} completed, ${summary.failedPrompts} failed)\n` +
                 `- **Total Tokens Saved:** **${summary.savedTokens.toLocaleString()} tokens** (-${summary.averageReductionPercentage}%)\n` +
-                `- **Financial Savings:** **~$${summary.savedCostUSD.toFixed(3)} USD**\n` +
-                `- **Calibrated Context Quality (CQ):** **${summary.averagePredictedCQ}%**\n` +
-                `- **Compiler Latency:** **${summary.averageOptimizationLatencyMs}ms**\n\n` +
+                `- **Financial Savings:** **${financialSavings}**\n` +
+                `- **Predicted Context Quality (CQ):** **${summary.averagePredictedCQ === null ? 'Unavailable' : `${summary.averagePredictedCQ}%`}**\n` +
+                `- **Compiler Latency:** **${summary.averageOptimizationLatencyMs === null ? 'Unavailable' : `${summary.averageOptimizationLatencyMs}ms`}**\n\n` +
                 `*Run \`@tokonomics /dashboard\` to view full real-time SVG charts.*`);
             return;
         }
@@ -318,9 +320,10 @@ export function registerChatParticipant(
 
         // 4. Dynamic /stats Command with Time Windows
         if (command === 'stats') {
-            const today = metricsTracker.getTodayMetrics();
-            const session = metricsTracker.getSessionMetrics();
-            const allTime = metricsTracker.getAllTimeMetrics();
+            const aggregator = LiveMetricsAggregator.getInstance();
+            const today = aggregator.getAggregateSummary('today');
+            const session = aggregator.getAggregateSummary('session');
+            const allTime = aggregator.getAggregateSummary('lifetime');
             const installDate = metricsTracker.getInstallationDate().toLocaleDateString();
             const indexStats = workspaceIndex.getStats();
             const ramStats = {
@@ -331,17 +334,18 @@ export function registerChatParticipant(
 
             response.markdown(`### ⚡ Enterprise AI Token Optimizer Live Telemetry\n\n`);
 
-            response.markdown(`#### 📅 Today's Performance (Last 24 Hours)\n`);
-            response.markdown(`- **Requests Processed:** ${today.requests}\n`);
-            response.markdown(`- **Tokens Pruned:** ${today.savedTokens.toLocaleString()} tokens (**${today.reductionPercentage}%** net reduction)\n`);
-            response.markdown(`- **Cost Saved Today:** $${today.costSavedUsd.toFixed(4)} USD\n`);
-            response.markdown(`- **Prompt Cache Hit Rate:** **${today.cacheHitPercentage}%** (requests $\\ge 1024$ prefix tokens)\n`);
+            response.markdown(`#### 📅 Today's Performance (Local Calendar Day)\n`);
+            response.markdown(`- **Requests Processed:** ${today.totalPrompts}\n`);
+            response.markdown(`- **Tokens Pruned:** ${today.savedTokens.toLocaleString()} tokens (**${today.averageReductionPercentage}%** net reduction)\n`);
+            response.markdown(`- **Cost Saved Today:** ${today.savedCostUSD === null ? 'Unavailable' : `${today.reconciledPrompts < today.costedPrompts ? '~' : ''}$${today.savedCostUSD.toFixed(4)} USD`}\n`);
+            response.markdown(`- **Verified Provider Cache Read Ratio:** **${today.cacheHitRatio === null ? 'Unavailable' : `${Math.round(today.cacheHitRatio * 1000) / 10}%`}**\n`);
             response.markdown(`- **In-Memory RAM Cache:** **${ramStats.usedMB} MB / ${ramStats.budgetMB} MB** (${ramStats.skeletonsCached} AST skeletons hot in RAM)\n\n`);
 
             response.markdown(`#### 🏛️ Cumulative (Since Installation on ${installDate})\n`);
-            response.markdown(`- **Total Prompts Optimized:** ${allTime.requests}\n`);
-            response.markdown(`- **Total Tokens Saved:** ${allTime.savedTokens.toLocaleString()} / ${allTime.originalTokens.toLocaleString()} tokens (**${allTime.reductionPercentage}%**)\n`);
-            response.markdown(`- **Total Cloud Spend Saved:** **$${allTime.costSavedUsd.toFixed(4)} USD**\n\n`);
+            response.markdown(`- **Total Requests Observed:** ${allTime.totalPrompts} (${allTime.completedPrompts} completed, ${allTime.failedPrompts} failed)\n`);
+            response.markdown(`- **Total Tokens Saved:** ${allTime.savedTokens.toLocaleString()} / ${allTime.rawTokens.toLocaleString()} tokens (**${allTime.averageReductionPercentage}%**)\n`);
+            response.markdown(`- **Total Cloud Spend Saved:** **${allTime.savedCostUSD === null ? 'Unavailable' : `${allTime.reconciledPrompts < allTime.costedPrompts ? '~' : ''}$${allTime.savedCostUSD.toFixed(4)} USD`}**\n`);
+            response.markdown(`- **Active Session Requests:** ${session.totalPrompts}\n\n`);
 
             response.markdown(`*Run \`@tokenopt /map\` for PageRank workspace structure or \`@tokenopt /ram\` for memory telemetry.*`);
             return;
@@ -419,6 +423,7 @@ export function registerChatParticipant(
         }
 
         // 6. Default AI Pair Programmer & Code Generation Handler
+        let activeCompilation: Awaited<ReturnType<CanonicalRequestCompiler['compile']>> | undefined;
         try {
             if (token.isCancellationRequested) return;
             const conf = vscode.workspace.getConfiguration('tokenOptimizer');
@@ -601,6 +606,7 @@ export function registerChatParticipant(
                 allowWorkspaceRetrieval: contextMode === 'automatic',
                 evidenceSignals
             });
+            activeCompilation = compiled;
             const compileResult = compiled.compilation;
             const prepared = prepareCanonicalEgress(compiled.messages, {}, {
                 workspaceRoots: workspaceRoots(),
@@ -630,6 +636,7 @@ export function registerChatParticipant(
 
             if (!models || models.length === 0) {
                 compiler.commit(compiled);
+                activeCompilation = undefined;
                 if (onOptimizationComplete) onOptimizationComplete();
                 BudgetGuardrail.checkBudget(metricsTracker);
                 response.markdown(`*(No downstream Copilot/Chat model available in active host)*\n\n**Optimized Prompt Payload:**\n\`\`\`markdown\n${prepared.messages.map(m => `[${m.role.toUpperCase()}]: ${m.parts.filter(p => p.kind === 'text').map(p => (p as any).text).join('')}`).join('\n\n')}\n\`\`\``);
@@ -673,7 +680,17 @@ export function registerChatParticipant(
                 const cacheHit = cache.lookup(exactCacheRequest);
                 if (cacheHit.hit && cacheHit.response) {
                     compiler.commit(compiled);
+                    activeCompilation = undefined;
                     if (onOptimizationComplete) onOptimizationComplete();
+                    OptimizationEventBus.getInstance().emit({
+                        ...compileResult.event,
+                        timestamp: Date.now(),
+                        state: 'PROMPT_COMPLETED',
+                        cacheState: 'response_hit',
+                        costStatus: 'unavailable',
+                        isCostReconciled: false,
+                        traceId: `${compiled.requestId}:response-cache-hit`
+                    });
                     response.markdown(`> ⚡ **Verified Exact Response Cache Hit**: identical request, conversation, workspace snapshot, evidence, model, tools, configuration, and policy.\n\n`);
                     response.markdown(cacheHit.response);
                     return;
@@ -684,7 +701,11 @@ export function registerChatParticipant(
             let completeResponseText = '';
             if ((llmResponse as any).stream) {
                 for await (const part of (llmResponse as any).stream as AsyncIterable<unknown>) {
-                    if (token.isCancellationRequested) return;
+                    if (token.isCancellationRequested) {
+                        compiler.fail(compiled, 'CANCELLED');
+                        activeCompilation = undefined;
+                        return;
+                    }
                     if (part instanceof vscode.LanguageModelTextPart) {
                         completeResponseText += part.value;
                         response.markdown(part.value);
@@ -694,14 +715,23 @@ export function registerChatParticipant(
                 }
             } else {
                 for await (const chunk of llmResponse.text) {
-                    if (token.isCancellationRequested) return;
+                    if (token.isCancellationRequested) {
+                        compiler.fail(compiled, 'CANCELLED');
+                        activeCompilation = undefined;
+                        return;
+                    }
                     completeResponseText += chunk;
                     response.markdown(chunk);
                 }
             }
-            if (token.isCancellationRequested) return;
+            if (token.isCancellationRequested) {
+                compiler.fail(compiled, 'CANCELLED');
+                activeCompilation = undefined;
+                return;
+            }
 
             compiler.commit(compiled);
+            activeCompilation = undefined;
             if (onOptimizationComplete) onOptimizationComplete();
             BudgetGuardrail.checkBudget(metricsTracker);
 
@@ -748,6 +778,8 @@ export function registerChatParticipant(
                         pricingCatalogVersion: costReconciled.pricingCatalogVersion,
                         pricingSource: costReconciled.pricingSource,
                         pricingCurrency: costReconciled.currency,
+                        cacheState: verifiedUsage.cacheReadInputTokens > 0 ? 'provider_read'
+                            : verifiedUsage.cacheWriteInputTokens > 0 ? 'provider_write' : compileResult.event.cacheState,
                         traceId: `${compiled.requestId}:reconciled`
                     };
                     OptimizationEventBus.getInstance().emit(reconciledEvent);
@@ -761,6 +793,10 @@ export function registerChatParticipant(
                 cache.store(exactCacheRequest, completeResponseText, 'completed');
             }
         } catch (err: any) {
+            if (activeCompilation) {
+                compiler.fail(activeCompilation, token.isCancellationRequested ? 'CANCELLED' : 'GENERATION_ERROR');
+                activeCompilation = undefined;
+            }
             response.markdown(`❌ Error during generation: ${err?.message || err}`);
         }
     });

@@ -69,6 +69,8 @@ export class TokenOptimizerLanguageModelProvider {
         });
         const stats = compiled.compilation;
 
+        try {
+
         if (!targetModel) {
             this.compiler.commit(compiled);
             this.onOptimizationComplete();
@@ -94,7 +96,10 @@ export class TokenOptimizerLanguageModelProvider {
 
         const responseStream: AsyncIterable<unknown> = (response as any).stream || this.textFallback(response.text);
         for await (const fragment of responseStream) {
-            if (token.isCancellationRequested) return;
+            if (token.isCancellationRequested) {
+                this.compiler.fail(compiled, 'CANCELLED');
+                return;
+            }
             if (fragment instanceof vscode.LanguageModelTextPart) {
                 progress.report(fragment);
             } else if (fragment instanceof vscode.LanguageModelToolCallPart || fragment instanceof vscode.LanguageModelToolResultPart || fragment instanceof vscode.LanguageModelDataPart) {
@@ -103,7 +108,10 @@ export class TokenOptimizerLanguageModelProvider {
                 throw new ProtocolError('UNSUPPORTED_OUTPUT_PART', 'The upstream model returned an unknown response part; it was not silently dropped.');
             }
         }
-        if (token.isCancellationRequested) return;
+        if (token.isCancellationRequested) {
+            this.compiler.fail(compiled, 'CANCELLED');
+            return;
+        }
 
         this.compiler.commit(compiled);
         this.onOptimizationComplete();
@@ -139,6 +147,8 @@ export class TokenOptimizerLanguageModelProvider {
                     pricingCatalogVersion: costReconciled.pricingCatalogVersion,
                     pricingSource: costReconciled.pricingSource,
                     pricingCurrency: costReconciled.currency,
+                    cacheState: verifiedUsage.cacheReadInputTokens > 0 ? 'provider_read'
+                        : verifiedUsage.cacheWriteInputTokens > 0 ? 'provider_write' : stats.event.cacheState,
                     traceId: `${compiled.requestId}:reconciled`
                 };
                 OptimizationEventBus.getInstance().emit(reconciledEvent);
@@ -148,6 +158,10 @@ export class TokenOptimizerLanguageModelProvider {
             }
         } else {
             this.emitCostUnavailable(stats.event, compiled.requestId, providerId, modelId);
+        }
+        } catch (error) {
+            this.compiler.fail(compiled, token.isCancellationRequested ? 'CANCELLED' : error instanceof ProtocolError ? error.code : 'UPSTREAM_PROVIDER_ERROR');
+            throw error;
         }
     }
 

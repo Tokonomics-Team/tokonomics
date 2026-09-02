@@ -7,10 +7,19 @@ import type * as vscode from 'vscode';
 import { OptimizationEventBus, PromptOptimizationEvent } from '../events/optimizationEvent';
 import { LiveMetricsAggregator, MetricTimeWindow } from '../metrics/liveAggregator';
 import { LocalHistoryStore } from '../history/localHistoryStore';
+import { RequestLedger, PrivacySafeDecisionTrace } from '../events/requestLedger';
 
 export interface WebviewMessage {
     type: 'EVENT' | 'SUMMARY_UPDATE' | 'INIT_STATE' | 'TRACE_DETAIL' | 'ERROR';
-    payload: any;
+    payload: PromptOptimizationEvent | ReturnType<LiveMetricsAggregator['getAggregateSummary']> |
+        DashboardInitialPayload | PrivacySafeDecisionTrace | { message: string };
+}
+
+export interface DashboardInitialPayload {
+    summary: ReturnType<LiveMetricsAggregator['getAggregateSummary']>;
+    recentEvents: PromptOptimizationEvent[];
+    latestEvent?: PromptOptimizationEvent;
+    historyRecords: ReturnType<LocalHistoryStore['getRecords']>;
 }
 
 export class DashboardController {
@@ -19,6 +28,7 @@ export class DashboardController {
     private eventBus = OptimizationEventBus.getInstance();
     private aggregator = LiveMetricsAggregator.getInstance();
     private historyStore = LocalHistoryStore.getInstance();
+    private ledger = RequestLedger.getInstance();
     private currentWindow: MetricTimeWindow = 'session';
     private unsubscribe?: () => void;
 
@@ -92,14 +102,23 @@ export class DashboardController {
                     payload: this.getInitialPayload()
                 });
                 break;
+
+            case 'REQUEST_TRACE': {
+                const trace = typeof msg.requestId === 'string' ? this.ledger.getDecisionTrace(msg.requestId) : undefined;
+                this.postToWebview(webview, trace
+                    ? { type: 'TRACE_DETAIL', payload: trace }
+                    : { type: 'ERROR', payload: { message: 'Trace unavailable for this request.' } });
+                break;
+            }
         }
     }
 
-    public getInitialPayload(): any {
+    public getInitialPayload(): DashboardInitialPayload {
+        const recentEvents = this.aggregator.getRecentEvents(50);
         return {
             summary: this.aggregator.getAggregateSummary(this.currentWindow),
-            recentEvents: this.aggregator.getRecentEvents(50),
-            latestEvent: this.eventBus.getLatestEvent(),
+            recentEvents,
+            latestEvent: recentEvents[recentEvents.length - 1],
             historyRecords: this.historyStore.getRecords(50)
         };
     }
