@@ -18,7 +18,6 @@ import { TokenCounter } from '../engine/tokenizer';
 import { MessagePayload, TokenOptimizationConfig } from '../types';
 import { TokenIgnoreFilter } from '../ignore/tokenIgnore';
 import { BudgetGuardrail } from '../metrics/budgetGuard';
-import { RepoMapEngine, FileWatchIndex } from '../repo/repoMap';
 import { ModelRouter } from '../engine/modelRouter';
 import { ResponseCache } from '../cache/responseCache';
 import { RelevanceScorer } from '../engine/relevanceScorer';
@@ -37,17 +36,17 @@ import { WorkspaceSourcePolicy } from '../security/sourcePolicy';
 import { CanonicalRequestCompiler } from '../protocol/canonicalCompiler';
 import { canonicalTextMessage, VsCodeProtocolAdapter } from '../protocol/canonicalProtocol';
 import { prepareCanonicalEgress } from '../protocol/canonicalEgress';
+import { VersionedWorkspaceIndex } from '../workspace/workspaceIndex';
 
 export function registerChatParticipant(
     context: vscode.ExtensionContext,
     metricsTracker: MetricsTracker,
     astEngine: AstPrunerEngine,
-    fileWatchIndex?: FileWatchIndex,
     responseCache?: ResponseCache,
     onOptimizationComplete?: () => void,
-    ramManager?: RamContextManager,
     pipelineOrchestrator?: PipelineOrchestrator,
-    requestCompiler?: CanonicalRequestCompiler
+    requestCompiler?: CanonicalRequestCompiler,
+    providedWorkspaceIndex?: VersionedWorkspaceIndex
 ) {
     if (!vscode.chat || typeof vscode.chat.createChatParticipant !== 'function') {
         return;
@@ -57,11 +56,11 @@ export function registerChatParticipant(
     const workspaceRoots = () => (vscode.workspace.workspaceFolders || []).map(folder => folder.uri.fsPath);
     const workspaceRoot = workspaceTrusted() ? workspaceRoots()[0] : undefined;
     const ignoreFilter = new TokenIgnoreFilter(workspaceRoot);
-    const watchIndex = fileWatchIndex || new FileWatchIndex(workspaceRoot);
     const cache = responseCache || new ResponseCache();
     const circuitBreaker = new AgenticCircuitBreaker();
-    const ram = ramManager || new RamContextManager(astEngine, undefined, workspaceRoot);
-    const orchestrator = pipelineOrchestrator || new PipelineOrchestrator(astEngine, ram, undefined, metricsTracker);
+    const turnCache = new RamContextManager(astEngine, { enableBackgroundWarming: false, enableSemanticIndex: false });
+    const workspaceIndex = providedWorkspaceIndex || new VersionedWorkspaceIndex(workspaceRoots(), astEngine, { trusted: workspaceTrusted() });
+    const orchestrator = pipelineOrchestrator || new PipelineOrchestrator(astEngine, undefined, undefined, metricsTracker, workspaceIndex);
     const compiler = requestCompiler || new CanonicalRequestCompiler(orchestrator);
     const protocol = new VsCodeProtocolAdapter();
 
@@ -76,6 +75,7 @@ export function registerChatParticipant(
 
     const participant = vscode.chat.createChatParticipant('token-optimizer-participant', async (request, chatContext, response, token) => {
         const command = request.command;
+        let requestSnapshot = workspaceIndex.captureSnapshot();
 
         if (!workspaceTrusted() && (command === 'map' || command === 'pack' || command === 'analyze')) {
             response.markdown('Workspace context is disabled in Restricted Mode. Trust this workspace before reading or analyzing project files.');
@@ -127,11 +127,14 @@ export function registerChatParticipant(
                 return;
             }
 
+            const mapMode = vscode.workspace.getConfiguration('tokenOptimizer')
+                .get<'off' | 'selection' | 'referenced' | 'automatic'>('workspaceContextMode', 'selection');
+            requestSnapshot = mapMode === 'automatic' ? await workspaceIndex.ensureInitialized() : await workspaceIndex.rebuild();
             const activeEditor = vscode.window.activeTextEditor;
             const activeFiles = activeEditor ? [activeEditor.document.fileName] : (lastActiveDocUri ? [lastActiveDocUri.fsPath] : []);
 
             response.markdown(`*Scanning workspace and calculating PageRank graph (Incremental Cache)...*\n\n`);
-            const mapResult = watchIndex.getMap(activeFiles, 1024, root);
+            const mapResult = workspaceIndex.generateRepoMap(activeFiles, 1024, requestSnapshot);
 
             metricsTracker.recordOptimization(
                 mapResult.tokenCount * 4,
@@ -269,7 +272,19 @@ export function registerChatParticipant(
 
         // 3. /ram Command: In-Memory Workspace Acceleration & RAM Diagnostics
         if (command === 'ram') {
-            const stats = ram.getStats();
+            const legacyStats = turnCache.getStats();
+            const stats = {
+                budgetMB: Math.round(workspaceIndex.getStats().budgetBytes / 1024 / 1024),
+                usedMB: Math.round((workspaceIndex.getStats().memoryBytes / 1024 / 1024) * 100) / 100,
+                usedBytes: workspaceIndex.getStats().memoryBytes,
+                skeletonsCached: workspaceIndex.getStats().filesIndexed,
+                symbolsIndexed: workspaceIndex.getStats().symbolsIndexed,
+                turnPointersCached: legacyStats.turnPointersCached,
+                hitRatePercentage: 0,
+                cacheHits: 0,
+                cacheMisses: 0,
+                isWarmed: workspaceIndex.getStats().generation > 0
+            };
             response.markdown(`### ⚡ Tokonomics In-Memory RAM Accelerator Telemetry\n\n`);
             response.markdown(`- **Configured RAM Budget:** **${stats.budgetMB} MB** (\`tokenOptimizer.ramBudgetMB\`)\n`);
             response.markdown(`- **Current RAM Usage:** **${stats.usedMB} MB** (${stats.usedBytes.toLocaleString()} bytes)\n`);
@@ -305,7 +320,12 @@ export function registerChatParticipant(
             const session = metricsTracker.getSessionMetrics();
             const allTime = metricsTracker.getAllTimeMetrics();
             const installDate = metricsTracker.getInstallationDate().toLocaleDateString();
-            const ramStats = ram.getStats();
+            const indexStats = workspaceIndex.getStats();
+            const ramStats = {
+                usedMB: Math.round((indexStats.memoryBytes / 1024 / 1024) * 100) / 100,
+                budgetMB: Math.round(indexStats.budgetBytes / 1024 / 1024),
+                skeletonsCached: indexStats.filesIndexed
+            };
 
             response.markdown(`### ⚡ Enterprise AI Token Optimizer Live Telemetry\n\n`);
 
@@ -401,6 +421,9 @@ export function registerChatParticipant(
             if (token.isCancellationRequested) return;
             const conf = vscode.workspace.getConfiguration('tokenOptimizer');
             const contextMode = conf.get<'off' | 'selection' | 'referenced' | 'automatic'>('workspaceContextMode', 'selection');
+            if (contextMode === 'automatic' && requestSnapshot.files.size === 0) {
+                requestSnapshot = await workspaceIndex.ensureInitialized();
+            }
             const mayReadWorkspace = workspaceTrusted() && contextMode !== 'off';
             const mayResolveReferencedFile = mayReadWorkspace && (contextMode === 'referenced' || contextMode === 'automatic');
             const mayAttachFullDocument = mayReadWorkspace && contextMode === 'automatic';
@@ -506,7 +529,7 @@ export function registerChatParticipant(
 
             // Phase 6: In-Memory BM25 Symbol Slices (Surgical RAM context retrieval)
             let referencedSlicesContext = '';
-            const slices = mayReadWorkspace && contextMode === 'automatic' ? ram.searchRelevantSlices(request.prompt, 2) : [];
+            const slices = mayReadWorkspace && contextMode === 'automatic' ? workspaceIndex.searchRelevantSlices(request.prompt, 2, requestSnapshot) : [];
             const filteredSlices = slices.filter(s => !doc || !s.file.includes(path.basename(doc.fileName)));
             if (filteredSlices.length > 0) {
                 referencedSlicesContext = `\n\n// 🔍 In-Memory Referenced Slices (RAM Index):\n` + filteredSlices.map(s => `// [${s.file}:${s.line}] ${s.kind} ${s.name}: ${s.signature}`).join('\n');
@@ -529,7 +552,7 @@ export function registerChatParticipant(
                 if (h instanceof vscode.ChatRequestTurn) {
                     const { text: rsText, stats: rsStats } = imageRightsizer.rightsizeInlineImages(h.prompt);
                     totalImageTokensSaved += rsStats.estimatedTokensSaved;
-                    const dedup = ram.deduplicateTurnCode(rsText, activeFileName || 'workspace');
+                    const dedup = turnCache.deduplicateTurnCode(rsText, activeFileName || 'workspace');
                     rawMessages.push({ role: 'user', content: dedup.text });
                 } else if (h instanceof vscode.ChatResponseTurn) {
                     const participantName = (h as any).participant || (h as any).name || 'tokonomics';
@@ -557,7 +580,9 @@ export function registerChatParticipant(
                 targetProvider: (config.targetProvider as any) || 'anthropic',
                 activeFilePath: doc?.fileName,
                 userIntent: diffAnalysis.intent,
-                cancellation: token
+                cancellation: token,
+                workspaceSnapshot: requestSnapshot,
+                allowWorkspaceRetrieval: contextMode === 'automatic'
             });
             const compileResult = compiled.compilation;
             const prepared = prepareCanonicalEgress(compiled.messages, {}, {

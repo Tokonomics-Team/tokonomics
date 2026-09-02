@@ -12,6 +12,10 @@ therefore apply to transmitted requests.
   is eligible; full active-file discovery requires the explicit `automatic` setting.
 - Unsaved buffers are excluded by default. Sensitive filenames, ignore rules, binary
   files, oversized files, paths outside the workspace, and symlink escapes are blocked.
+- Whole-workspace snapshot construction and retrieval run automatically only when
+  `workspaceContextMode` is `automatic`. Invoking `/map` explicitly permits a current
+  local index build for that command. Merely capturing a snapshot never authorizes its
+  contents to be attached to a model request.
 - Immediately before a cloud request, the complete compiled text and string-valued
   model options pass through one fail-closed boundary for cancellation, size limits,
   credential redaction, and path anonymization.

@@ -16,13 +16,15 @@ import { CostCalculator } from '../cost/costCalculator';
 import { CanonicalRequestCompiler } from '../protocol/canonicalCompiler';
 import { ProtocolError, VsCodeProtocolAdapter } from '../protocol/canonicalProtocol';
 import { prepareCanonicalEgress } from '../protocol/canonicalEgress';
+import { WorkspaceSnapshot } from '../workspace/workspaceIndex';
 
 export class TokenOptimizerLanguageModelProvider {
     private readonly protocol = new VsCodeProtocolAdapter();
 
     constructor(
         private compiler: CanonicalRequestCompiler,
-        private onOptimizationComplete: () => void
+        private onOptimizationComplete: () => void,
+        private captureWorkspaceSnapshot?: () => WorkspaceSnapshot
     ) {}
 
     public async provideTokenCount(
@@ -56,7 +58,8 @@ export class TokenOptimizerLanguageModelProvider {
             sessionId: 'session_lm_proxy',
             targetProvider: effectiveProvider,
             targetModel: targetModel?.id || detectedFamily,
-            cancellation: token
+            cancellation: token,
+            workspaceSnapshot: this.captureWorkspaceSnapshot?.()
         });
         const stats = compiled.compilation;
 

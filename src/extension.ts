@@ -13,16 +13,15 @@ import { registerChatParticipant } from './proxy/chatParticipant';
 import { TokenCounter } from './engine/tokenizer';
 import { PrunedDiffContentProvider } from './diff/diffProvider';
 import { BudgetGuardrail } from './metrics/budgetGuard';
-import { FileWatchIndex } from './repo/repoMap';
 import { ResponseCache } from './cache/responseCache';
 import { ReviewPrompter } from './ui/reviewPrompter';
-import { RamContextManager } from './engine/ramManager';
 import { AnonymizedLogger } from './security/anonymizedLogger';
 import { PipelineOrchestrator } from './engine/pipelineOrchestrator';
 import { LiveMetricsAggregator } from './metrics/liveAggregator';
 import { LocalHistoryStore } from './history/localHistoryStore';
 import { FeatureFlagRegistry } from './engine/featureFlags';
 import { CanonicalRequestCompiler } from './protocol/canonicalCompiler';
+import { VersionedWorkspaceIndex } from './workspace/workspaceIndex';
 
 let statusBarManager: StatusBarManager | undefined;
 
@@ -39,7 +38,9 @@ export async function activate(context: vscode.ExtensionContext) {
     });
 
     const workspaceIsTrusted = () => vscode.workspace.isTrusted !== false;
-    const workspaceRoot = workspaceIsTrusted() ? vscode.workspace.workspaceFolders?.[0]?.uri.fsPath : undefined;
+    const workspaceRoots = () => (vscode.workspace.workspaceFolders || []).map(folder => folder.uri.fsPath);
+    const automaticWorkspaceIndexing = () => vscode.workspace.getConfiguration('tokenOptimizer')
+        .get<'off' | 'selection' | 'referenced' | 'automatic'>('workspaceContextMode', 'selection') === 'automatic';
     const optConf = vscode.workspace.getConfiguration('tokenOptimizer');
 
     // Initialize pipeline mode from user configuration (default: compiler)
@@ -56,61 +57,79 @@ export async function activate(context: vscode.ExtensionContext) {
     const metricsTracker = new MetricsTracker(context.globalState);
     const localHistoryStore = LocalHistoryStore.getInstance(context.globalState);
 
-    // Initialize RAM Context Manager first with user-configured budget (matching package.json default: true)
-    const ramManager = new RamContextManager(astEngine, {
-        ramBudgetMB: optConf.get<number>('ramBudgetMB', 64),
-        enableBackgroundWarming: optConf.get<boolean>('enableBackgroundRamWarming', true),
-        enableSemanticIndex: optConf.get<boolean>('enableRamSemanticIndex', true)
-    }, workspaceRoot);
+    const workspaceIndex = new VersionedWorkspaceIndex(workspaceRoots(), astEngine, {
+        budgetMB: optConf.get<number>('ramBudgetMB', 64),
+        maxFileBytes: optConf.get<number>('maxIndexFileSizeKB', 300) * 1024,
+        trusted: workspaceIsTrusted()
+    });
+    context.subscriptions.push({ dispose: () => workspaceIndex.dispose() });
 
-    const pipelineOrchestrator = new PipelineOrchestrator(astEngine, ramManager, cacheAligner, metricsTracker);
+    const pipelineOrchestrator = new PipelineOrchestrator(astEngine, undefined, cacheAligner, metricsTracker, workspaceIndex);
     const requestCompiler = new CanonicalRequestCompiler(pipelineOrchestrator);
-    const fileWatchIndex = new FileWatchIndex(workspaceRoot);
     const cacheMaxSize = optConf.get<number>('responseCacheMaxSize', 100);
     const responseCache = new ResponseCache(cacheMaxSize);
     const reviewPrompter = new ReviewPrompter(context.globalState);
 
-    // 2. Setup Document Watchers for Incremental Indexing & RAM Cache Invalidation
+    // 2. One versioned facade owns all production workspace intelligence.
     context.subscriptions.push(
         vscode.workspace.onDidChangeTextDocument(e => {
-            if (!workspaceIsTrusted()) return;
+            if (!workspaceIsTrusted() || !automaticWorkspaceIndexing()) return;
             const file = e.document.fileName;
-            fileWatchIndex.onFileChanged(file);
             responseCache.invalidateForFile(file);
-            ramManager.onFileChanged(file);
+            const includeUnsaved = vscode.workspace.getConfiguration('tokenOptimizer').get<boolean>('includeUnsavedBuffers', false);
+            if (includeUnsaved) workspaceIndex.scheduleUpsert(file, { text: e.document.getText(), version: e.document.version });
+            if (/[/\\](?:\.gitignore|\.tokenignore)$/i.test(file)) void workspaceIndex.rebuild();
         })
     );
+    if (typeof vscode.workspace.onDidSaveTextDocument === 'function') {
+        context.subscriptions.push(vscode.workspace.onDidSaveTextDocument(document => {
+            if (workspaceIsTrusted() && automaticWorkspaceIndexing()) workspaceIndex.scheduleUpsert(document.fileName);
+        }));
+    }
     context.subscriptions.push(
         vscode.workspace.onDidCreateFiles(e => {
-            if (!workspaceIsTrusted()) return;
+            if (!workspaceIsTrusted() || !automaticWorkspaceIndexing()) return;
             for (const f of e.files) {
-                fileWatchIndex.onFileCreated(f.fsPath);
+                workspaceIndex.scheduleUpsert(f.fsPath);
             }
         })
     );
     context.subscriptions.push(
         vscode.workspace.onDidDeleteFiles(e => {
-            if (!workspaceIsTrusted()) return;
+            if (!workspaceIsTrusted() || !automaticWorkspaceIndexing()) return;
             for (const f of e.files) {
-                fileWatchIndex.onFileDeleted(f.fsPath);
                 responseCache.invalidateForFile(f.fsPath);
-                ramManager.onFileDeleted(f.fsPath);
+                workspaceIndex.delete(f.fsPath);
             }
         })
     );
+    if (typeof vscode.workspace.onDidRenameFiles === 'function') {
+        context.subscriptions.push(vscode.workspace.onDidRenameFiles(e => {
+            if (!workspaceIsTrusted() || !automaticWorkspaceIndexing()) return;
+            for (const file of e.files) {
+                responseCache.invalidateForFile(file.oldUri.fsPath);
+                void workspaceIndex.rename(file.oldUri.fsPath, file.newUri.fsPath);
+            }
+        }));
+    }
+    if (typeof vscode.workspace.onDidChangeWorkspaceFolders === 'function') {
+        context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders(() => {
+            void workspaceIndex.replaceRoots(workspaceRoots(), automaticWorkspaceIndexing() && workspaceIsTrusted());
+        }));
+    }
 
     // Dynamic configuration listener
     context.subscriptions.push(
         vscode.workspace.onDidChangeConfiguration(e => {
-            if (e.affectsConfiguration('tokenOptimizer.ramBudgetMB') ||
-                e.affectsConfiguration('tokenOptimizer.enableBackgroundRamWarming') ||
-                e.affectsConfiguration('tokenOptimizer.enableRamSemanticIndex')) {
-                const conf = vscode.workspace.getConfiguration('tokenOptimizer');
-                ramManager.updateConfig({
-                    ramBudgetMB: conf.get<number>('ramBudgetMB', 64),
-                    enableBackgroundWarming: conf.get<boolean>('enableBackgroundRamWarming', true),
-                    enableSemanticIndex: conf.get<boolean>('enableRamSemanticIndex', true)
-                });
+            if (e.affectsConfiguration('tokenOptimizer.ramBudgetMB')) {
+                workspaceIndex.updateBudgetMB(vscode.workspace.getConfiguration('tokenOptimizer').get<number>('ramBudgetMB', 64));
+            }
+            if (e.affectsConfiguration('tokenOptimizer.workspaceContextMode')) {
+                if (automaticWorkspaceIndexing()) void workspaceIndex.rebuild();
+                else {
+                    workspaceIndex.setTrusted(false);
+                    workspaceIndex.setTrusted(workspaceIsTrusted());
+                }
             }
             if (e.affectsConfiguration('tokenOptimizer.pipelineMode')) {
                 const conf = vscode.workspace.getConfiguration('tokenOptimizer');
@@ -121,21 +140,31 @@ export async function activate(context: vscode.ExtensionContext) {
         })
     );
 
-    // Background RAM Pre-Warming (Enabled by default per package.json manifest)
+    // Background snapshot construction; per-file sequences prevent stale publication.
     const warmTrustedWorkspace = () => {
-        const trustedRoot = workspaceIsTrusted() ? vscode.workspace.workspaceFolders?.[0]?.uri.fsPath : undefined;
-        if (!trustedRoot || !optConf.get<boolean>('enableBackgroundRamWarming', true)) return;
+        if (workspaceRoots().length === 0 || !automaticWorkspaceIndexing() || !optConf.get<boolean>('enableBackgroundRamWarming', true)) return;
         setTimeout(() => {
-            ramManager.warmWorkspace(trustedRoot).then(res => {
-                console.log(`[Tokonomics] RAM Pre-Warm complete: ${res.skeletonsCached} skeletons, ${res.symbolsIndexed} symbols in ${res.durationMs}ms`);
+            workspaceIndex.initialize().then(async snapshot => {
+                console.log(`[Tokonomics] Workspace snapshot ${snapshot.generation} ready: ${snapshot.files.size} files, ${snapshot.symbols.length} symbols`);
+                const includeUnsaved = vscode.workspace.getConfiguration('tokenOptimizer').get<boolean>('includeUnsavedBuffers', false);
+                if (includeUnsaved) {
+                    for (const document of vscode.workspace.textDocuments || []) {
+                        if (document.isDirty && !document.isUntitled) {
+                            await workspaceIndex.upsert(document.fileName, { text: document.getText(), version: document.version });
+                        }
+                    }
+                }
             }).catch(err => {
-                console.warn('[Tokonomics] RAM Pre-Warm warning:', err);
+                console.warn('[Tokonomics] Workspace index warning:', err);
             });
         }, 1000);
     };
     warmTrustedWorkspace();
     if (typeof vscode.workspace.onDidGrantWorkspaceTrust === 'function') {
-        context.subscriptions.push(vscode.workspace.onDidGrantWorkspaceTrust(warmTrustedWorkspace));
+        context.subscriptions.push(vscode.workspace.onDidGrantWorkspaceTrust(() => {
+            workspaceIndex.setTrusted(true);
+            void workspaceIndex.replaceRoots(workspaceRoots(), false).then(warmTrustedWorkspace);
+        }));
     }
 
     // 3. Setup UI & Visual Diff Provider
@@ -156,7 +185,8 @@ export async function activate(context: vscode.ExtensionContext) {
     try {
         const provider = new TokenOptimizerLanguageModelProvider(
             requestCompiler,
-            onComplete
+            onComplete,
+            () => workspaceIndex.captureSnapshot()
         );
 
         if (vscode.lm && typeof (vscode.lm as any).registerLanguageModelChatProvider === 'function') {
@@ -177,12 +207,11 @@ export async function activate(context: vscode.ExtensionContext) {
             context,
             metricsTracker,
             astEngine,
-            fileWatchIndex,
             responseCache,
             onComplete,
-            ramManager,
             pipelineOrchestrator,
-            requestCompiler
+            requestCompiler,
+            workspaceIndex
         );
     } catch (err) {
         console.warn('[Tokonomics] Chat participant registration note:', err);

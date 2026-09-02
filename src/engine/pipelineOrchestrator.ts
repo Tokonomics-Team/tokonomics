@@ -27,6 +27,7 @@ import { DeterministicContextGovernor } from '../governor/contextGovernor';
 import { ContextGovernorDecision, EvidenceCategory } from '../governor/governorTypes';
 
 import { PreservationGate } from '../evaluation/preservationGate';
+import { VersionedWorkspaceIndex, WorkspaceSnapshot } from '../workspace/workspaceIndex';
 
 export interface ContextCompileRequest {
     messages: MessagePayload[];
@@ -41,6 +42,8 @@ export interface ContextCompileRequest {
     cancellation?: CancellationLike;
     preserveProtocol?: boolean;
     deferSideEffects?: boolean;
+    workspaceSnapshot?: WorkspaceSnapshot;
+    allowWorkspaceRetrieval?: boolean;
 }
 
 export interface CancellationLike { readonly isCancellationRequested: boolean; }
@@ -63,6 +66,7 @@ export interface ContextCompileResult {
     governorDecision?: ContextGovernorDecision;
     event: PromptOptimizationEvent;
     committed: boolean;
+    snapshotGeneration?: number;
 }
 
 export class PipelineOrchestrator {
@@ -79,7 +83,8 @@ export class PipelineOrchestrator {
         private astEngine: AstPrunerEngine = new AstPrunerEngine(),
         private ramManager?: RamContextManager,
         private cacheAligner?: CacheAlignerEngine,
-        private metricsTracker?: MetricsTracker
+        private metricsTracker?: MetricsTracker,
+        private workspaceIndex?: VersionedWorkspaceIndex
     ) {}
 
     public getTraceLogger(): TraceLogger {
@@ -130,8 +135,16 @@ export class PipelineOrchestrator {
             }
         ];
 
-        // 1b. In-Memory RAM Context Accelerator Invariant
-        if (this.ramManager) {
+        // 1b. Immutable workspace snapshot invariant
+        if (request.workspaceSnapshot) {
+            decisions.push({
+                itemId: 'workspace_snapshot',
+                action: 'include',
+                reason: `Captured immutable workspace generation ${request.workspaceSnapshot.generation} (${request.workspaceSnapshot.files.size} files, ${request.workspaceSnapshot.symbols.length} symbols)`,
+                confidence: 1.0,
+                evidence: ['VersionedWorkspaceIndex', `generation:${request.workspaceSnapshot.generation}`]
+            });
+        } else if (this.ramManager) {
             const stats = this.ramManager.getStats();
             decisions.push({
                 itemId: 'ram_context_accelerator',
@@ -315,7 +328,8 @@ export class PipelineOrchestrator {
             pipelineModeUsed: mode,
             governorDecision,
             event,
-            committed: false
+            committed: false,
+            snapshotGeneration: request.workspaceSnapshot?.generation
         };
         if (!request.deferSideEffects) this.commitCompilation(result);
         return result;
@@ -490,8 +504,23 @@ export class PipelineOrchestrator {
             }
         }
 
-        // 2b. In-Memory RAM Candidate Symbol Enrichment (if available)
-        if (this.ramManager) {
+        // 2b. Request-pinned workspace candidate enrichment
+        if (request.allowWorkspaceRetrieval && request.workspaceSnapshot && this.workspaceIndex) {
+            const ramSlices = this.workspaceIndex.searchRelevantSlices(userInstruction, 3, request.workspaceSnapshot);
+            for (let r = 0; r < ramSlices.length; r++) {
+                const s = ramSlices[r];
+                const ramEntityId = `snapshot_slice_${request.workspaceSnapshot.generation}_${r}_${s.name}`;
+                candidateEntities.push({
+                    id: ramEntityId,
+                    filePath: s.file,
+                    symbolName: s.name,
+                    kind: s.kind as any,
+                    baseUtility: 60 - (r * 10),
+                    signatures: [s.signature],
+                    fullCode: `// [${s.file}:${s.line}]\n${s.signature} {\n  /* implementation */\n}`
+                });
+            }
+        } else if (this.ramManager) {
             const ramSlices = this.ramManager.searchRelevantSlices(userInstruction, 3);
             for (let r = 0; r < ramSlices.length; r++) {
                 const s = ramSlices[r];

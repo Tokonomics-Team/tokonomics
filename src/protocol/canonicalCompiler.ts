@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto';
 import { PipelineOrchestrator, ContextCompileResult, CancellationLike } from '../engine/pipelineOrchestrator';
 import { MessagePayload, TargetProvider } from '../types';
 import { CanonicalMessage, VsCodeProtocolAdapter } from './canonicalProtocol';
+import { WorkspaceSnapshot } from '../workspace/workspaceIndex';
 
 export interface CanonicalCompileRequest {
     messages: CanonicalMessage[];
@@ -14,6 +15,8 @@ export interface CanonicalCompileRequest {
     cursorLine?: number;
     userIntent?: string;
     cancellation?: CancellationLike;
+    workspaceSnapshot?: WorkspaceSnapshot;
+    allowWorkspaceRetrieval?: boolean;
 }
 
 export interface CanonicalCompileResult {
@@ -48,7 +51,9 @@ export class CanonicalRequestCompiler {
             userIntent: request.userIntent,
             cancellation: request.cancellation,
             preserveProtocol: structuredPassThrough,
-            deferSideEffects: true
+            deferSideEffects: true,
+            workspaceSnapshot: request.workspaceSnapshot,
+            allowWorkspaceRetrieval: request.allowWorkspaceRetrieval
         });
 
         const messages = structuredPassThrough

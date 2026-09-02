@@ -70,8 +70,8 @@ Request lifecycle -> append-only ledger -> dashboard and diagnostics
 |---:|---|---|---|
 | 0 | Measurement truth and release safety | Approved and complete | Granted |
 | 1 | Privacy, security, trust, and packaging | Approved and complete | Granted |
-| 2 | Canonical compiler and protocol-safe adapters | Implemented; pending owner review | Granted |
-| 3 | Versioned incremental workspace intelligence | Blocked on approval | Yes |
+| 2 | Canonical compiler and protocol-safe adapters | Approved and complete | Granted |
+| 3 | Versioned incremental workspace intelligence | Implemented; pending owner review | Granted |
 | 4 | Evidence-aware retrieval and preservation | Blocked on approval | Yes |
 | 5 | Global token budgeting and selection | Blocked on approval | Yes |
 | 6 | Correct caching and token economics | Blocked on approval | Yes |
@@ -217,8 +217,7 @@ Remove divergent chat/provider behavior and use one request-scoped compiler.
   early/late cancellation tests. The normative behavior and compatibility boundaries
   are recorded in `PROTOCOL_CONTRACT.md`.
 
-Phase 3 remains blocked until the repository owner reviews this implementation and
-explicitly approves the next phase.
+The repository owner subsequently reviewed Phase 2 and explicitly approved Phase 3.
 
 ## Phase 3 - Versioned incremental workspace intelligence
 
@@ -245,6 +244,39 @@ Make retrieval current, coherent, bounded, and scalable.
 - Late work cannot overwrite newer document versions.
 - Every request observes one snapshot generation.
 - Memory stays within the configured envelope plus documented allocator tolerance.
+
+### Implementation record
+
+- Added one production `VersionedWorkspaceIndex` for file records, AST skeletons,
+  symbols, reference edges, lexical search, and repository-map PageRank. Legacy RAM,
+  file-watch, graph, SCIP, and LSP classes remain compatibility surfaces but no longer
+  own the production model-entry retrieval state.
+- Added canonical multi-root identities based on normalized real paths and stable root
+  hashes. Relative-path collisions across roots remain distinct; nested roots prefer
+  the most specific owner; symlink escapes and outside-root paths cannot be indexed.
+- Added immutable request snapshots containing generation, root identities,
+  ignore-policy version, source versions, content hashes, skeletons, symbols,
+  references, and fully accounted estimated bytes. Runtime map/set views do not expose
+  mutation methods, and compiler results record their captured generation.
+- Replaced production dirty flags with per-file debounced create/change/save/delete and
+  atomic rename updates. Per-key sequences and a rebuild epoch prevent late disk reads
+  or obsolete background scans from overwriting newer buffers, deletes, root changes,
+  trust changes, or ignore-policy rebuilds.
+- Added deterministic priority admission and budget enforcement covering strings,
+  keys, hashes, records, skeletons, symbol objects, signatures, term sets, reference
+  edges, arrays, maps, sets, and root metadata. Repository maps and retrieval operate
+  directly on a caller-pinned snapshot.
+- Kept Phase 1 consent intact: snapshot capture does not authorize retrieval; automatic
+  indexing/retrieval requires `workspaceContextMode=automatic`, while `/map` performs
+  an explicit current rebuild when invoked under a conservative mode. Unsaved buffers
+  enter the index only when the existing opt-in setting allows them.
+- Added automated multi-root identity, runtime immutability, buffer version, incremental
+  create/update/delete/rename, atomic rename, stale-read suppression, ignore rebuild,
+  consent separation, request-generation coherence, PageRank budget, and memory-envelope
+  tests. The normative design is recorded in `WORKSPACE_SNAPSHOT_CONTRACT.md`.
+
+Phase 4 remains blocked until the repository owner reviews this implementation and
+explicitly approves the next phase.
 
 ## Phase 4 - Evidence-aware retrieval and preservation
 

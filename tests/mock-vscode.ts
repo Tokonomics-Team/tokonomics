@@ -82,6 +82,7 @@ export const window = {
 };
 
 export const workspace = {
+    textDocuments: [] as any[],
     workspaceFolders: [
         { uri: { fsPath: process.cwd() } }
     ],
@@ -93,8 +94,11 @@ export const workspace = {
     }),
     onDidChangeConfiguration: () => ({ dispose: () => {} }),
     onDidChangeTextDocument: () => ({ dispose: () => {} }),
+    onDidSaveTextDocument: () => ({ dispose: () => {} }),
     onDidCreateFiles: () => ({ dispose: () => {} }),
     onDidDeleteFiles: () => ({ dispose: () => {} }),
+    onDidRenameFiles: () => ({ dispose: () => {} }),
+    onDidChangeWorkspaceFolders: () => ({ dispose: () => {} }),
     registerTextDocumentContentProvider: (scheme: string, provider: any) => ({ dispose: () => {} }),
     openTextDocument: async (options?: any) => ({
         getText: () => options?.content || '',
