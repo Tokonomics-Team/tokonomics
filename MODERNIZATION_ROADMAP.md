@@ -69,8 +69,8 @@ Request lifecycle -> append-only ledger -> dashboard and diagnostics
 | Phase | Name | State | Approval required to start |
 |---:|---|---|---|
 | 0 | Measurement truth and release safety | Approved and complete | Granted |
-| 1 | Privacy, security, trust, and packaging | Implemented; pending owner review | Granted |
-| 2 | Canonical compiler and protocol-safe adapters | Blocked on approval | Yes |
+| 1 | Privacy, security, trust, and packaging | Approved and complete | Granted |
+| 2 | Canonical compiler and protocol-safe adapters | Implemented; pending owner review | Granted |
 | 3 | Versioned incremental workspace intelligence | Blocked on approval | Yes |
 | 4 | Evidence-aware retrieval and preservation | Blocked on approval | Yes |
 | 5 | Global token budgeting and selection | Blocked on approval | Yes |
@@ -161,7 +161,7 @@ privacy and parser behavior.
   `SECURITY_AND_PRIVACY.md`.
 - Automated Phase 1 adversarial tests cover the request boundary, secrets, paths,
   trust, source policy, ignore precedence, payload limits, WASM validity, parser startup,
-  and manifest defaults. Phase 2 remains blocked pending owner approval.
+  and manifest defaults. The repository owner subsequently approved Phase 2.
 
 ## Phase 2 - Canonical compiler and protocol-safe adapters
 
@@ -190,6 +190,35 @@ Remove divergent chat/provider behavior and use one request-scoped compiler.
 - Protocol conformance tests prove that no supported part or role is dropped.
 - Cancellation creates no completed metric, cache record, or partial success.
 - Exactly one logical event exists per request.
+
+### Implementation record
+
+- Added a typed canonical protocol for roles, names, text, tool calls, tool results,
+  and binary or textual data parts. Known VS Code parts round-trip without flattening;
+  unknown input/output parts fail closed instead of being silently dropped.
+- Added one `CanonicalRequestCompiler` over `PipelineOrchestrator` and injected that
+  same compiler into the chat participant and language-model provider. Structured
+  turns take a conservative byte-preserving pass-through path until later phases can
+  optimize them without weakening tool/data semantics.
+- Removed implicit system-to-user rewriting. The canonical contract can represent a
+  system role, but the current VS Code language-model request API cannot; attempting
+  to emit one therefore returns an explicit protocol error.
+- Added a canonical final-egress adapter. It sanitizes text, textual data, tool inputs,
+  and forwarded model/tool options, while preserving opaque binary data exactly and
+  charging it against the outbound byte limit.
+- Made request IDs stable from compilation through cost reconciliation and deferred
+  traces, metrics, and event publication until upstream streaming completes. A
+  cancellation or unsupported response part cannot commit successful side effects.
+- Excluded Tokonomics-provided models from upstream selection to prevent recursion and
+  raised the supported VS Code/API floor to 1.106, the first pinned API used here that
+  includes `LanguageModelDataPart`.
+- Added automated Phase 2 round-trip, fail-closed, structured pass-through, secret
+  egress, binary-integrity, entry-point equivalence, streaming, lifecycle-ID, and
+  early/late cancellation tests. The normative behavior and compatibility boundaries
+  are recorded in `PROTOCOL_CONTRACT.md`.
+
+Phase 3 remains blocked until the repository owner reviews this implementation and
+explicitly approves the next phase.
 
 ## Phase 3 - Versioned incremental workspace intelligence
 

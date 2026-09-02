@@ -146,6 +146,25 @@ export class LanguageModelTextPart {
     constructor(public value: string) {}
 }
 
+export class LanguageModelToolCallPart {
+    constructor(public callId: string, public name: string, public input: object) {}
+}
+
+export class LanguageModelToolResultPart {
+    constructor(public callId: string, public content: any[]) {}
+}
+
+export class LanguageModelPromptTsxPart {
+    constructor(public value: unknown) {}
+}
+
+export class LanguageModelDataPart {
+    constructor(public data: Uint8Array, public mimeType: string) {}
+    static image(data: Uint8Array, mimeType: string) { return new LanguageModelDataPart(data, mimeType); }
+    static text(value: string, mimeType = 'text/plain') { return new LanguageModelDataPart(new TextEncoder().encode(value), mimeType); }
+    static json(value: any, mimeType = 'application/json') { return LanguageModelDataPart.text(JSON.stringify(value), mimeType); }
+}
+
 export enum StatusBarAlignment {
     Left = 1,
     Right = 2
@@ -196,13 +215,15 @@ export class ChatResponseMarkdownPart {
 }
 
 export const LanguageModelChatMessage = {
-    User: (msg: string) => ({ role: 'user', content: msg }),
-    Assistant: (msg: string) => ({ role: 'assistant', content: msg })
+    User: (content: any, name?: string) => ({ role: 'user', content: typeof content === 'string' ? [new LanguageModelTextPart(content)] : content, name }),
+    Assistant: (content: any, name?: string) => ({ role: 'assistant', content: typeof content === 'string' ? [new LanguageModelTextPart(content)] : content, name })
 };
 
 export const registeredLmProviders: Array<{ vendor: string; provider: any }> = [];
 export let lastModelRequest: { messages: any[]; options: any } | undefined;
 export function clearLastModelRequest() { lastModelRequest = undefined; }
+export let nextModelResponseParts: any[] | undefined;
+export function setNextModelResponseParts(parts?: any[]) { nextModelResponseParts = parts; }
 
 export const lm = {
     registerLanguageModelChatProvider: (vendor: string, provider: any) => {
@@ -217,6 +238,14 @@ export const lm = {
             family: 'claude-3',
             sendRequest: async (messages: any[], options: any) => {
                 lastModelRequest = { messages, options };
+                if (nextModelResponseParts) {
+                    const parts = nextModelResponseParts;
+                    nextModelResponseParts = undefined;
+                    return {
+                        stream: (async function* () { for (const part of parts) yield part; })(),
+                        text: []
+                    };
+                }
                 return ({
                 text: ['Refactored function implementation with zero vulnerabilities.']
                 });

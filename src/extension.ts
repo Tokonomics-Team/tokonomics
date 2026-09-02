@@ -6,7 +6,6 @@ import * as vscode from 'vscode';
 import { AstPrunerEngine } from './ast/pruner';
 import { CacheAlignerEngine } from './cache/aligner';
 import { MetricsTracker } from './metrics/tracker';
-import { ContextAnalyzer } from './proxy/contextAnalyzer';
 import { TokenOptimizerLanguageModelProvider } from './proxy/modelProvider';
 import { StatusBarManager } from './ui/statusBar';
 import { DashboardWebviewPanel } from './ui/dashboardWebview';
@@ -23,6 +22,7 @@ import { PipelineOrchestrator } from './engine/pipelineOrchestrator';
 import { LiveMetricsAggregator } from './metrics/liveAggregator';
 import { LocalHistoryStore } from './history/localHistoryStore';
 import { FeatureFlagRegistry } from './engine/featureFlags';
+import { CanonicalRequestCompiler } from './protocol/canonicalCompiler';
 
 let statusBarManager: StatusBarManager | undefined;
 
@@ -64,7 +64,7 @@ export async function activate(context: vscode.ExtensionContext) {
     }, workspaceRoot);
 
     const pipelineOrchestrator = new PipelineOrchestrator(astEngine, ramManager, cacheAligner, metricsTracker);
-    const contextAnalyzer = new ContextAnalyzer(astEngine, cacheAligner, metricsTracker, pipelineOrchestrator);
+    const requestCompiler = new CanonicalRequestCompiler(pipelineOrchestrator);
     const fileWatchIndex = new FileWatchIndex(workspaceRoot);
     const cacheMaxSize = optConf.get<number>('responseCacheMaxSize', 100);
     const responseCache = new ResponseCache(cacheMaxSize);
@@ -155,7 +155,7 @@ export async function activate(context: vscode.ExtensionContext) {
     // 4. Register Language Model Provider Proxy
     try {
         const provider = new TokenOptimizerLanguageModelProvider(
-            contextAnalyzer,
+            requestCompiler,
             onComplete
         );
 
@@ -177,12 +177,12 @@ export async function activate(context: vscode.ExtensionContext) {
             context,
             metricsTracker,
             astEngine,
-            contextAnalyzer,
             fileWatchIndex,
             responseCache,
             onComplete,
             ramManager,
-            pipelineOrchestrator
+            pipelineOrchestrator,
+            requestCompiler
         );
     } catch (err) {
         console.warn('[Tokonomics] Chat participant registration note:', err);

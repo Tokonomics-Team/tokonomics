@@ -9,16 +9,19 @@
  */
 
 import * as vscode from 'vscode';
-import { ContextAnalyzer } from './contextAnalyzer';
-import { MessagePayload, TargetProvider, TokenOptimizationConfig } from '../types';
+import { TargetProvider, TokenOptimizationConfig } from '../types';
 import { OptimizationEventBus, PromptOptimizationEvent } from '../events/optimizationEvent';
 import { TokenCounter } from '../engine/tokenizer';
 import { CostCalculator } from '../cost/costCalculator';
-import { ModelRequestBoundary } from '../security/requestBoundary';
+import { CanonicalRequestCompiler } from '../protocol/canonicalCompiler';
+import { ProtocolError, VsCodeProtocolAdapter } from '../protocol/canonicalProtocol';
+import { prepareCanonicalEgress } from '../protocol/canonicalEgress';
 
 export class TokenOptimizerLanguageModelProvider {
+    private readonly protocol = new VsCodeProtocolAdapter();
+
     constructor(
-        private contextAnalyzer: ContextAnalyzer,
+        private compiler: CanonicalRequestCompiler,
         private onOptimizationComplete: () => void
     ) {}
 
@@ -39,8 +42,7 @@ export class TokenOptimizerLanguageModelProvider {
     ): Promise<void> {
         const config = this.getOptimizationConfig();
 
-        // 1. Dynamic Automatic Model Discovery & Upstream Model Detection (Preserving requested model preference)
-        const requestedFamilyOrId = options?.family || options?.model || (model && model.family !== 'auto' ? model.family : undefined);
+        const requestedFamilyOrId = model && model.family !== 'auto' ? model.family : undefined;
         const { targetModel, detectedProvider, detectedFamily } = await this.resolveUpstreamModelAndProvider(config, requestedFamilyOrId);
 
         // Effective provider (uses detected provider if config is 'auto')
@@ -48,77 +50,56 @@ export class TokenOptimizerLanguageModelProvider {
             ? detectedProvider 
             : config.targetProvider;
 
-        const effectiveConfig: TokenOptimizationConfig = {
-            ...config,
-            targetProvider: effectiveProvider
-        };
-
-        // Convert VS Code messages into internal payload representation
-        const rawMessages: MessagePayload[] = [];
-        for (const msg of messages) {
-            const roleStr: 'system' | 'user' | 'assistant' = msg.role === vscode.LanguageModelChatMessageRole.User 
-                ? 'user' 
-                : msg.role === vscode.LanguageModelChatMessageRole.Assistant 
-                    ? 'assistant' 
-                    : 'system';
-
-            const textContent = Array.isArray(msg.content)
-                ? msg.content
-                    .map((part: any) => {
-                        if (part instanceof vscode.LanguageModelTextPart) {
-                            return part.value;
-                        }
-                        return typeof part === 'string' ? part : '';
-                    })
-                    .join('')
-                : String(msg.content || '');
-
-            rawMessages.push({ role: roleStr, content: textContent });
-        }
-
-        // Run full optimization pipeline with dynamically tailored provider rules
-        const { alignedMessages, stats } = this.contextAnalyzer.processMessages(
-            rawMessages, 
-            effectiveConfig,
-            detectedFamily
-        );
-        this.onOptimizationComplete();
+        const canonicalMessages = this.protocol.fromProviderMessages(messages);
+        const compiled = await this.compiler.compile({
+            messages: canonicalMessages,
+            sessionId: 'session_lm_proxy',
+            targetProvider: effectiveProvider,
+            targetModel: targetModel?.id || detectedFamily,
+            cancellation: token
+        });
+        const stats = compiled.compilation;
 
         if (!targetModel) {
+            this.compiler.commit(compiled);
+            this.onOptimizationComplete();
             // If no underlying Copilot/LM is active, emit a helpful diagnostic message
             const summary = `⚡ [Tokonomics]: Prompt optimized from ${stats.originalTokens} to ${stats.optimizedTokens} tokens (${stats.reductionPercentage}% saved for [${effectiveProvider.toUpperCase()}]). No downstream language model detected in current environment.`;
-            progress.report({ index: 0, part: new vscode.LanguageModelTextPart(summary) });
+            progress.report(new vscode.LanguageModelTextPart(summary));
             return;
         }
 
-        // Final outbound security boundary runs after every optimization/compilation stage.
-        const prepared = ModelRequestBoundary.prepare(alignedMessages, options ? { ...options } : {}, {
+        const forwardOptions = {
+            modelOptions: options?.modelOptions,
+            tools: options?.tools ? [...options.tools] : undefined,
+            toolMode: options?.toolMode
+        };
+        const prepared = prepareCanonicalEgress(compiled.messages, forwardOptions, {
             workspaceRoots: (vscode.workspace.workspaceFolders || []).map(folder => folder.uri.fsPath),
             workspaceTrusted: vscode.workspace.isTrusted !== false,
             containsWorkspaceData: false,
             isCancellationRequested: token.isCancellationRequested
         });
-
-        const upstreamMessages: vscode.LanguageModelChatMessage[] = prepared.messages.map(m => {
-            if (m.role === 'assistant') {
-                return vscode.LanguageModelChatMessage.Assistant(m.content);
-            }
-            if (m.role === 'system') {
-                return vscode.LanguageModelChatMessage.User(`[SYSTEM DIRECTIVE]:\n${m.content}`);
-            }
-            return vscode.LanguageModelChatMessage.User(m.content);
-        });
-
+        const upstreamMessages = this.protocol.toUpstreamMessages(prepared.messages);
         const response = await targetModel.sendRequest(upstreamMessages, prepared.options as any, token);
 
         let completeResponseText = '';
-        for await (const fragment of response.text) {
-            if (token.isCancellationRequested) {
-                break;
+        const responseStream: AsyncIterable<unknown> = (response as any).stream || this.textFallback(response.text);
+        for await (const fragment of responseStream) {
+            if (token.isCancellationRequested) return;
+            if (fragment instanceof vscode.LanguageModelTextPart) {
+                completeResponseText += fragment.value;
+                progress.report(fragment);
+            } else if (fragment instanceof vscode.LanguageModelToolCallPart || fragment instanceof vscode.LanguageModelToolResultPart || fragment instanceof vscode.LanguageModelDataPart) {
+                progress.report(fragment);
+            } else {
+                throw new ProtocolError('UNSUPPORTED_OUTPUT_PART', 'The upstream model returned an unknown response part; it was not silently dropped.');
             }
-            completeResponseText += fragment;
-            progress.report({ index: 0, part: new vscode.LanguageModelTextPart(fragment) });
         }
+        if (token.isCancellationRequested) return;
+
+        this.compiler.commit(compiled);
+        this.onOptimizationComplete();
 
         // Post-Inference Reconcile Event from live Model Provider proxy turn using authentic pricing
         const outputTokens = TokenCounter.countTokens(completeResponseText);
@@ -127,13 +108,6 @@ export class TokenOptimizerLanguageModelProvider {
             (responseUsage?.cache_read_input_tokens ?? 0);
 
         const modelId = targetModel.id || targetModel.name || detectedFamily || 'claude-3-7-sonnet';
-        const costProj = CostCalculator.calculateProjectedCost(
-            stats.originalTokens,
-            stats.optimizedTokens,
-            0,
-            modelId
-        );
-
         const costReconciled = CostCalculator.calculateReconciledCost(
             stats.optimizedTokens,
             confirmedCachedTokens,
@@ -143,40 +117,25 @@ export class TokenOptimizerLanguageModelProvider {
         );
 
         const reconciledEvent: PromptOptimizationEvent = {
-            id: `opt_rec_proxy_${Date.now()}`,
+            ...stats.event,
+            id: compiled.requestId,
             timestamp: Date.now(),
-            sessionId: 'session_lm_proxy',
             state: 'COST_RECONCILED',
-            taskType: 'general',
-            taskConfidence: 0.95,
             provider: (targetModel.vendor || effectiveProvider) as any,
             model: modelId,
-            rawInputTokens: stats.originalTokens,
-            optimizedInputTokens: stats.optimizedTokens,
-            savedTokens: stats.originalTokens - stats.optimizedTokens,
-            reductionPercentage: stats.reductionPercentage,
-            cacheableTokens: 0,
             cachedTokens: confirmedCachedTokens,
-            projectedRawCostUSD: costProj.rawCostUSD,
-            projectedOptimizedCostUSD: costProj.optimizedCostUSD,
-            projectedSavingsUSD: costProj.savingsUSD,
             outputTokens: outputTokens,
             actualRawCostUSD: costReconciled.actualRawCostUSD,
             actualOptimizedCostUSD: costReconciled.actualOptimizedCostUSD,
             actualSavingsUSD: costReconciled.actualSavingsUSD,
             isCostReconciled: true,
-            predictedCQ: 95.0,
-            evidenceCoverage: 0.95,
-            sliceConfidence: 0.95,
-            cqRating: 'EXCELLENT',
-            totalOptimizationLatencyMs: 0.05,
-            stageMetrics: [
-                { stageName: 'ASTStructuralPruning', tokensBefore: stats.originalTokens, tokensAfter: stats.optimizedTokens, tokensSaved: stats.originalTokens - stats.optimizedTokens, latencyMs: 0.05 }
-            ],
-            contextItemCount: rawMessages.length,
-            traceId: 'LanguageModelProxy'
+            traceId: `${compiled.requestId}:reconciled`
         };
         OptimizationEventBus.getInstance().emit(reconciledEvent);
+    }
+
+    private async *textFallback(text: AsyncIterable<string>): AsyncIterable<vscode.LanguageModelTextPart> {
+        for await (const fragment of text) yield new vscode.LanguageModelTextPart(fragment);
     }
 
     public async provideLanguageModelChatInformation(

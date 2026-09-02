@@ -80,7 +80,13 @@ export class ModelRequestBoundary {
         if (!Array.isArray(value) && prototype !== Object.prototype && prototype !== null) return value;
         seen.add(value);
         const output: any = Array.isArray(value) ? [] : {};
-        for (const [key, child] of Object.entries(value)) output[key] = this.sanitizeValue(child, sanitize, seen, depth + 1);
+        for (const [key, child] of Object.entries(value)) {
+            if (typeof child === 'string' && /^(?:api[_-]?key|access[_-]?token|auth[_-]?token|client[_-]?secret|password|passwd|secret)$/i.test(key)) {
+                output[key] = '***[REDACTED_CREDENTIAL_VALUE]***';
+            } else {
+                output[key] = this.sanitizeValue(child, sanitize, seen, depth + 1);
+            }
+        }
         seen.delete(value);
         return output;
     }

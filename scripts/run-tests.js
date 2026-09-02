@@ -43,6 +43,7 @@ import { runE2ETests } from '../tests/e2e.test';
 import { runComprehensiveAuditTests } from '../tests/comprehensive-audit.test';
 import { runPhase0MeasurementTruthTests } from '../tests/phase0MeasurementTruth.test';
 import { runPhase1SecurityBoundaryTests } from '../tests/phase1SecurityBoundary.test';
+import { runPhase2ProtocolCompilerTests } from '../tests/phase2ProtocolCompiler.test';
 
 async function runAll() {
     try {
@@ -82,6 +83,7 @@ async function runAll() {
         await runComprehensiveAuditTests();
         runPhase0MeasurementTruthTests();
         await runPhase1SecurityBoundaryTests();
+        await runPhase2ProtocolCompilerTests();
         console.log('\\n====================================================================================');
         console.log('ALL AUTOMATED REPOSITORY TESTS PASSED');
         console.log('Synthetic benchmark passes do not constitute release, provider, or model-quality certification.');

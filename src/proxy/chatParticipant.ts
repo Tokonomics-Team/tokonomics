@@ -14,7 +14,6 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { MetricsTracker } from '../metrics/tracker';
 import { AstPrunerEngine } from '../ast/pruner';
-import { ContextAnalyzer } from './contextAnalyzer';
 import { TokenCounter } from '../engine/tokenizer';
 import { MessagePayload, TokenOptimizationConfig } from '../types';
 import { TokenIgnoreFilter } from '../ignore/tokenIgnore';
@@ -34,19 +33,21 @@ import { OptimizationEventBus, PromptOptimizationEvent } from '../events/optimiz
 import { LiveMetricsAggregator } from '../metrics/liveAggregator';
 import { CostCalculator } from '../cost/costCalculator';
 import { DashboardWebviewPanel } from '../ui/dashboardWebview';
-import { ModelRequestBoundary } from '../security/requestBoundary';
 import { WorkspaceSourcePolicy } from '../security/sourcePolicy';
+import { CanonicalRequestCompiler } from '../protocol/canonicalCompiler';
+import { canonicalTextMessage, VsCodeProtocolAdapter } from '../protocol/canonicalProtocol';
+import { prepareCanonicalEgress } from '../protocol/canonicalEgress';
 
 export function registerChatParticipant(
     context: vscode.ExtensionContext,
     metricsTracker: MetricsTracker,
     astEngine: AstPrunerEngine,
-    contextAnalyzer: ContextAnalyzer,
     fileWatchIndex?: FileWatchIndex,
     responseCache?: ResponseCache,
     onOptimizationComplete?: () => void,
     ramManager?: RamContextManager,
-    pipelineOrchestrator?: PipelineOrchestrator
+    pipelineOrchestrator?: PipelineOrchestrator,
+    requestCompiler?: CanonicalRequestCompiler
 ) {
     if (!vscode.chat || typeof vscode.chat.createChatParticipant !== 'function') {
         return;
@@ -61,6 +62,8 @@ export function registerChatParticipant(
     const circuitBreaker = new AgenticCircuitBreaker();
     const ram = ramManager || new RamContextManager(astEngine, undefined, workspaceRoot);
     const orchestrator = pipelineOrchestrator || new PipelineOrchestrator(astEngine, ram, undefined, metricsTracker);
+    const compiler = requestCompiler || new CanonicalRequestCompiler(orchestrator);
+    const protocol = new VsCodeProtocolAdapter();
 
     let lastActiveDocUri: vscode.Uri | undefined = vscode.window.activeTextEditor?.document?.uri;
     context.subscriptions.push(
@@ -395,6 +398,7 @@ export function registerChatParticipant(
 
         // 6. Default AI Pair Programmer & Code Generation Handler
         try {
+            if (token.isCancellationRequested) return;
             const conf = vscode.workspace.getConfiguration('tokenOptimizer');
             const contextMode = conf.get<'off' | 'selection' | 'referenced' | 'automatic'>('workspaceContextMode', 'selection');
             const mayReadWorkspace = workspaceTrusted() && contextMode !== 'off';
@@ -547,15 +551,16 @@ export function registerChatParticipant(
             totalImageTokensSaved += rsPromptStats.estimatedTokensSaved;
             rawMessages.push({ role: 'user', content: rsFullPrompt });
 
-            const compileResult = await orchestrator.compileContext({
-                messages: rawMessages,
+            const compiled = await compiler.compile({
+                messages: rawMessages.map(message => canonicalTextMessage(message.role, message.content, message.name)),
+                sessionId: 'session_chat_participant',
                 targetProvider: (config.targetProvider as any) || 'anthropic',
                 activeFilePath: doc?.fileName,
-                userIntent: diffAnalysis.intent
+                userIntent: diffAnalysis.intent,
+                cancellation: token
             });
-
-            const alignedMessages = compileResult.optimizedMessages;
-            const prepared = ModelRequestBoundary.prepare(alignedMessages, {}, {
+            const compileResult = compiled.compilation;
+            const prepared = prepareCanonicalEgress(compiled.messages, {}, {
                 workspaceRoots: workspaceRoots(),
                 workspaceTrusted: workspaceTrusted(),
                 containsWorkspaceData: activeFileContext.length > 0 || referencedSlicesContext.length > 0,
@@ -566,9 +571,6 @@ export function registerChatParticipant(
             const savedTokens = compileResult.tokensSaved;
             const reductionPercentage = compileResult.reductionPercentage;
             const costSavedUSD = compileResult.effectiveCostSavedUSD;
-
-            if (onOptimizationComplete) onOptimizationComplete();
-            BudgetGuardrail.checkBudget(metricsTracker);
 
             // Circuit Breaker Evaluation
             const cbStatus = circuitBreaker.evaluateTurn(optimizedTokens, request.prompt);
@@ -586,7 +588,7 @@ export function registerChatParticipant(
 
             // Phase 9: Model Allow-List Enforcement (inspired by TokenShift governance)
             let allModels = await vscode.lm.selectChatModels();
-            let models = allModels ? allModels.filter(m => m.id !== 'token-optimizer-proxy') : [];
+            let models = allModels ? allModels.filter(m => m.id !== 'token-optimizer-proxy' && (m as any).vendor !== 'tokonomics') : [];
             const allowList = conf.get<string[]>('modelAllowList', []);
             if (allowList && allowList.length > 0) {
                 const allowedLower = allowList.map(a => a.toLowerCase());
@@ -603,24 +605,40 @@ export function registerChatParticipant(
                 models = filtered.length > 0 ? filtered : models;
             }
             if (!models || models.length === 0) {
-                response.markdown(`*(No downstream Copilot/Chat model available in active host)*\n\n**Optimized Prompt Payload:**\n\`\`\`markdown\n${prepared.messages.map(m => `[${m.role.toUpperCase()}]: ${m.content}`).join('\n\n')}\n\`\`\``);
+                compiler.commit(compiled);
+                if (onOptimizationComplete) onOptimizationComplete();
+                BudgetGuardrail.checkBudget(metricsTracker);
+                response.markdown(`*(No downstream Copilot/Chat model available in active host)*\n\n**Optimized Prompt Payload:**\n\`\`\`markdown\n${prepared.messages.map(m => `[${m.role.toUpperCase()}]: ${m.parts.filter(p => p.kind === 'text').map(p => (p as any).text).join('')}`).join('\n\n')}\n\`\`\``);
                 return;
             }
 
             const targetModel = models[0];
-            const upstreamMessages = prepared.messages.map(m => {
-                if (m.role === 'assistant') return vscode.LanguageModelChatMessage.Assistant(m.content);
-                if (m.role === 'system') return vscode.LanguageModelChatMessage.User(`[SYSTEM]:\n${m.content}`);
-                return vscode.LanguageModelChatMessage.User(m.content);
-            });
+            const upstreamMessages = protocol.toUpstreamMessages(prepared.messages);
 
-            const llmResponse = await targetModel.sendRequest(upstreamMessages, {}, token);
+            const llmResponse = await targetModel.sendRequest(upstreamMessages, prepared.options as any, token);
             let completeResponseText = '';
-            for await (const chunk of llmResponse.text) {
-                if (token.isCancellationRequested) break;
-                completeResponseText += chunk;
-                response.markdown(chunk);
+            if ((llmResponse as any).stream) {
+                for await (const part of (llmResponse as any).stream as AsyncIterable<unknown>) {
+                    if (token.isCancellationRequested) return;
+                    if (part instanceof vscode.LanguageModelTextPart) {
+                        completeResponseText += part.value;
+                        response.markdown(part.value);
+                    } else {
+                        throw new Error('The chat participant received a non-text model response part that its UI cannot represent safely.');
+                    }
+                }
+            } else {
+                for await (const chunk of llmResponse.text) {
+                    if (token.isCancellationRequested) return;
+                    completeResponseText += chunk;
+                    response.markdown(chunk);
+                }
             }
+            if (token.isCancellationRequested) return;
+
+            compiler.commit(compiled);
+            if (onOptimizationComplete) onOptimizationComplete();
+            BudgetGuardrail.checkBudget(metricsTracker);
 
             // Post-Inference Reconcile Event using real model pricing and verified provider usage
             const outputTokens = TokenCounter.countTokens(completeResponseText);
@@ -629,13 +647,6 @@ export function registerChatParticipant(
                 (responseUsage?.cache_read_input_tokens ?? 0);
 
             const modelId = targetModel.id || targetModel.name || 'claude-3-7-sonnet';
-            const costProj = CostCalculator.calculateProjectedCost(
-                originalTokens,
-                optimizedTokens,
-                compileResult.cachePlan?.staticPrefixTokens || 0,
-                modelId
-            );
-
             const costReconciled = CostCalculator.calculateReconciledCost(
                 optimizedTokens,
                 confirmedCachedTokens,
@@ -645,38 +656,19 @@ export function registerChatParticipant(
             );
 
             const reconciledEvent: PromptOptimizationEvent = {
-                id: `opt_rec_${Date.now()}`,
+                ...compileResult.event,
+                id: compiled.requestId,
                 timestamp: Date.now(),
-                sessionId: 'session_active',
                 state: 'COST_RECONCILED',
-                taskType: (diffAnalysis.intent === 'edit' ? 'refactor' : (diffAnalysis.intent === 'question' ? 'explain' : (diffAnalysis.intent || 'debug'))) as any,
-                taskConfidence: compileResult.contextQuality.predictedCQ / 100,
                 provider: (targetModel.vendor || 'anthropic') as any,
                 model: modelId,
-                rawInputTokens: originalTokens,
-                optimizedInputTokens: optimizedTokens,
-                savedTokens: savedTokens,
-                reductionPercentage: reductionPercentage,
-                cacheableTokens: compileResult.cachePlan?.staticPrefixTokens || 0,
                 cachedTokens: confirmedCachedTokens,
-                projectedRawCostUSD: costProj.rawCostUSD,
-                projectedOptimizedCostUSD: costProj.optimizedCostUSD,
-                projectedSavingsUSD: costProj.savingsUSD,
                 outputTokens: outputTokens,
                 actualRawCostUSD: costReconciled.actualRawCostUSD,
                 actualOptimizedCostUSD: costReconciled.actualOptimizedCostUSD,
                 actualSavingsUSD: costReconciled.actualSavingsUSD,
                 isCostReconciled: true,
-                predictedCQ: compileResult.contextQuality.predictedCQ,
-                evidenceCoverage: compileResult.contextQuality.breakdown.evidenceCoverage,
-                sliceConfidence: compileResult.contextQuality.breakdown.sliceConfidence,
-                cqRating: compileResult.contextQuality.rating,
-                totalOptimizationLatencyMs: compileResult.trace.latencyMs,
-                stageMetrics: [
-                    { stageName: 'ContextKnapsackCompiler', tokensBefore: originalTokens, tokensAfter: optimizedTokens, tokensSaved: savedTokens, latencyMs: compileResult.trace.latencyMs }
-                ],
-                contextItemCount: rawMessages.length,
-                traceId: compileResult.trace.stage
+                traceId: `${compiled.requestId}:reconciled`
             };
             OptimizationEventBus.getInstance().emit(reconciledEvent);
 

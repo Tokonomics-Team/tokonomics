@@ -15,6 +15,12 @@ therefore apply to transmitted requests.
 - Immediately before a cloud request, the complete compiled text and string-valued
   model options pass through one fail-closed boundary for cancellation, size limits,
   credential redaction, and path anonymization.
+- Tool inputs, tool-result text, textual data parts, and nested tool/model options use
+  the same final boundary. Opaque binary parts are not decoded or rewritten, but are
+  copied byte-for-byte and counted toward the outbound payload limit.
+- Unknown request or response part types are rejected rather than omitted. A cancelled
+  or protocol-invalid request does not commit optimization metrics or a successful
+  lifecycle event.
 
 ## Local retention
 

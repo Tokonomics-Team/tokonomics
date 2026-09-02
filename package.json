@@ -7,7 +7,7 @@
   "license": "SEE LICENSE IN LICENSE.txt",
   "icon": "assets/icon.png",
   "engines": {
-    "vscode": "^1.90.0"
+    "vscode": "^1.106.0"
   },
   "categories": [
     "AI",
@@ -473,7 +473,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.14.0",
-    "@types/vscode": "^1.90.0",
+    "@types/vscode": "1.106.0",
     "@vscode/vsce": "^3.9.2",
     "esbuild": "^0.28.2",
     "typescript": "^5.4.5"

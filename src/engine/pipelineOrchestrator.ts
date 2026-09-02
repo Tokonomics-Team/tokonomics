@@ -30,14 +30,26 @@ import { PreservationGate } from '../evaluation/preservationGate';
 
 export interface ContextCompileRequest {
     messages: MessagePayload[];
+    requestId?: string;
+    sessionId?: string;
     targetProvider?: TargetProvider;
+    targetModel?: string;
     maxTokenBudget?: number;
     activeFilePath?: string;
     cursorLine?: number;
     userIntent?: string;
+    cancellation?: CancellationLike;
+    preserveProtocol?: boolean;
+    deferSideEffects?: boolean;
+}
+
+export interface CancellationLike { readonly isCancellationRequested: boolean; }
+export class CompilationCancelledError extends Error {
+    constructor() { super('Context compilation was cancelled.'); this.name = 'CompilationCancelledError'; }
 }
 
 export interface ContextCompileResult {
+    requestId: string;
     optimizedMessages: MessagePayload[];
     originalTokens: number;
     optimizedTokens: number;
@@ -49,6 +61,8 @@ export interface ContextCompileResult {
     trace: OptimizationTrace;
     pipelineModeUsed: PipelineMode;
     governorDecision?: ContextGovernorDecision;
+    event: PromptOptimizationEvent;
+    committed: boolean;
 }
 
 export class PipelineOrchestrator {
@@ -84,6 +98,8 @@ export class PipelineOrchestrator {
      * Executes context compilation through the active pipeline (legacy / hybrid / compiler)
      */
     public async compileContext(request: ContextCompileRequest): Promise<ContextCompileResult> {
+        this.throwIfCancelled(request.cancellation);
+        const requestId = request.requestId || `tok_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
         const startTime = performance.now();
         const flags = FeatureFlagRegistry.getFlags();
         const mode = flags.pipelineMode;
@@ -128,7 +144,7 @@ export class PipelineOrchestrator {
         let cqReport: ContextQualityReport;
         let cachePlanResult: CachePlanResult | undefined;
 
-        if (governorDecision.optimizationAggressiveness === 'none') {
+        if (request.preserveProtocol || governorDecision.optimizationAggressiveness === 'none') {
             // Critical risk override: Full context preserved
             optimizedMessages = request.messages.map(m => ({ ...m }));
         } else if (mode === 'legacy') {
@@ -142,6 +158,21 @@ export class PipelineOrchestrator {
             const compilerRes = await this.executeCompilerPipeline(request, decisions);
             optimizedMessages = compilerRes.messages;
             cachePlanResult = compilerRes.cachePlan;
+        }
+
+        this.throwIfCancelled(request.cancellation);
+
+        const structureChanged = optimizedMessages.length !== request.messages.length || optimizedMessages.some((message, index) => {
+            const original = request.messages[index];
+            return !original || original.role !== message.role || original.name !== message.name;
+        });
+        if (structureChanged) {
+            optimizedMessages = request.messages.map(message => ({ ...message }));
+            decisions.push({
+                itemId: 'protocol_structure_guardrail', action: 'preserve',
+                reason: 'Compiler output changed message role, name, order, or cardinality; original protocol structure restored.',
+                confidence: 1, evidence: ['CanonicalProtocol']
+            });
         }
 
         // 2a. Audit against Fail-Closed Preservation Gate
@@ -212,22 +243,6 @@ export class PipelineOrchestrator {
             latencyMs: durationMs
         };
 
-        this.traceLogger.recordTrace(trace);
-
-        // Record metrics if tracker available
-        if (this.metricsTracker) {
-            this.metricsTracker.recordOptimization(
-                originalTokens,
-                optimizedTokens,
-                {
-                    astSaved: tokensSaved,
-                    textCompressionSaved: 0,
-                    historyCompacted: 0,
-                    cacheAligned: cachePlanResult?.staticPrefixTokens || 0
-                }
-            );
-        }
-
         // Calculate Projected Cost via Centralized CostCalculator
         const costProj = CostCalculator.calculateProjectedCost(
             originalTokens,
@@ -258,14 +273,14 @@ export class PipelineOrchestrator {
 
         // Emit Authoritative Real-Time Optimization Event
         const event: PromptOptimizationEvent = {
-            id: `opt_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+            id: requestId,
             timestamp: Date.now(),
-            sessionId: 'session_active',
+            sessionId: request.sessionId || 'session_active',
             state: 'OPTIMIZATION_COMPLETED',
             taskType: 'debug',
             taskConfidence: cqReport.breakdown.evidenceCoverage,
             provider: request.targetProvider || 'anthropic',
-            model: 'claude-3-7-sonnet',
+            model: request.targetModel || 'auto',
             rawInputTokens: originalTokens,
             optimizedInputTokens: optimizedTokens,
             savedTokens: tokensSaved,
@@ -283,11 +298,11 @@ export class PipelineOrchestrator {
             totalOptimizationLatencyMs: durationMs,
             stageMetrics,
             contextItemCount: request.messages.length,
-            traceId: `trace_${Date.now()}`
+            traceId: `${requestId}:compile`
         };
-        OptimizationEventBus.getInstance().emit(event);
-
-        return {
+        this.throwIfCancelled(request.cancellation);
+        const result: ContextCompileResult = {
+            requestId,
             optimizedMessages,
             originalTokens,
             optimizedTokens,
@@ -298,8 +313,35 @@ export class PipelineOrchestrator {
             cachePlan: cachePlanResult,
             trace,
             pipelineModeUsed: mode,
-            governorDecision
+            governorDecision,
+            event,
+            committed: false
         };
+        if (!request.deferSideEffects) this.commitCompilation(result);
+        return result;
+    }
+
+    public commitCompilation(result: ContextCompileResult): void {
+        if (result.committed) return;
+        this.traceLogger.recordTrace(result.trace);
+        if (this.metricsTracker) {
+            this.metricsTracker.recordOptimization(
+                result.originalTokens,
+                result.optimizedTokens,
+                {
+                    astSaved: result.tokensSaved,
+                    textCompressionSaved: 0,
+                    historyCompacted: 0,
+                    cacheAligned: result.cachePlan?.staticPrefixTokens || 0
+                }
+            );
+        }
+        OptimizationEventBus.getInstance().emit(result.event);
+        result.committed = true;
+    }
+
+    private throwIfCancelled(cancellation?: CancellationLike): void {
+        if (cancellation?.isCancellationRequested) throw new CompilationCancelledError();
     }
 
     /**

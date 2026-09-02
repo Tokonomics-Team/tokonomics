@@ -9,6 +9,8 @@ import { WorkspaceSourcePolicy, SourcePolicyError } from '../src/security/source
 import { AstPrunerEngine } from '../src/ast/pruner';
 import { TokenOptimizerLanguageModelProvider } from '../src/proxy/modelProvider';
 import * as mockVscode from './mock-vscode';
+import { CanonicalRequestCompiler } from '../src/protocol/canonicalCompiler';
+import { PipelineOrchestrator } from '../src/engine/pipelineOrchestrator';
 
 function expectCode(fn: () => unknown, code: string): void {
     assert.throws(fn, (error: unknown) => error instanceof RequestBoundaryError || error instanceof SourcePolicyError
@@ -112,12 +114,7 @@ export async function runPhase1SecurityBoundaryTests(): Promise<void> {
     assert.strictEqual(manifest.contributes.configuration.properties['tokenOptimizer.workspaceContextMode'].default, 'selection');
 
     mockVscode.clearLastModelRequest();
-    const proxy = new TokenOptimizerLanguageModelProvider({
-        processMessages: (messages: any[]) => ({
-            alignedMessages: messages,
-            stats: { originalTokens: 10, optimizedTokens: 8, reductionPercentage: 20 }
-        })
-    } as any, () => undefined);
+    const proxy = new TokenOptimizerLanguageModelProvider(new CanonicalRequestCompiler(new PipelineOrchestrator()), () => undefined);
     await proxy.provideLanguageModelChatResponse(
         {},
         [{ role: mockVscode.LanguageModelChatMessageRole.User, content: [new mockVscode.LanguageModelTextPart('password=providersecretvalue')] }],
