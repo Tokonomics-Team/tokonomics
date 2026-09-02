@@ -71,9 +71,8 @@ export class CheckoutController {
         throw new Error(`Expected compiler mode, got ${result.pipelineModeUsed}`);
     }
 
-    if (result.reductionPercentage < 20) {
-        throw new Error(`Context compiler token reduction too low: ${result.reductionPercentage}%; ${result.trace.decisions
-            .filter(decision => decision.action === 'preserve').map(decision => `${decision.itemId}=${decision.reason}`).join(' | ')}`);
+    if (!result.budgetPlan?.withinBudget || result.budgetPlan.projectedTotalTokens > result.budgetPlan.totalTokenLimit) {
+        throw new Error(`Context compiler exceeded its authoritative payload budget: ${JSON.stringify(result.budgetPlan)}`);
     }
 
     if (result.contextQuality.predictedCQ < 85.0) {

@@ -4,7 +4,7 @@
  * maximizing semantic utility subject to hard token budgets, risk ceilings, and cache benefits.
  */
 
-import { ContextIRGenerator, ContextEntity, ResolutionLevel, RenderedResolution } from './contextIR';
+import { ContextIRGenerator, ContextEntity, ResolutionLevel, RenderedResolution, RESOLUTION_LEVELS } from './contextIR';
 
 export interface SolverCandidate {
     entity: ContextEntity;
@@ -20,6 +20,10 @@ export interface SolverResult {
     excludedCount: number;
     includedCount: number;
     executionTimeMs: number;
+}
+
+export class SolverConstraintError extends Error {
+    constructor(message: string) { super(message); this.name = 'SolverConstraintError'; }
 }
 
 export class ContextKnapsackSolver {
@@ -49,6 +53,41 @@ export class ContextKnapsackSolver {
             resolutions: this.irGenerator.generateAllResolutions(e),
             isCacheEligible: e.filePath.includes('types') || e.filePath.includes('interface')
         }));
+        const byId = new Map(solverCandidates.map(candidate => [candidate.entity.id, candidate]));
+        const mandatoryIds = new Set(solverCandidates.filter(candidate => this.irGenerator.normalizeMetadata(candidate.entity).mandatory)
+            .map(candidate => candidate.entity.id));
+        let changed = true;
+        while (changed) {
+            changed = false;
+            for (const id of [...mandatoryIds]) {
+                const candidate = byId.get(id);
+                if (!candidate) continue;
+                for (const dependency of this.irGenerator.normalizeMetadata(candidate.entity).dependencies) {
+                    if (!byId.has(dependency)) throw new SolverConstraintError(`Mandatory entity ${id} depends on missing entity ${dependency}.`);
+                    if (!mandatoryIds.has(dependency)) { mandatoryIds.add(dependency); changed = true; }
+                }
+            }
+        }
+        for (const id of mandatoryIds) {
+            const metadata = this.irGenerator.normalizeMetadata(byId.get(id)!.entity);
+            for (const conflict of metadata.conflicts) {
+                if (mandatoryIds.has(conflict)) throw new SolverConstraintError(`Mandatory entities ${id} and ${conflict} conflict.`);
+            }
+        }
+        const excludedByConflict = new Set<string>();
+        const processedConflicts = new Set<string>();
+        for (const candidate of solverCandidates) {
+            const id = candidate.entity.id;
+            for (const conflict of this.irGenerator.normalizeMetadata(candidate.entity).conflicts) {
+                const other = byId.get(conflict);
+                const pairKey = [id, conflict].sort().join('\0');
+                if (!other || processedConflicts.has(pairKey)) continue;
+                processedConflicts.add(pairKey);
+                const loser = mandatoryIds.has(id) ? conflict : mandatoryIds.has(conflict) ? id
+                    : candidate.entity.baseUtility >= other.entity.baseUtility ? conflict : id;
+                excludedByConflict.add(loser);
+            }
+        }
 
         // 2. Compute Net Optimization Utility for each resolution option
         // NetUtility = BaseUtility + (CacheBenefit * lambdaCache) - (Cost * lambdaCost) - (Risk * lambdaRisk)
@@ -66,8 +105,12 @@ export class ContextKnapsackSolver {
 
         for (const cand of solverCandidates) {
             const options: OptionChoice[] = [];
+            const metadata = this.irGenerator.normalizeMetadata(cand.entity);
+            const minimumIndex = RESOLUTION_LEVELS.indexOf(metadata.minimumResolution);
 
             for (const [level, res] of cand.resolutions.entries()) {
+                if (excludedByConflict.has(cand.entity.id) && level !== 'R_exclude') continue;
+                if (mandatoryIds.has(cand.entity.id) && (level === 'R_exclude' || RESOLUTION_LEVELS.indexOf(level) < minimumIndex)) continue;
                 const cacheBonus = cand.isCacheEligible && (level === 'R2' || level === 'R5') ? 15.0 : 0.0;
                 const costPenalty = res.tokenCount * lambdaCost;
                 const riskPenalty = res.risk * 50.0 * lambdaRisk;
@@ -86,6 +129,7 @@ export class ContextKnapsackSolver {
 
             // Sort options by token cost ascending
             options.sort((a, b) => a.tokens - b.tokens);
+            if (options.length === 0) throw new SolverConstraintError(`Entity ${cand.entity.id} has no allowed representation.`);
             candidateOptions.push(options);
         }
 
@@ -126,6 +170,9 @@ export class ContextKnapsackSolver {
 
             dp = nextDp;
             backtrack.push(choices);
+            if (!dp.some(score => score >= 0)) {
+                throw new SolverConstraintError(`Mandatory representations exceed the ${budget}-token candidate budget.`);
+            }
         }
 
         // 4. Find optimal bucket with maximum score

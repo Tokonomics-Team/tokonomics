@@ -58,6 +58,12 @@ export class TokenOptimizerLanguageModelProvider {
             sessionId: 'session_lm_proxy',
             targetProvider: effectiveProvider,
             targetModel: targetModel?.id || detectedFamily,
+            maxTokenBudget: typeof (targetModel as any)?.maxInputTokens === 'number' ? (targetModel as any).maxInputTokens : undefined,
+            maxOutputTokens: typeof options?.modelOptions?.maxOutputTokens === 'number'
+                ? options.modelOptions.maxOutputTokens
+                : typeof options?.modelOptions?.max_tokens === 'number'
+                    ? options.modelOptions.max_tokens
+                    : typeof (targetModel as any)?.maxOutputTokens === 'number' ? (targetModel as any).maxOutputTokens : undefined,
             cancellation: token,
             workspaceSnapshot: this.captureWorkspaceSnapshot?.()
         });

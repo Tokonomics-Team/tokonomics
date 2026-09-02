@@ -4,6 +4,7 @@ import { MessagePayload, TargetProvider } from '../types';
 import { CanonicalMessage, VsCodeProtocolAdapter } from './canonicalProtocol';
 import { WorkspaceSnapshot } from '../workspace/workspaceIndex';
 import { EvidenceSignal } from '../retrieval/evidenceTypes';
+import { CanonicalPayloadTokenEstimator } from '../tokenizer/canonicalPayload';
 
 export interface CanonicalCompileRequest {
     messages: CanonicalMessage[];
@@ -12,6 +13,7 @@ export interface CanonicalCompileRequest {
     targetProvider?: TargetProvider;
     targetModel?: string;
     maxTokenBudget?: number;
+    maxOutputTokens?: number;
     activeFilePath?: string;
     cursorLine?: number;
     userIntent?: string;
@@ -48,6 +50,8 @@ export class CanonicalRequestCompiler {
             targetProvider: request.targetProvider,
             targetModel: request.targetModel,
             maxTokenBudget: request.maxTokenBudget,
+            maxOutputTokens: request.maxOutputTokens,
+            fixedProtocolTokens: CanonicalPayloadTokenEstimator.countNonTextParts(request.messages),
             activeFilePath: request.activeFilePath,
             cursorLine: request.cursorLine,
             userIntent: request.userIntent,

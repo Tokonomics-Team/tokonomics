@@ -17,6 +17,21 @@ export const RESOLUTION_LEVELS: ResolutionLevel[] = [
     'R5'
 ];
 
+export type RenderLocation = 'system' | 'history' | 'latest_user' | 'tool' | 'evidence';
+export type ContextSensitivity = 'public' | 'workspace' | 'sensitive';
+
+export interface ContextIRMetadata {
+    provenance: readonly string[];
+    renderLocation: RenderLocation;
+    mandatory: boolean;
+    minimumResolution: ResolutionLevel;
+    dependencies: readonly string[];
+    conflicts: readonly string[];
+    freshness: string;
+    sensitivity: ContextSensitivity;
+    transformationHistory: readonly string[];
+}
+
 export interface ContextEntity {
     id: string;
     filePath: string;
@@ -29,6 +44,7 @@ export interface ContextEntity {
     slicedCode?: string;
     provenanceOrigin?: string;
     baseUtility: number;
+    metadata?: Partial<ContextIRMetadata>;
 }
 
 export interface RenderedResolution {
@@ -37,6 +53,7 @@ export interface RenderedResolution {
     tokenCount: number;
     utility: number;
     risk: number;
+    metadata: ContextIRMetadata;
 }
 
 export class ContextIRGenerator {
@@ -44,6 +61,7 @@ export class ContextIRGenerator {
      * Renders a specific resolution level for an entity
      */
     public renderResolution(entity: ContextEntity, level: ResolutionLevel): RenderedResolution {
+        const metadata = this.normalizeMetadata(entity);
         switch (level) {
             case 'R_exclude':
                 return {
@@ -51,7 +69,8 @@ export class ContextIRGenerator {
                     text: '',
                     tokenCount: 0,
                     utility: 0.0,
-                    risk: 0.0
+                    risk: 0.0,
+                    metadata
                 };
 
             case 'R0': {
@@ -62,7 +81,8 @@ export class ContextIRGenerator {
                     text,
                     tokenCount: TokenCounter.countTokens(text),
                     utility: entity.baseUtility * 0.15,
-                    risk: 0.40
+                    risk: 0.40,
+                    metadata
                 };
             }
 
@@ -83,7 +103,8 @@ export class ContextIRGenerator {
                     text,
                     tokenCount: TokenCounter.countTokens(text),
                     utility: entity.baseUtility * 0.35,
-                    risk: 0.25
+                    risk: 0.25,
+                    metadata
                 };
             }
 
@@ -97,7 +118,8 @@ export class ContextIRGenerator {
                     text,
                     tokenCount: TokenCounter.countTokens(text),
                     utility: entity.baseUtility * 0.75,
-                    risk: 0.08
+                    risk: 0.08,
+                    metadata
                 };
             }
 
@@ -114,7 +136,8 @@ export class ContextIRGenerator {
                     text,
                     tokenCount: TokenCounter.countTokens(text),
                     utility: entity.baseUtility * 0.88,
-                    risk: 0.04
+                    risk: 0.04,
+                    metadata
                 };
             }
 
@@ -128,7 +151,8 @@ export class ContextIRGenerator {
                     text,
                     tokenCount: TokenCounter.countTokens(text),
                     utility: entity.baseUtility * 0.96,
-                    risk: 0.02
+                    risk: 0.02,
+                    metadata
                 };
             }
 
@@ -140,7 +164,8 @@ export class ContextIRGenerator {
                     text,
                     tokenCount: TokenCounter.countTokens(text),
                     utility: entity.baseUtility * 1.0,
-                    risk: 0.0
+                    risk: 0.0,
+                    metadata
                 };
             }
         }
@@ -155,5 +180,20 @@ export class ContextIRGenerator {
             resolutions.set(level, this.renderResolution(entity, level));
         }
         return resolutions;
+    }
+
+    public normalizeMetadata(entity: ContextEntity): ContextIRMetadata {
+        const input = entity.metadata || {};
+        return Object.freeze({
+            provenance: Object.freeze([...(input.provenance || (entity.provenanceOrigin ? [entity.provenanceOrigin] : ['request']))]),
+            renderLocation: input.renderLocation || 'evidence',
+            mandatory: input.mandatory === true,
+            minimumResolution: input.minimumResolution || 'R0',
+            dependencies: Object.freeze([...(input.dependencies || [])]),
+            conflicts: Object.freeze([...(input.conflicts || [])]),
+            freshness: input.freshness || 'request',
+            sensitivity: input.sensitivity || 'workspace',
+            transformationHistory: Object.freeze([...(input.transformationHistory || ['ingested'])])
+        });
     }
 }

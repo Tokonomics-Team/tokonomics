@@ -32,6 +32,10 @@ import { SliceConfidenceEvaluator } from '../ast/sliceConfidence';
 import { EvidenceAwareRetriever } from '../retrieval/evidenceRetriever';
 import { EvidenceRetrievalResult, EvidenceSignal } from '../retrieval/evidenceTypes';
 import { StructuredPreservationGate } from '../retrieval/structuredPreservation';
+import { GlobalTokenBudgeter, PayloadBudgetPlan, RenderedBudgetAssignment, TokenBudgetExceededError } from '../solver/globalBudget';
+import { SolverConstraintError } from '../solver/knapsackSolver';
+import { createHash } from 'crypto';
+import { ModelProfile } from '../tokenizer/modelProfile';
 
 export interface ContextCompileRequest {
     messages: MessagePayload[];
@@ -40,6 +44,8 @@ export interface ContextCompileRequest {
     targetProvider?: TargetProvider;
     targetModel?: string;
     maxTokenBudget?: number;
+    maxOutputTokens?: number;
+    fixedProtocolTokens?: number;
     activeFilePath?: string;
     cursorLine?: number;
     userIntent?: string;
@@ -73,6 +79,7 @@ export interface ContextCompileResult {
     committed: boolean;
     snapshotGeneration?: number;
     evidenceRetrieval?: EvidenceRetrievalResult;
+    budgetPlan?: PayloadBudgetPlan;
 }
 
 export class PipelineOrchestrator {
@@ -86,6 +93,7 @@ export class PipelineOrchestrator {
     private compressor: RuleBasedCompressor = new RuleBasedCompressor();
     private sliceConfidenceEvaluator = new SliceConfidenceEvaluator();
     private evidenceRetriever = new EvidenceAwareRetriever();
+    private globalBudgeter = new GlobalTokenBudgeter();
 
     constructor(
         private astEngine: AstPrunerEngine = new AstPrunerEngine(),
@@ -127,10 +135,7 @@ export class PipelineOrchestrator {
         });
 
         // 1. Calculate Baseline Tokens
-        let originalTokens = 0;
-        for (const msg of request.messages) {
-            originalTokens += TokenCounter.countTokens(msg.content);
-        }
+        const originalTokens = TokenCounter.countMessagesTokens(request.messages) + Math.max(0, request.fixedProtocolTokens || 0);
 
         let optimizedMessages: MessagePayload[] = [];
         const decisions: Decision[] = [
@@ -164,7 +169,9 @@ export class PipelineOrchestrator {
         }
         let cqReport: ContextQualityReport;
         let cachePlanResult: CachePlanResult | undefined;
+        let codeRenderedAssignments: readonly RenderedBudgetAssignment[] = Object.freeze([]);
         let evidenceRetrieval: EvidenceRetrievalResult | undefined;
+        const modelProfile = ModelProfileRegistry.getProfile(request.targetModel || request.targetProvider || 'claude-3-5-sonnet');
 
         if (request.allowWorkspaceRetrieval && request.workspaceSnapshot && !request.preserveProtocol) {
             evidenceRetrieval = this.evidenceRetriever.retrieve({
@@ -205,14 +212,17 @@ export class PipelineOrchestrator {
             optimizedMessages = await this.executeHybridPipeline(request, decisions);
         } else {
             // --- TOKONOMICS FULL CONTEXT COMPILER PIPELINE ---
-            const compilerRes = await this.executeCompilerPipeline(request, decisions, evidenceRetrieval);
+            const compilerRes = await this.executeCompilerPipeline(request, decisions);
             optimizedMessages = compilerRes.messages;
             cachePlanResult = compilerRes.cachePlan;
+            codeRenderedAssignments = compilerRes.renderedAssignments;
         }
 
-        if (evidenceRetrieval && !evidenceRetrieval.conservativeFallback) {
-            optimizedMessages = this.renderEvidenceBundle(optimizedMessages, evidenceRetrieval, request.workspaceSnapshot?.generation, decisions);
-        }
+        const budgeted = this.applyGlobalBudget(optimizedMessages, request, modelProfile, evidenceRetrieval, decisions);
+        optimizedMessages = budgeted.messages;
+        let budgetPlan = budgeted.plan;
+        budgetPlan = { ...budgetPlan, renderedAssignments: Object.freeze([...codeRenderedAssignments, ...budgetPlan.renderedAssignments]) };
+        let contentRestored = false;
 
         this.throwIfCancelled(request.cancellation);
 
@@ -222,6 +232,7 @@ export class PipelineOrchestrator {
         });
         if (structureChanged) {
             optimizedMessages = request.messages.map(message => ({ ...message }));
+            contentRestored = true;
             decisions.push({
                 itemId: 'protocol_structure_guardrail', action: 'preserve',
                 reason: 'Compiler output changed message role, name, order, or cardinality; original protocol structure restored.',
@@ -237,6 +248,7 @@ export class PipelineOrchestrator {
         );
         if (!structuredCheck.passed) {
             optimizedMessages = request.messages.map(message => ({ ...message }));
+            contentRestored = true;
             decisions.push({
                 itemId: 'structured_preservation_guardrail', action: 'preserve',
                 reason: `Structured obligations failed: ${structuredCheck.missing.join(', ')}`,
@@ -249,6 +261,7 @@ export class PipelineOrchestrator {
         if (!presCheck.passed) {
             // Fail closed: Revert to 100% original messages to prevent any quality degradation
             optimizedMessages = request.messages.map(m => ({ ...m }));
+            contentRestored = true;
             decisions.push({
                 itemId: 'preservation_gate_guardrail',
                 action: 'preserve',
@@ -271,6 +284,7 @@ export class PipelineOrchestrator {
         const safetyAudit = governor.validateEvidenceSafety(governorDecision, providedCategories);
         if (!safetyAudit.passed && safetyAudit.actionTaken === 'fail_closed_fallback') {
             optimizedMessages = request.messages.map(m => ({ ...m }));
+            contentRestored = true;
             decisions.push({
                 itemId: 'evidence_safety_gate_fallback',
                 action: 'preserve',
@@ -281,7 +295,27 @@ export class PipelineOrchestrator {
         }
         if (evidenceRetrieval?.conservativeFallback) {
             optimizedMessages = request.messages.map(message => ({ ...message }));
+            contentRestored = true;
         }
+
+        const finalBudgetPlan = this.globalBudgeter.finalize(
+            this.globalBudgeter.planBase({
+                messages: optimizedMessages,
+                profile: modelProfile,
+                requestedTotalTokens: request.maxTokenBudget,
+                requestedOutputTokens: request.maxOutputTokens,
+                fixedProtocolTokens: request.fixedProtocolTokens
+            }),
+            optimizedMessages
+        );
+        budgetPlan = contentRestored
+            ? { ...finalBudgetPlan, renderedAssignments: Object.freeze([]) }
+            : {
+                ...budgetPlan,
+                finalInputTokens: finalBudgetPlan.finalInputTokens,
+                projectedTotalTokens: finalBudgetPlan.projectedTotalTokens,
+                withinBudget: finalBudgetPlan.withinBudget
+            };
 
         // 3. Dynamic Real Context Quality (CQ) Evaluation (No static constants)
         const instructionIntegrity = presCheck.missingItems.some(m => m.includes('instruction')) ? 0.0 : 1.0;
@@ -298,10 +332,7 @@ export class PipelineOrchestrator {
         });
 
         // 4. Count Final Tokens
-        let optimizedTokens = 0;
-        for (const msg of optimizedMessages) {
-            optimizedTokens += TokenCounter.countTokens(msg.content);
-        }
+        const optimizedTokens = budgetPlan.finalInputTokens;
 
         const tokensSaved = Math.max(0, originalTokens - optimizedTokens);
         const reductionPercentage = originalTokens > 0 ? Math.round((tokensSaved / originalTokens) * 100) : 0;
@@ -391,7 +422,8 @@ export class PipelineOrchestrator {
             event,
             committed: false,
             snapshotGeneration: request.workspaceSnapshot?.generation,
-            evidenceRetrieval
+            evidenceRetrieval,
+            budgetPlan
         };
         if (!request.deferSideEffects) this.commitCompilation(result);
         return result;
@@ -486,11 +518,9 @@ export class PipelineOrchestrator {
      */
     private async executeCompilerPipeline(
         request: ContextCompileRequest,
-        decisions: Decision[],
-        evidenceRetrieval?: EvidenceRetrievalResult
-    ): Promise<{ messages: MessagePayload[]; cqReport: ContextQualityReport; cachePlan?: CachePlanResult }> {
+        decisions: Decision[]
+    ): Promise<{ messages: MessagePayload[]; cqReport: ContextQualityReport; cachePlan?: CachePlanResult; renderedAssignments: readonly RenderedBudgetAssignment[] }> {
         const profile = ModelProfileRegistry.getProfile(request.targetProvider || 'claude-3-5-sonnet');
-        const tokenBudget = request.maxTokenBudget || 4000;
 
         // 1. Task Sufficiency Profiling & Focal Keyword Extraction
         const rawUserMsg = request.messages.filter(m => m.role === 'user').pop()?.content || '';
@@ -522,6 +552,7 @@ export class PipelineOrchestrator {
 
         const candidateEntities: ContextEntity[] = [];
         const extractedBlocks: ExtractedBlock[] = [];
+        const renderedAssignments: RenderedBudgetAssignment[] = [];
 
         for (let i = 0; i < request.messages.length; i++) {
             const msg = request.messages[i];
@@ -585,7 +616,12 @@ export class PipelineOrchestrator {
                         baseUtility: 100 - (i * 5),
                         signatures: [sliceRes.slicedCode.split('\n')[0] || ''],
                         fullCode: rawCode,
-                        slicedCode: sliceRes.slicedCode
+                        slicedCode: sliceRes.slicedCode,
+                        metadata: {
+                            provenance: [`message:${i}:code:${blockIndex - 1}`], renderLocation: 'latest_user', mandatory: true,
+                            minimumResolution: 'R4', dependencies: [], conflicts: [], freshness: 'request', sensitivity: 'workspace',
+                            transformationHistory: ['ingested', 'slice-confidence-gated']
+                        }
                     };
 
                     candidateEntities.push(entity);
@@ -601,44 +637,26 @@ export class PipelineOrchestrator {
             }
         }
 
-        // 2b. Request-pinned workspace candidate enrichment
-        if (evidenceRetrieval && !evidenceRetrieval.conservativeFallback) {
-            for (let r = 0; r < evidenceRetrieval.selected.length; r++) {
-                const candidate = evidenceRetrieval.selected[r];
-                const ramEntityId = `evidence_${r}_${candidate.contentHash.slice(0, 12)}`;
-                candidateEntities.push({
-                    id: ramEntityId,
-                    filePath: candidate.filePath || `request/${candidate.sourceKind}`,
-                    symbolName: candidate.symbolName || candidate.category,
-                    kind: 'module',
-                    baseUtility: candidate.mandatory ? 100 : Math.max(20, 70 - (r * 5)),
-                    signatures: [candidate.content.split(/\r?\n/)[0] || candidate.category],
-                    fullCode: candidate.content
-                });
-            }
-        } else if (!request.workspaceSnapshot && this.ramManager) {
-            const ramSlices = this.ramManager.searchRelevantSlices(userInstruction, 3);
-            for (let r = 0; r < ramSlices.length; r++) {
-                const s = ramSlices[r];
-                const ramEntityId = `ram_slice_${r}_${s.name}`;
-                candidateEntities.push({
-                    id: ramEntityId,
-                    filePath: s.file,
-                    symbolName: s.name,
-                    kind: s.kind as any,
-                    baseUtility: 60 - (r * 10),
-                    signatures: [s.signature],
-                    fullCode: `// [${s.file}:${s.line}]\n${s.signature} {\n  /* implementation */\n}`
-                });
-            }
-        }
-
         // 3. Stage 5: Global Multi-Choice Knapsack Token Budget Optimization across ALL competing candidates
         let solverAssignments = new Map<string, any>();
         if (candidateEntities.length > 0) {
+            const fixedMessages = request.messages.map((message, messageIndex) => ({
+                ...message,
+                content: extractedBlocks.filter(block => block.messageIndex === messageIndex)
+                    .reduce((content, block) => content.replace(block.fullMatch, ''), message.content)
+            }));
+            const fixedPlan = this.globalBudgeter.planBase({
+                messages: fixedMessages,
+                profile,
+                requestedTotalTokens: request.maxTokenBudget,
+                requestedOutputTokens: request.maxOutputTokens,
+                fixedProtocolTokens: request.fixedProtocolTokens
+            });
+            const tokenBudget = fixedPlan.candidateTokenBudget;
             const solverResult = this.knapsackSolver.solve({
                 candidates: candidateEntities,
-                tokenBudget
+                tokenBudget,
+                lambdaCost: 0.10
             });
             solverAssignments = solverResult.assignments;
 
@@ -674,9 +692,7 @@ export class PipelineOrchestrator {
 
                 for (const block of relevantBlocks) {
                     const assigned = solverAssignments.get(block.entityId);
-                    const finalCode = (block.sliceResult.reductionPercentage > 0)
-                        ? block.sliceResult.slicedCode
-                        : (assigned?.text || block.rawCode);
+                    const finalCode = assigned?.text;
 
                     if (finalCode && finalCode.trim().length > 0) {
                         updatedContent = updatedContent.replace(block.fullMatch, `\`\`\`${block.langTag}\n${finalCode}\n\`\`\``);
@@ -687,6 +703,14 @@ export class PipelineOrchestrator {
                             confidence: 0.96,
                             evidence: ['SystemDependenceGraph', 'ContextKnapsackSolver']
                         });
+                        renderedAssignments.push({
+                            entityId: block.entityId,
+                            level: assigned.level,
+                            tokenCount: assigned.tokenCount,
+                            renderedTextHash: createHash('sha256').update(finalCode).digest('hex')
+                        });
+                    } else {
+                        updatedContent = updatedContent.replace(block.fullMatch, '');
                     }
                 }
 
@@ -739,33 +763,116 @@ export class PipelineOrchestrator {
         return {
             messages: finalMessages,
             cqReport,
-            cachePlan
+            cachePlan,
+            renderedAssignments: Object.freeze(renderedAssignments)
         };
     }
 
-    private renderEvidenceBundle(
+    private applyGlobalBudget(
         messages: MessagePayload[],
-        retrieval: EvidenceRetrievalResult,
-        snapshotGeneration: number | undefined,
+        request: ContextCompileRequest,
+        profile: ModelProfile,
+        retrieval: EvidenceRetrievalResult | undefined,
         decisions: Decision[]
-    ): MessagePayload[] {
-        if (retrieval.selected.length === 0) return messages;
-        const evidenceText = retrieval.selected.map(candidate => {
+    ): { messages: MessagePayload[]; plan: PayloadBudgetPlan } {
+        const baseParams = {
+            profile,
+            requestedTotalTokens: request.maxTokenBudget,
+            requestedOutputTokens: request.maxOutputTokens,
+            fixedProtocolTokens: request.fixedProtocolTokens
+        };
+        if (!retrieval || retrieval.conservativeFallback || retrieval.selected.length === 0) {
+            const plan = this.globalBudgeter.planBase({ messages, ...baseParams });
+            return { messages, plan: this.globalBudgeter.finalize(plan, messages) };
+        }
+        const targetIndex = messages.map(message => message.role).lastIndexOf('user');
+        if (targetIndex < 0) {
+            const plan = this.globalBudgeter.planBase({ messages, ...baseParams });
+            return { messages, plan: this.globalBudgeter.finalize(plan, messages) };
+        }
+        const wrapperOpen = `<tokonomics-evidence snapshot="${request.workspaceSnapshot?.generation}">`;
+        const wrapperClose = '</tokonomics-evidence>';
+        const withEmptyWrapper = messages.map(message => ({ ...message }));
+        withEmptyWrapper[targetIndex].content = `${withEmptyWrapper[targetIndex].content}\n\n${wrapperOpen}\n${wrapperClose}`;
+        const basePlan = this.globalBudgeter.planBase({ messages: withEmptyWrapper, ...baseParams });
+        const idBySymbol = new Map(retrieval.selected.filter(candidate => candidate.symbolName)
+            .map(candidate => [candidate.symbolName!, candidate.id]));
+        const entities: ContextEntity[] = retrieval.selected.map((candidate, index) => {
             const location = candidate.filePath
                 ? `${candidate.filePath}${candidate.lineStart ? `:${candidate.lineStart}${candidate.lineEnd && candidate.lineEnd !== candidate.lineStart ? `-${candidate.lineEnd}` : ''}` : ''}`
                 : candidate.sourceKind;
-            return `--- ${candidate.category} | ${location} | ${candidate.sourceKind} | ${candidate.contentHash.slice(0, 12)} ---\n${candidate.content}`;
-        }).join('\n\n');
-        const rendered = messages.map(message => ({ ...message }));
-        const targetIndex = rendered.map(message => message.role).lastIndexOf('user');
-        if (targetIndex < 0) return rendered;
-        rendered[targetIndex].content = `${rendered[targetIndex].content}\n\n<tokonomics-evidence snapshot="${snapshotGeneration}">\n${evidenceText}\n</tokonomics-evidence>`;
-        decisions.push({
-            itemId: 'rendered_evidence_bundle', action: 'include',
-            reason: `Rendered ${retrieval.selected.length} selected candidates with snapshot and provenance metadata.`,
-            confidence: retrieval.criticalRecall,
-            evidence: ['EvidenceAwareRetriever', `snapshot:${snapshotGeneration}`]
+            const header = `--- ${candidate.category} | ${location} | ${candidate.sourceKind} | ${candidate.contentHash.slice(0, 12)} ---`;
+            return {
+                id: candidate.id,
+                filePath: candidate.filePath || `request/${candidate.sourceKind}`,
+                symbolName: candidate.symbolName || candidate.category,
+                kind: 'module',
+                baseUtility: candidate.mandatory ? 100 : Math.max(20, 70 - index * 5),
+                signatures: [`${header}\n${candidate.content.split(/\r?\n/)[0] || candidate.category}`],
+                slicedCode: `${header}\n${candidate.content}`,
+                fullCode: `${header}\n${candidate.content}`,
+                metadata: {
+                    provenance: candidate.provenance,
+                    renderLocation: 'evidence',
+                    mandatory: candidate.mandatory,
+                    minimumResolution: candidate.mandatory ? 'R5' : 'R0',
+                    dependencies: candidate.dependencies.map(dependency => idBySymbol.get(dependency)).filter((id): id is string => !!id),
+                    conflicts: [],
+                    freshness: `snapshot:${candidate.snapshotGeneration}`,
+                    sensitivity: 'workspace',
+                    transformationHistory: ['retrieved', 'fused', 'diversified', 'budgeted']
+                }
+            };
         });
-        return rendered;
+
+        let candidateBudget = Math.max(0, basePlan.candidateTokenBudget - retrieval.selected.length * 4);
+        for (let attempt = 0; attempt < 4; attempt++) {
+            let solved;
+            try {
+                solved = this.knapsackSolver.solve({ candidates: entities, tokenBudget: candidateBudget });
+            } catch (error) {
+                if (error instanceof SolverConstraintError) {
+                    throw new TokenBudgetExceededError(error.message, { ...basePlan, candidateTokenBudget: candidateBudget });
+                }
+                throw error;
+            }
+            const included = entities.map(entity => ({ entity, assignment: solved.assignments.get(entity.id)! }))
+                .filter(item => item.assignment.level !== 'R_exclude');
+            const rendered = messages.map(message => ({ ...message }));
+            const evidenceText = included.map(item => item.assignment.text).join('\n\n');
+            rendered[targetIndex].content = `${rendered[targetIndex].content}\n\n${wrapperOpen}\n${evidenceText}\n${wrapperClose}`;
+            try {
+                let plan = this.globalBudgeter.finalize(basePlan, rendered);
+                const renderedAssignments = Object.freeze(included.map(item => ({
+                    entityId: item.entity.id,
+                    level: item.assignment.level,
+                    tokenCount: item.assignment.tokenCount,
+                    renderedTextHash: createHash('sha256').update(item.assignment.text).digest('hex')
+                })));
+                plan = { ...plan, candidateTokenBudget: candidateBudget, renderedAssignments };
+                for (const item of entities) {
+                    const assignment = solved.assignments.get(item.id)!;
+                    decisions.push({
+                        itemId: item.id,
+                        action: assignment.level === 'R_exclude' ? 'exclude' : 'include',
+                        reason: `Global budget assigned ${assignment.level} (${assignment.tokenCount} tokens).`,
+                        confidence: 1,
+                        evidence: ['GlobalTokenBudgeter', 'ContextKnapsackSolver']
+                    });
+                }
+                decisions.push({
+                    itemId: 'global_payload_budget', action: 'include',
+                    reason: `Rendered ${included.length}/${entities.length} evidence blocks; projected ${plan.projectedTotalTokens}/${plan.totalTokenLimit} total tokens.`,
+                    confidence: 0.92,
+                    evidence: [plan.tokenizer, 'complete-payload-recount']
+                });
+                return { messages: rendered, plan };
+            } catch (error) {
+                if (!(error instanceof TokenBudgetExceededError) || attempt === 3) throw error;
+                const overflow = Math.max(1, error.plan.projectedTotalTokens - error.plan.totalTokenLimit);
+                candidateBudget = Math.max(0, candidateBudget - overflow - 4);
+            }
+        }
+        throw new TokenBudgetExceededError('Unable to render evidence within the complete payload budget.', basePlan);
     }
 }

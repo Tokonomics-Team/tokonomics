@@ -28,12 +28,18 @@ export class EvidenceAwareRetriever {
             if (missing.length === 0) break;
         }
         const maxCandidates = Math.max(contract.required.length, request.maxCandidates ?? 10);
-        const selected = this.selectDiverse(pool, contract.required, maxCandidates);
+        const claimedRequired = new Set<EvidenceCategory>();
+        const selected = this.selectDiverse(pool, contract.required, maxCandidates).map(candidate => {
+            const mandatory = contract.required.includes(candidate.category) && !claimedRequired.has(candidate.category) && this.canSatisfyRequirement(candidate);
+            if (mandatory) claimedRequired.add(candidate.category);
+            return { ...candidate, mandatory };
+        });
         missing = this.missingRequired(contract.required, selected);
         const selectedIds = new Set(selected.map(candidate => candidate.id));
+        const selectedById = new Map(selected.map(candidate => [candidate.id, candidate]));
         const decisions: EvidenceDecision[] = candidates.map(candidate => selectedIds.has(candidate.id)
             ? { candidateId: candidate.id, action: 'include', rank: selected.findIndex(item => item.id === candidate.id) + 1,
-                reason: candidate.mandatory ? `Required ${candidate.category} evidence.` : `High fused relevance with diversity.` }
+                reason: selectedById.get(candidate.id)!.mandatory ? `Required ${candidate.category} evidence.` : `High fused relevance with diversity.` }
             : { candidateId: candidate.id, action: 'exclude', reason: contract.forbidden.includes(candidate.category)
                 ? `Category ${candidate.category} is forbidden for ${contract.taskType}.` : `Lower fused utility or redundant evidence.` });
         const covered = [...new Set(selected.filter(candidate => this.canSatisfyRequirement(candidate)).map(candidate => candidate.category))];

@@ -72,8 +72,8 @@ Request lifecycle -> append-only ledger -> dashboard and diagnostics
 | 1 | Privacy, security, trust, and packaging | Approved and complete | Granted |
 | 2 | Canonical compiler and protocol-safe adapters | Approved and complete | Granted |
 | 3 | Versioned incremental workspace intelligence | Approved and complete | Granted |
-| 4 | Evidence-aware retrieval and preservation | Implemented; pending owner review | Granted |
-| 5 | Global token budgeting and selection | Blocked on approval | Yes |
+| 4 | Evidence-aware retrieval and preservation | Approved and complete | Granted |
+| 5 | Global token budgeting and selection | Implemented; pending owner review | Granted |
 | 6 | Correct caching and token economics | Blocked on approval | Yes |
 | 7 | Authoritative observability and dashboard | Blocked on approval | Yes |
 | 8 | Performance, concurrency, and resilience | Blocked on approval | Yes |
@@ -333,8 +333,7 @@ Optimize task success per token by selecting structured evidence.
   snapshots, and adversarial dynamic slicing. The normative behavior is recorded in
   `EVIDENCE_RETRIEVAL_CONTRACT.md`.
 
-Phase 5 remains blocked until the repository owner reviews this implementation and
-explicitly approves the next phase.
+The repository owner subsequently reviewed Phase 4 and explicitly approved Phase 5.
 
 ## Phase 5 - Global token budgeting and selection
 
@@ -361,6 +360,39 @@ Make the selected Context IR exactly control the rendered prompt and total budge
 - Solver assignments match rendered content exactly.
 - Brute-force fixtures validate small-instance optimality.
 - Mandatory evidence cannot be evicted.
+
+### Implementation record
+
+- Extended every generated Context IR resolution with normalized provenance, render
+  location, mandatory state, minimum safe resolution, dependencies, conflicts,
+  freshness, sensitivity, and transformation history. Token cost remains attached to
+  the exact resolution text.
+- Added a complete-payload budget plan covering message text and wrappers, structured
+  tool calls/results, textual and opaque data parts, evidence wrappers, output reserve,
+  a two-percent safety margin, and an explicit eight-percent tokenizer-estimation error
+  allowance. Caller limits are capped by the selected model context window and are
+  never silently raised.
+- Added mandatory-first solver constraints and transitive dependency closure. Mandatory
+  items cannot select `R_exclude` or a resolution below their declared minimum;
+  missing dependencies, conflicting mandatory blocks, and infeasible minimums fail
+  explicitly.
+- Removed the remaining RAM/evidence bypass from the compiler solver. Safe code slices
+  and evidence now render only from solver assignments, and every rendered assignment
+  records its resolution, token count, and SHA-256 text hash for conformance auditing.
+- Centralized evidence selection after text-pipeline transformation so compiler,
+  hybrid, and legacy text paths share one global budget. Evidence wrappers and
+  separators are charged before selection, with a final complete-payload recount and
+  bounded retry if estimator composition creates an overflow.
+- Added conservative accounting for canonical tool schemas, tool results, textual data,
+  and binary/image parts. Structured protocol requests remain byte-preserving and are
+  rejected when mandatory payload plus reserves cannot fit.
+- Added automated exact-boundary, caller-limit, mandatory overflow, dependency closure,
+  conflict, metadata completeness, structured-part accounting, deterministic rendering,
+  assignment-hash conformance, mandatory-evidence, and DP-versus-brute-force optimality
+  tests. The normative rules are recorded in `GLOBAL_BUDGET_CONTRACT.md`.
+
+Phase 6 remains blocked until the repository owner reviews this implementation and
+explicitly approves the next phase.
 
 ## Phase 6 - Correct caching and token economics
 
