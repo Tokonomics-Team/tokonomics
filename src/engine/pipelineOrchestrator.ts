@@ -353,7 +353,7 @@ export class PipelineOrchestrator {
             originalTokens,
             optimizedTokens,
             cachePlanResult?.staticPrefixTokens || 0,
-            request.targetProvider || 'claude-3-7-sonnet'
+            request.targetModel || modelProfile.modelId
         );
 
         // Stage metrics accurately reflecting transformations executed
@@ -395,6 +395,10 @@ export class PipelineOrchestrator {
             projectedRawCostUSD: costProj.rawCostUSD,
             projectedOptimizedCostUSD: costProj.optimizedCostUSD,
             projectedSavingsUSD: costProj.savingsUSD,
+            costStatus: costProj.pricingAvailable ? 'projected' : 'unavailable',
+            pricingCatalogVersion: costProj.pricingCatalogVersion,
+            pricingSource: costProj.pricingSource,
+            pricingCurrency: costProj.currency,
             isCostReconciled: false,
             predictedCQ: cqReport.predictedCQ,
             evidenceCoverage: cqReport.breakdown.evidenceCoverage,

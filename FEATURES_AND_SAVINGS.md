@@ -21,8 +21,8 @@ The intended design combines **Graph-based PageRank Repository Mapping**, **Mult
 +---------------------------------------------------------------------------------------------------+
 |  1. Incoming Request (VS Code Chat / @tokenopt / Inline Context / Agent Invocation)               |
 |     │                                                                                             |
-|     ├──► Layer 1: Hybrid Semantic Response Cache (Exact-Hash O(1) + N-Gram MinHash Approx >= 0.88)|
-|     │    └── Instant 0-token, 0ms return for repeated & rephrased read-only questions             |
+|     ├──► Layer 1: Complete-Request Exact Response Cache (Canonical SHA-256 Fingerprint)           |
+|     │    └── Reuse only after every answer-affecting input and safe terminal state match          |
 |     │                                                                                             |
 |     ├──► Layer 2: Intelligent Task Complexity Model Router                                        |
 |     │    └── Classifies complexity → recommends Flash ($0.25) vs Standard ($3) vs Reasoning ($15)  |
@@ -84,15 +84,14 @@ The intended design combines **Graph-based PageRank Repository Mapping**, **Mult
 
 ## 🔍 In-Depth Layer-by-Layer Feature Breakdown
 
-### 1. Hybrid Semantic Response Cache (Exact-Hash + MinHash Shingle Matching)
+### 1. Complete-Request Exact Response Cache (SHA-256)
 - **Source File**: `src/cache/responseCache.ts`
 - **How It Saves Tokens**:
-  - Employs a 2-tier resolution architecture:
-    - **Tier 1 (Exact Match)**: 32-bit FNV-1a hash of $(\text{Normalized Query} + \text{Active File Path})$ with $O(1)$ instant retrieval.
-    - **Tier 2 (Semantic Approximate Match)**: Computes word 2-gram and 3-gram token shingles and evaluates Jaccard/Dice set similarity ($\ge 0.88$ threshold). Matches rephrased queries (e.g., *"How do I configure auth?"* vs *"How do I configure auth please?"*) with **0MB external binary bloat and <1ms latency**.
-  - **Safety**: Strictly restricts caching to read-only queries (`question`, `explain`), rejecting mutations (`edit`, `generate`).
-  - **Automatic Invalidation**: Clears cache entries when associated files are modified.
-- **Token Impact**: **100% token elimination (0 tokens consumed, 0ms return)** on exact and rephrased repeat queries (**20% to 35% of daily developer prompts**).
+  - Uses a SHA-256 fingerprint of all answer-affecting request state, including conversation, workspace snapshot, evidence, model, tools, configuration, policy, and extension version.
+  - Approximate similarity is restricted to response-free retrieval hints and never replays a cached answer.
+  - **Safety**: Rejects mutations, tools, partial streams, cancellation, failures, unresolved workspace state, and time-sensitive requests.
+  - **Automatic Invalidation**: Workspace version/content changes miss conservatively, and explicit file invalidation clears every dependent entry.
+- **Token Impact**: An eligible exact hit avoids one downstream model request. Realized token and cost savings are request- and provider-dependent and are reconciled only from provider usage.
 
 ---
 
@@ -200,7 +199,7 @@ The intended design combines **Graph-based PageRank Repository Mapping**, **Mult
 - **How It Saves Dollars**:
   - Enforces deterministic 1,024-token prefix stabilization across System, Tools, and Repo Map layers.
   - Inserts Anthropic ephemeral cache breakpoints (`cache_control: { type: "ephemeral" }`) at 4 key boundaries.
-- **Financial Impact**: **90% discount on cached input tokens** ($3.00/MTok $\rightarrow$ $0.30/MTok for Claude 3.7 Sonnet).
+- **Financial Impact**: Cache eligibility is not booked as savings. A cache-read scenario may be projected, while realized discounts are recorded only from provider-reported cached-token usage using the pinned pricing catalog.
 
 ---
 
@@ -217,8 +216,8 @@ The intended design combines **Graph-based PageRank Repository Mapping**, **Mult
 | **Tool Output Head/Tail Masking** | 2,500 tokens | 350 tokens | **86.0%** | Regex head/tail log masking |
 | **Token-Aware Line Range Slicing** | 1,500 tokens | 220 tokens | **85.3%** | Line range interval extraction |
 | **Diff-Based Output Optimization** | 800 tokens (out) | 220 tokens (out) | **72.5%** | GNU unified diff patches |
-| **Hybrid Semantic Response Cache** | 1,500 tokens | 0 tokens | **100.0%** | Exact-hash & MinHash shingle match |
-| **4-Tier Cloud Cache Alignment** | $3.00 / MTok | $0.30 / MTok | **90.0% ($)** | 1,024-token prefix stabilization |
+| **Exact Response Cache** | Request-dependent | Provider request avoided on verified exact hit | **Measured per hit** | Complete-request SHA-256 fingerprint |
+| **Cloud Cache Alignment** | Provider-dependent | Provider-dependent | **Reconciled only** | Stable prefix plus verified usage |
 
 ---
 

@@ -25,6 +25,9 @@ export interface CachePlanResult {
     unoptimizedCostUSD: number;
     effectiveCostSavingsUSD: number;
     savingsPercentage: number;
+    cacheReadScenarioCostUSD?: number;
+    cacheReadScenarioSavingsUSD?: number;
+    costStatus: 'estimated_no_verified_cache_read';
 }
 
 export class CachePlanner {
@@ -87,23 +90,18 @@ export class CachePlanner {
 
         const isCacheEligible = profile.cachePolicy.supported && totalPrefixTokens >= profile.cachePolicy.minPrefixTokens;
 
-        // 4. Calculate Effective Cost with Prompt Caching Discounts
+        // 4. Eligibility is not a provider cache hit. Project without a discount and
+        // expose the possible read-hit economics as a labelled scenario only.
         const rawInputRate = profile.pricing.inputCostPer1M;
         const cachedInputRate = profile.pricing.cachedInputCostPer1M;
 
-        let effectiveCostUSD = 0;
-        let unoptimizedCostUSD = (totalTokens / 1_000_000) * rawInputRate;
-
-        if (isCacheEligible) {
-            // Static prefix gets 90% discount on cache hits
-            const prefixCost = (totalPrefixTokens / 1_000_000) * cachedInputRate;
-            const queryCost = (queryTokens / 1_000_000) * rawInputRate;
-            effectiveCostUSD = prefixCost + queryCost;
-        } else {
-            effectiveCostUSD = unoptimizedCostUSD;
-        }
-
-        const effectiveCostSavingsUSD = Math.max(0, unoptimizedCostUSD - effectiveCostUSD);
+        const unoptimizedCostUSD = (totalTokens / 1_000_000) * rawInputRate;
+        const effectiveCostUSD = unoptimizedCostUSD;
+        const scenarioCost = isCacheEligible
+            ? ((totalPrefixTokens / 1_000_000) * cachedInputRate) + ((queryTokens / 1_000_000) * rawInputRate)
+            : undefined;
+        const scenarioSavings = scenarioCost === undefined ? undefined : unoptimizedCostUSD - scenarioCost;
+        const effectiveCostSavingsUSD = 0;
         const savingsPercentage = unoptimizedCostUSD > 0 ? Math.round((effectiveCostSavingsUSD / unoptimizedCostUSD) * 100) : 0;
 
         let providerCacheHeader: any = undefined;
@@ -120,7 +118,10 @@ export class CachePlanner {
             effectiveCostUSD: Math.round(effectiveCostUSD * 100000) / 100000,
             unoptimizedCostUSD: Math.round(unoptimizedCostUSD * 100000) / 100000,
             effectiveCostSavingsUSD: Math.round(effectiveCostSavingsUSD * 100000) / 100000,
-            savingsPercentage
+            savingsPercentage,
+            cacheReadScenarioCostUSD: scenarioCost === undefined ? undefined : Math.round(scenarioCost * 100000) / 100000,
+            cacheReadScenarioSavingsUSD: scenarioSavings === undefined ? undefined : Math.round(scenarioSavings * 100000) / 100000,
+            costStatus: 'estimated_no_verified_cache_read'
         };
     }
 }

@@ -1,34 +1,67 @@
 /**
- * Hybrid Semantic Response Cache v4.0
- * 
- * Two-tier caching strategy:
- *   - Tier 1 (Exact Hash): FNV-1a hash of (normalized query + active file path). O(1) lookup.
- *   - Tier 2 (Semantic Approximate Match): 3-gram MinHash & Token Fingerprint Jaccard/Dice similarity
- *     (threshold >= 0.88) catching rephrased questions with 0MB external binary bloat and <1ms latency.
- * 
- * Safety: Only caches read-only queries (questions, explanations).
- * Never caches mutation queries (edits, refactorings, generations).
+ * Exact response cache.
+ *
+ * Answer replay is deliberately stricter than retrieval: a response is reusable only
+ * when every input that can affect the answer has the same SHA-256 fingerprint.
+ * Approximate matches are exposed as non-answer hints only.
  */
 
+import { createHash } from 'crypto';
+
+export interface ResponseCacheSafety {
+    intent: string;
+    hasToolCalls?: boolean;
+    partialStream?: boolean;
+    cancelled?: boolean;
+    failed?: boolean;
+    unresolvedWorkspace?: boolean;
+    timeSensitive?: boolean;
+}
+
+export interface ResponseCacheRequest {
+    requestText: string;
+    conversation: readonly unknown[];
+    workspace: {
+        roots: readonly string[];
+        snapshotGeneration: number;
+        ignorePolicyVersion: string;
+        files: readonly { path: string; contentHash: string; sourceVersion: string }[];
+    };
+    evidence: readonly { id: string; contentHash: string }[];
+    model: { provider: string; id: string };
+    tools: readonly unknown[];
+    compilerConfiguration: unknown;
+    policies: unknown;
+    extensionVersion: string;
+    safety: ResponseCacheSafety;
+}
+
 export interface CacheEntry {
-    queryHash: number;
+    fingerprint: string;
     normalizedQuery: string;
-    tokenShingles: Set<string>;
-    activeFilePath: string;
+    queryShingles: ReadonlySet<string>;
     response: string;
     timestamp: number;
     hitCount: number;
+    dependentFiles: ReadonlySet<string>;
 }
 
 export interface CacheLookupResult {
     hit: boolean;
     response?: string;
-    tier?: 'exact_hash' | 'semantic_approximate';
+    tier?: 'exact_sha256';
     similarityScore?: number;
     ageMs?: number;
+    bypassReason?: string;
     totalHits: number;
     totalMisses: number;
     hitRatePercent: number;
+}
+
+export interface CacheHint {
+    fingerprint: string;
+    similarityScore: number;
+    ageMs: number;
 }
 
 export interface CacheStats {
@@ -37,177 +70,119 @@ export interface CacheStats {
     totalHits: number;
     exactHits: number;
     semanticHits: number;
+    semanticHints: number;
     totalMisses: number;
+    bypassed: number;
     hitRatePercent: number;
     oldestEntryAgeMs: number;
 }
 
 const CACHEABLE_INTENTS = new Set(['question', 'explain']);
-const UNCACHEABLE_INTENTS = new Set(['edit', 'generate']);
+const MUTATING_INTENTS = new Set(['edit', 'generate', 'refactor', 'test']);
 
 export class ResponseCache {
-    private cache: Map<number, CacheEntry> = new Map();
-    private insertionOrder: number[] = [];
-    private totalHits: number = 0;
-    private exactHits: number = 0;
-    private semanticHits: number = 0;
-    private totalMisses: number = 0;
+    private cache = new Map<string, CacheEntry>();
+    private insertionOrder: string[] = [];
+    private totalHits = 0;
+    private exactHits = 0;
+    private totalMisses = 0;
+    private bypassed = 0;
+    private semanticHints = 0;
 
     constructor(
-        private maxSize: number = 100,
-        private ttlMs: number = 30 * 60 * 1000, // 30 minutes
-        private similarityThreshold: number = 0.88
+        private readonly maxSize: number = 100,
+        private readonly ttlMs: number = 30 * 60 * 1000,
+        private readonly hintSimilarityThreshold: number = 0.88
     ) {}
 
-    /**
-     * Look up a cached response with 2-tier resolution (Exact Hash -> Semantic Approximate).
-     */
-    public lookup(
-        query: string,
-        activeFilePath: string,
-        intent: string = 'question'
-    ): CacheLookupResult {
-        if (UNCACHEABLE_INTENTS.has(intent)) {
+    public lookup(request: ResponseCacheRequest): CacheLookupResult {
+        const bypassReason = this.ineligibilityReason(request.safety);
+        if (bypassReason) {
+            this.bypassed++;
+            return this.buildMissResult(bypassReason);
+        }
+
+        const fingerprint = ResponseCache.fingerprint(request);
+        const entry = this.cache.get(fingerprint);
+        if (!entry) {
             this.totalMisses++;
             return this.buildMissResult();
         }
 
-        const normalizedQuery = this.normalizeQuery(query);
-        const hash = this.fnv1a(normalizedQuery + '|' + activeFilePath);
-
-        // Tier 1: Exact Hash Match (O(1))
-        const exactEntry = this.cache.get(hash);
-        if (exactEntry) {
-            const age = Date.now() - exactEntry.timestamp;
-            if (age <= this.ttlMs) {
-                exactEntry.hitCount++;
-                this.totalHits++;
-                this.exactHits++;
-                return {
-                    hit: true,
-                    response: exactEntry.response,
-                    tier: 'exact_hash',
-                    similarityScore: 1.0,
-                    ageMs: age,
-                    totalHits: this.totalHits,
-                    totalMisses: this.totalMisses,
-                    hitRatePercent: this.getHitRate()
-                };
-            } else {
-                this.cache.delete(hash);
-                this.insertionOrder = this.insertionOrder.filter(h => h !== hash);
-            }
+        const ageMs = Date.now() - entry.timestamp;
+        if (ageMs > this.ttlMs) {
+            this.delete(fingerprint);
+            this.totalMisses++;
+            return this.buildMissResult('expired');
         }
 
-        // Tier 2: Semantic Approximate Match (N-gram Shingle Jaccard Similarity >= 0.88)
-        const queryShingles = this.generateShingles(normalizedQuery);
-        let bestMatch: CacheEntry | null = null;
-        let bestSimilarity = 0;
-
-        for (const entry of this.cache.values()) {
-            if (entry.activeFilePath !== activeFilePath) continue;
-            const age = Date.now() - entry.timestamp;
-            if (age > this.ttlMs) continue;
-
-            const similarity = this.calculateJaccardSimilarity(queryShingles, entry.tokenShingles);
-            if (similarity >= this.similarityThreshold && similarity > bestSimilarity) {
-                bestSimilarity = similarity;
-                bestMatch = entry;
-            }
-        }
-
-        if (bestMatch) {
-            bestMatch.hitCount++;
-            this.totalHits++;
-            this.semanticHits++;
-            return {
-                hit: true,
-                response: bestMatch.response,
-                tier: 'semantic_approximate',
-                similarityScore: Math.round(bestSimilarity * 100) / 100,
-                ageMs: Date.now() - bestMatch.timestamp,
-                totalHits: this.totalHits,
-                totalMisses: this.totalMisses,
-                hitRatePercent: this.getHitRate()
-            };
-        }
-
-        this.totalMisses++;
-        return this.buildMissResult();
+        entry.hitCount++;
+        this.totalHits++;
+        this.exactHits++;
+        this.touch(fingerprint);
+        return {
+            hit: true,
+            response: entry.response,
+            tier: 'exact_sha256',
+            similarityScore: 1,
+            ageMs,
+            totalHits: this.totalHits,
+            totalMisses: this.totalMisses,
+            hitRatePercent: this.getHitRate()
+        };
     }
 
-    /**
-     * Stores response in cache along with token shingles for approximate matching.
-     * Proactively sweeps expired entries before LRU eviction to bound memory usage.
-     */
-    public store(
-        query: string,
-        activeFilePath: string,
-        response: string,
-        intent: string = 'question'
-    ): boolean {
-        if (UNCACHEABLE_INTENTS.has(intent) || !CACHEABLE_INTENTS.has(intent)) {
-            return false;
+    public store(request: ResponseCacheRequest, response: string, terminalState: 'completed' | 'partial' | 'cancelled' | 'failed'): boolean {
+        const safety: ResponseCacheSafety = {
+            ...request.safety,
+            partialStream: request.safety.partialStream || terminalState === 'partial',
+            cancelled: request.safety.cancelled || terminalState === 'cancelled',
+            failed: request.safety.failed || terminalState === 'failed'
+        };
+        if (terminalState !== 'completed' || this.ineligibilityReason(safety) || !response.trim()) return false;
+
+        this.sweepExpired();
+        const fingerprint = ResponseCache.fingerprint(request);
+        while (!this.cache.has(fingerprint) && this.cache.size >= this.maxSize && this.insertionOrder.length > 0) {
+            this.delete(this.insertionOrder[0]);
         }
 
-        const normalizedQuery = this.normalizeQuery(query);
-        const hash = this.fnv1a(normalizedQuery + '|' + activeFilePath);
-        const tokenShingles = this.generateShingles(normalizedQuery);
-
-        // Proactive TTL sweep: evict all expired entries to bound memory under sustained usage
-        const now = Date.now();
-        for (const [h, entry] of this.cache.entries()) {
-            if (now - entry.timestamp > this.ttlMs) {
-                this.cache.delete(h);
-                this.insertionOrder = this.insertionOrder.filter(x => x !== h);
-            }
-        }
-
-        // Standard LRU eviction if still at capacity
-        while (this.cache.size >= this.maxSize && this.insertionOrder.length > 0) {
-            const evictHash = this.insertionOrder.shift()!;
-            this.cache.delete(evictHash);
-        }
-
-        this.cache.set(hash, {
-            queryHash: hash,
-            normalizedQuery,
-            tokenShingles,
-            activeFilePath,
+        this.cache.set(fingerprint, {
+            fingerprint,
+            normalizedQuery: this.normalizeQuery(request.requestText),
+            queryShingles: this.generateShingles(this.normalizeQuery(request.requestText)),
             response,
-            timestamp: now,
-            hitCount: 0
+            timestamp: Date.now(),
+            hitCount: 0,
+            dependentFiles: new Set(request.workspace.files.map(file => file.path))
         });
-        this.insertionOrder.push(hash);
-
+        this.touch(fingerprint);
         return true;
     }
 
-    /**
-     * Estimates current memory consumption of the cache in bytes (for diagnostics).
-     */
-    public estimateMemoryBytes(): number {
-        let bytes = 0;
-        for (const entry of this.cache.values()) {
-            bytes += entry.normalizedQuery.length * 2; // UTF-16
-            bytes += entry.response.length * 2;
-            bytes += entry.activeFilePath.length * 2;
-            bytes += entry.tokenShingles.size * 40; // approx per shingle
-            bytes += 64; // overhead for hash, timestamp, hitCount
-        }
-        return bytes;
+    /** Similar entries may guide retrieval, but never expose or replay cached answers. */
+    public findHints(request: ResponseCacheRequest, limit: number = 3): readonly CacheHint[] {
+        if (this.ineligibilityReason(request.safety)) return Object.freeze([]);
+        this.sweepExpired();
+        const shingles = this.generateShingles(this.normalizeQuery(request.requestText));
+        const hints = [...this.cache.values()].map(entry => ({
+            fingerprint: entry.fingerprint,
+            similarityScore: this.jaccard(shingles, entry.queryShingles),
+            ageMs: Date.now() - entry.timestamp
+        })).filter(hint => hint.similarityScore >= this.hintSimilarityThreshold)
+            .sort((a, b) => b.similarityScore - a.similarityScore || a.fingerprint.localeCompare(b.fingerprint))
+            .slice(0, Math.max(0, limit));
+        this.semanticHints += hints.length;
+        return Object.freeze(hints);
     }
 
     public invalidateForFile(filePath: string): number {
-        let invalidated = 0;
-        for (const [hash, entry] of this.cache.entries()) {
-            if (entry.activeFilePath === filePath) {
-                this.cache.delete(hash);
-                this.insertionOrder = this.insertionOrder.filter(h => h !== hash);
-                invalidated++;
-            }
-        }
-        return invalidated;
+        const normalized = filePath.replace(/\\/g, '/').toLowerCase();
+        const targets = [...this.cache.entries()].filter(([, entry]) =>
+            [...entry.dependentFiles].some(file => file.replace(/\\/g, '/').toLowerCase() === normalized)
+        ).map(([fingerprint]) => fingerprint);
+        targets.forEach(fingerprint => this.delete(fingerprint));
+        return targets.length;
     }
 
     public clear(): void {
@@ -215,95 +190,128 @@ export class ResponseCache {
         this.insertionOrder = [];
         this.totalHits = 0;
         this.exactHits = 0;
-        this.semanticHits = 0;
+        this.semanticHints = 0;
         this.totalMisses = 0;
+        this.bypassed = 0;
+    }
+
+    public estimateMemoryBytes(): number {
+        let bytes = 0;
+        for (const entry of this.cache.values()) {
+            bytes += (entry.fingerprint.length + entry.normalizedQuery.length + entry.response.length) * 2;
+            bytes += entry.queryShingles.size * 40 + entry.dependentFiles.size * 80 + 64;
+        }
+        return bytes;
     }
 
     public getStats(): CacheStats {
-        let oldestAge = 0;
-        for (const entry of this.cache.values()) {
-            const age = Date.now() - entry.timestamp;
-            if (age > oldestAge) oldestAge = age;
-        }
-
+        let oldestEntryAgeMs = 0;
+        for (const entry of this.cache.values()) oldestEntryAgeMs = Math.max(oldestEntryAgeMs, Date.now() - entry.timestamp);
         return {
             size: this.cache.size,
             maxSize: this.maxSize,
             totalHits: this.totalHits,
             exactHits: this.exactHits,
-            semanticHits: this.semanticHits,
+            semanticHits: 0,
+            semanticHints: this.semanticHints,
             totalMisses: this.totalMisses,
+            bypassed: this.bypassed,
             hitRatePercent: this.getHitRate(),
-            oldestEntryAgeMs: oldestAge
+            oldestEntryAgeMs
         };
     }
 
-    /**
-     * Generates word 2-grams and 3-grams for semantic fuzzy matching.
-     * Capped at first 120 words to ensure <0.05ms execution and zero GC pressure on low-spec HW.
-     */
-    private generateShingles(text: string): Set<string> {
-        const words = text.split(/\s+/).slice(0, 120).filter(w => w.length > 1);
-        const shingles = new Set<string>();
-
-        // Add single words
-        for (const w of words) shingles.add(`1:${w}`);
-
-        // Add 2-grams
-        for (let i = 0; i < words.length - 1; i++) {
-            shingles.add(`2:${words[i]}_${words[i + 1]}`);
-        }
-
-        // Add 3-grams
-        for (let i = 0; i < words.length - 2; i++) {
-            shingles.add(`3:${words[i]}_${words[i + 1]}_${words[i + 2]}`);
-        }
-
-        return shingles;
+    public static fingerprint(request: ResponseCacheRequest): string {
+        const material = {
+            schema: 'tokonomics.response-cache.v1',
+            requestText: request.requestText,
+            conversation: request.conversation,
+            workspace: {
+                ...request.workspace,
+                roots: [...request.workspace.roots].sort(),
+                files: [...request.workspace.files].sort((a, b) => a.path.localeCompare(b.path))
+            },
+            evidence: [...request.evidence].sort((a, b) => a.id.localeCompare(b.id)),
+            model: request.model,
+            tools: request.tools,
+            compilerConfiguration: request.compilerConfiguration,
+            policies: request.policies,
+            extensionVersion: request.extensionVersion
+        };
+        return createHash('sha256').update(stableSerialize(material)).digest('hex');
     }
 
-    /**
-     * Calculates Jaccard similarity coefficient between two token shingle sets.
-     */
-    private calculateJaccardSimilarity(setA: Set<string>, setB: Set<string>): number {
-        if (setA.size === 0 || setB.size === 0) return 0;
-        let intersection = 0;
-        for (const s of setA) {
-            if (setB.has(s)) intersection++;
-        }
-        const union = setA.size + setB.size - intersection;
-        return union === 0 ? 0 : intersection / union;
+    private ineligibilityReason(safety: ResponseCacheSafety): string | undefined {
+        const intent = safety.intent.toLowerCase();
+        if (MUTATING_INTENTS.has(intent) || !CACHEABLE_INTENTS.has(intent)) return `intent:${intent || 'unknown'}`;
+        if (safety.hasToolCalls) return 'tool-call';
+        if (safety.partialStream) return 'partial-stream';
+        if (safety.cancelled) return 'cancelled';
+        if (safety.failed) return 'failed';
+        if (safety.unresolvedWorkspace) return 'unresolved-workspace';
+        if (safety.timeSensitive) return 'time-sensitive';
+        return undefined;
     }
 
     private normalizeQuery(query: string): string {
-        return query
-            .toLowerCase()
-            .replace(/\s+/g, ' ')
-            .replace(/[^\w\s]/g, '')
-            .trim();
+        return query.toLowerCase().replace(/[^\w\s]/g, '').replace(/\s+/g, ' ').trim();
     }
 
-    private fnv1a(str: string): number {
-        let hash = 0x811c9dc5;
-        for (let i = 0; i < str.length; i++) {
-            hash ^= str.charCodeAt(i);
-            hash = (hash * 0x01000193) >>> 0;
-        }
-        return hash;
+    private generateShingles(text: string): ReadonlySet<string> {
+        const words = text.split(/\s+/).slice(0, 120).filter(Boolean);
+        const shingles = new Set<string>(words.map(word => `1:${word}`));
+        for (let i = 0; i < words.length - 1; i++) shingles.add(`2:${words[i]}_${words[i + 1]}`);
+        for (let i = 0; i < words.length - 2; i++) shingles.add(`3:${words[i]}_${words[i + 1]}_${words[i + 2]}`);
+        return shingles;
+    }
+
+    private jaccard(a: ReadonlySet<string>, b: ReadonlySet<string>): number {
+        if (a.size === 0 || b.size === 0) return 0;
+        let intersection = 0;
+        for (const value of a) if (b.has(value)) intersection++;
+        return intersection / (a.size + b.size - intersection);
+    }
+
+    private sweepExpired(): void {
+        const now = Date.now();
+        for (const [fingerprint, entry] of this.cache) if (now - entry.timestamp > this.ttlMs) this.delete(fingerprint);
+    }
+
+    private delete(fingerprint: string): void {
+        this.cache.delete(fingerprint);
+        this.insertionOrder = this.insertionOrder.filter(value => value !== fingerprint);
+    }
+
+    private touch(fingerprint: string): void {
+        this.insertionOrder = this.insertionOrder.filter(value => value !== fingerprint);
+        this.insertionOrder.push(fingerprint);
     }
 
     private getHitRate(): number {
-        const total = this.totalHits + this.totalMisses;
-        if (total === 0) return 0;
-        return Math.round((this.totalHits / total) * 100);
+        const attempts = this.totalHits + this.totalMisses;
+        return attempts === 0 ? 0 : Math.round((this.totalHits / attempts) * 100);
     }
 
-    private buildMissResult(): CacheLookupResult {
+    private buildMissResult(bypassReason?: string): CacheLookupResult {
         return {
             hit: false,
+            bypassReason,
             totalHits: this.totalHits,
             totalMisses: this.totalMisses,
             hitRatePercent: this.getHitRate()
         };
     }
+}
+
+export function isTimeSensitiveRequest(text: string): boolean {
+    return /\b(latest|current|currently|today|tonight|now|recent|news|weather|price|stock|market|exchange rate|schedule|time|date)\b/i.test(text);
+}
+
+function stableSerialize(value: unknown): string {
+    if (value === undefined) return '"<undefined>"';
+    if (typeof value === 'number' && !Number.isFinite(value)) return JSON.stringify(String(value));
+    if (value === null || typeof value !== 'object') return JSON.stringify(value);
+    if (Array.isArray(value)) return `[${value.map(stableSerialize).join(',')}]`;
+    const record = value as Record<string, unknown>;
+    return `{${Object.keys(record).sort().map(key => `${JSON.stringify(key)}:${stableSerialize(record[key])}`).join(',')}}`;
 }

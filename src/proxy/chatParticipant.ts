@@ -5,7 +5,7 @@
  *   - /pack (Multi-File Context Pack with Line Range Slicing & AST Pruning)
  *   - /analyze, /compact, /stats
  *   - Intelligent Model Routing suggestions (Flash vs Standard vs Reasoning)
- *   - Hybrid Semantic Response Cache (Exact-Hash + MinHash Shingle Matching)
+ *   - Exact response cache with response-free similarity hints
  *   - Agentic Loop Circuit Breakers & Token Velocity Governance
  */
 
@@ -19,7 +19,7 @@ import { MessagePayload, TokenOptimizationConfig } from '../types';
 import { TokenIgnoreFilter } from '../ignore/tokenIgnore';
 import { BudgetGuardrail } from '../metrics/budgetGuard';
 import { ModelRouter } from '../engine/modelRouter';
-import { ResponseCache } from '../cache/responseCache';
+import { ResponseCache, ResponseCacheRequest, isTimeSensitiveRequest } from '../cache/responseCache';
 import { RelevanceScorer } from '../engine/relevanceScorer';
 import { DiffOutputOptimizer } from '../engine/diffOutputOptimizer';
 import { AgenticCircuitBreaker } from '../metrics/circuitBreaker';
@@ -31,6 +31,7 @@ import { PipelineOrchestrator } from '../engine/pipelineOrchestrator';
 import { OptimizationEventBus, PromptOptimizationEvent } from '../events/optimizationEvent';
 import { LiveMetricsAggregator } from '../metrics/liveAggregator';
 import { CostCalculator } from '../cost/costCalculator';
+import { costReconciliationLedger } from '../cost/reconciliationLedger';
 import { DashboardWebviewPanel } from '../ui/dashboardWebview';
 import { WorkspaceSourcePolicy } from '../security/sourcePolicy';
 import { CanonicalRequestCompiler } from '../protocol/canonicalCompiler';
@@ -513,27 +514,6 @@ export function registerChatParticipant(
 
             const diffAnalysis = DiffOutputOptimizer.analyzeIntent(request.prompt, !!activeFileContext);
 
-            // Phase 7: Semantic Response Cache Lookup
-            if (config.enableResponseCache !== false && diffAnalysis.intent === 'question') {
-                const cacheHit = cache.lookup(request.prompt, activeFileName, diffAnalysis.intent);
-                if (cacheHit.hit && cacheHit.response) {
-                    const originalTokens = TokenCounter.countTokens(request.prompt);
-                    metricsTracker.recordOptimization(
-                        originalTokens,
-                        0,
-                        { astSaved: 0, textCompressionSaved: 0, historyCompacted: 0, cacheAligned: originalTokens }
-                    );
-                    if (onOptimizationComplete) onOptimizationComplete();
-
-                    const matchType = cacheHit.tier === 'semantic_approximate' 
-                        ? `Semantic Match (${Math.round((cacheHit.similarityScore || 0.9) * 100)}% similarity)`
-                        : 'Exact Hash Match';
-                    response.markdown(`> ⚡ **Response Cache Hit [${matchType}] (0 Tokens | 0ms)**: Saved 100% inference tokens!\n\n`);
-                    response.markdown(cacheHit.response);
-                    return;
-                }
-            }
-
             // Phase 5: Model Routing Suggestion
             if (config.enableModelRouting !== false) {
                 const routing = ModelRouter.analyzeComplexity(
@@ -584,10 +564,36 @@ export function registerChatParticipant(
             totalImageTokensSaved += rsPromptStats.estimatedTokensSaved;
             rawMessages.push({ role: 'user', content: rsFullPrompt });
 
+            // Resolve the concrete upstream model before compilation so context limits,
+            // cache identity, and projected pricing refer to the request actually sent.
+            const allModels = await vscode.lm.selectChatModels();
+            let models = allModels ? allModels.filter(m => m.id !== 'token-optimizer-proxy' && (m as any).vendor !== 'tokonomics') : [];
+            const allowList = conf.get<string[]>('modelAllowList', []);
+            if (allowList && allowList.length > 0) {
+                const allowedLower = allowList.map(a => a.toLowerCase());
+                const filtered = models.filter(m => {
+                    const identity = `${m.id || ''} ${m.name || ''} ${m.family || ''}`.toLowerCase();
+                    return allowedLower.some(allowed => identity.includes(allowed));
+                });
+                if (filtered.length === 0 && models.length > 0) {
+                    response.markdown(`> 🚫 **Model Policy:** Available models (${models.map(m => m.id).join(', ')}) are not in the allow list (${allowList.join(', ')}). Contact your admin to update \`tokenOptimizer.modelAllowList\`.\n\n`);
+                    return;
+                }
+                models = filtered.length > 0 ? filtered : models;
+            }
+            const targetModel = models[0];
+            const detectedProvider = targetModel?.vendor === 'google' ? 'gemini' : targetModel?.vendor;
+            const compileProvider = config.targetProvider === 'auto'
+                ? (detectedProvider || 'generic')
+                : config.targetProvider;
+
             const compiled = await compiler.compile({
                 messages: rawMessages.map(message => canonicalTextMessage(message.role, message.content, message.name)),
                 sessionId: 'session_chat_participant',
-                targetProvider: (config.targetProvider as any) || 'anthropic',
+                targetProvider: compileProvider as any,
+                targetModel: targetModel?.id || targetModel?.family,
+                maxTokenBudget: typeof (targetModel as any)?.maxInputTokens === 'number' ? (targetModel as any).maxInputTokens : undefined,
+                maxOutputTokens: typeof (targetModel as any)?.maxOutputTokens === 'number' ? (targetModel as any).maxOutputTokens : undefined,
                 activeFilePath: doc?.fileName,
                 userIntent: diffAnalysis.intent,
                 cancellation: token,
@@ -622,24 +628,6 @@ export function registerChatParticipant(
                 response.markdown(`> ⚡ **Tokonomics:** Standalone prompt (${originalTokens} tokens). *Open a code file or run \`@tokonomics /map\` to see structural token optimization.*\n\n`);
             }
 
-            // Phase 9: Model Allow-List Enforcement (inspired by TokenShift governance)
-            let allModels = await vscode.lm.selectChatModels();
-            let models = allModels ? allModels.filter(m => m.id !== 'token-optimizer-proxy' && (m as any).vendor !== 'tokonomics') : [];
-            const allowList = conf.get<string[]>('modelAllowList', []);
-            if (allowList && allowList.length > 0) {
-                const allowedLower = allowList.map(a => a.toLowerCase());
-                const filtered = models.filter(m => {
-                    const mId = (m.id || '').toLowerCase();
-                    const mName = (m.name || '').toLowerCase();
-                    const mFamily = (m.family || '').toLowerCase();
-                    return allowedLower.some(a => mId.includes(a) || mName.includes(a) || mFamily.includes(a));
-                });
-                if (filtered.length === 0 && models.length > 0) {
-                    response.markdown(`> 🚫 **Model Policy:** Available models (${models.map(m => m.id).join(', ')}) are not in the allow list (${allowList.join(', ')}). Contact your admin to update \`tokenOptimizer.modelAllowList\`.\n\n`);
-                    return;
-                }
-                models = filtered.length > 0 ? filtered : models;
-            }
             if (!models || models.length === 0) {
                 compiler.commit(compiled);
                 if (onOptimizationComplete) onOptimizationComplete();
@@ -648,8 +636,49 @@ export function registerChatParticipant(
                 return;
             }
 
-            const targetModel = models[0];
             const upstreamMessages = protocol.toUpstreamMessages(prepared.messages);
+
+            // Evaluate answer reuse only after every answer-affecting input is known.
+            const exactCacheRequest: ResponseCacheRequest = {
+                requestText: request.prompt,
+                conversation: prepared.messages,
+                workspace: {
+                    roots: requestSnapshot.roots.map(rootIdentity => rootIdentity.id),
+                    snapshotGeneration: requestSnapshot.generation,
+                    ignorePolicyVersion: requestSnapshot.ignorePolicyVersion,
+                    files: [...requestSnapshot.files.values()].map(file => ({
+                        path: file.key,
+                        contentHash: file.contentHash,
+                        sourceVersion: file.sourceVersion
+                    }))
+                },
+                evidence: (compileResult.evidenceRetrieval?.selected || []).map(candidate => ({
+                    id: candidate.id,
+                    contentHash: candidate.contentHash
+                })),
+                model: { provider: targetModel.vendor || 'unknown', id: targetModel.id || targetModel.name || 'unknown' },
+                tools: Array.isArray((prepared.options as any)?.tools) ? (prepared.options as any).tools : [],
+                compilerConfiguration: config,
+                policies: { contextMode, workspaceTrusted: workspaceTrusted(), modelAllowList: allowList || [] },
+                extensionVersion: String((context.extension as any)?.packageJSON?.version || 'unknown'),
+                safety: {
+                    intent: diffAnalysis.intent,
+                    hasToolCalls: Array.isArray((prepared.options as any)?.tools) && (prepared.options as any).tools.length > 0,
+                    unresolvedWorkspace: contextMode === 'automatic' && requestSnapshot.files.size === 0,
+                    timeSensitive: isTimeSensitiveRequest(request.prompt),
+                    cancelled: token.isCancellationRequested
+                }
+            };
+            if (config.enableResponseCache !== false) {
+                const cacheHit = cache.lookup(exactCacheRequest);
+                if (cacheHit.hit && cacheHit.response) {
+                    compiler.commit(compiled);
+                    if (onOptimizationComplete) onOptimizationComplete();
+                    response.markdown(`> ⚡ **Verified Exact Response Cache Hit**: identical request, conversation, workspace snapshot, evidence, model, tools, configuration, and policy.\n\n`);
+                    response.markdown(cacheHit.response);
+                    return;
+                }
+            }
 
             const llmResponse = await targetModel.sendRequest(upstreamMessages, prepared.options as any, token);
             let completeResponseText = '';
@@ -676,40 +705,60 @@ export function registerChatParticipant(
             if (onOptimizationComplete) onOptimizationComplete();
             BudgetGuardrail.checkBudget(metricsTracker);
 
-            // Post-Inference Reconcile Event using real model pricing and verified provider usage
-            const outputTokens = TokenCounter.countTokens(completeResponseText);
+            // Reconcile only from provider-reported complete usage; locally estimated
+            // tokens remain projected metrics and are never relabelled as actual cost.
             const responseUsage = (llmResponse as any)?.usage || (llmResponse as any)?.result?.usage;
-            const confirmedCachedTokens = responseUsage?.cachedTokens ?? 
-                (responseUsage?.cache_read_input_tokens ?? 0);
-
             const modelId = targetModel.id || targetModel.name || 'claude-3-7-sonnet';
-            const costReconciled = CostCalculator.calculateReconciledCost(
-                optimizedTokens,
-                confirmedCachedTokens,
-                outputTokens,
-                originalTokens,
-                modelId
-            );
-
-            const reconciledEvent: PromptOptimizationEvent = {
+            const providerId = targetModel.vendor || 'anthropic';
+            const verifiedUsage = CostCalculator.parseVerifiedProviderUsage(responseUsage, compiled.requestId, providerId, modelId);
+            const emitCostUnavailable = () => OptimizationEventBus.getInstance().emit({
                 ...compileResult.event,
                 id: compiled.requestId,
                 timestamp: Date.now(),
-                state: 'COST_RECONCILED',
-                provider: (targetModel.vendor || 'anthropic') as any,
+                state: 'PROMPT_COMPLETED',
+                provider: providerId as any,
                 model: modelId,
-                cachedTokens: confirmedCachedTokens,
-                outputTokens: outputTokens,
-                actualRawCostUSD: costReconciled.actualRawCostUSD,
-                actualOptimizedCostUSD: costReconciled.actualOptimizedCostUSD,
-                actualSavingsUSD: costReconciled.actualSavingsUSD,
-                isCostReconciled: true,
-                traceId: `${compiled.requestId}:reconciled`
-            };
-            OptimizationEventBus.getInstance().emit(reconciledEvent);
+                isCostReconciled: false,
+                costStatus: 'unavailable',
+                traceId: `${compiled.requestId}:cost-unavailable`
+            });
+            if (verifiedUsage) {
+                costReconciliationLedger.begin({
+                    requestId: compiled.requestId,
+                    provider: providerId,
+                    model: modelId,
+                    unoptimizedInputTokens: originalTokens
+                });
+                try {
+                    const costReconciled = costReconciliationLedger.reconcile(compiled.requestId, verifiedUsage);
+                    const reconciledEvent: PromptOptimizationEvent = {
+                        ...compileResult.event,
+                        id: compiled.requestId,
+                        timestamp: Date.now(),
+                        state: 'COST_RECONCILED',
+                        provider: providerId as any,
+                        model: modelId,
+                        cachedTokens: verifiedUsage.cacheReadInputTokens,
+                        outputTokens: verifiedUsage.outputTokens,
+                        actualRawCostUSD: costReconciled.actualRawCostUSD,
+                        actualOptimizedCostUSD: costReconciled.actualOptimizedCostUSD,
+                        actualSavingsUSD: costReconciled.actualSavingsUSD,
+                        isCostReconciled: true,
+                        costStatus: 'reconciled',
+                        pricingCatalogVersion: costReconciled.pricingCatalogVersion,
+                        pricingSource: costReconciled.pricingSource,
+                        pricingCurrency: costReconciled.currency,
+                        traceId: `${compiled.requestId}:reconciled`
+                    };
+                    OptimizationEventBus.getInstance().emit(reconciledEvent);
+                } catch {
+                    costReconciliationLedger.abandon(compiled.requestId);
+                    emitCostUnavailable();
+                }
+            } else emitCostUnavailable();
 
-            if (config.enableResponseCache !== false && completeResponseText.length > 20 && diffAnalysis.intent === 'question') {
-                cache.store(request.prompt, activeFileName, completeResponseText, diffAnalysis.intent);
+            if (config.enableResponseCache !== false && completeResponseText.length > 20) {
+                cache.store(exactCacheRequest, completeResponseText, 'completed');
             }
         } catch (err: any) {
             response.markdown(`❌ Error during generation: ${err?.message || err}`);

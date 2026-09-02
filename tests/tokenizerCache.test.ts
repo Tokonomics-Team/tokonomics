@@ -60,8 +60,8 @@ export function runTokenizerCacheTests(): boolean {
         throw new Error(`Cache planner failed to trigger cache eligibility (Prefix: ${plan.staticPrefixTokens})`);
     }
 
-    if (plan.effectiveCostSavingsUSD <= 0 || plan.savingsPercentage < 50) {
-        throw new Error(`Effective cost savings calculation error (Savings: ${plan.savingsPercentage}%)`);
+    if (plan.effectiveCostSavingsUSD !== 0 || plan.savingsPercentage !== 0 || !plan.cacheReadScenarioSavingsUSD || plan.cacheReadScenarioSavingsUSD <= 0) {
+        throw new Error(`Cache eligibility was incorrectly counted as a verified saving`);
     }
 
     if (!plan.providerCacheHeader || plan.providerCacheHeader.cache_control.type !== 'ephemeral') {

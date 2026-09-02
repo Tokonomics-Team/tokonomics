@@ -115,8 +115,8 @@ Type `@tokonomics` followed by a slash command:
 4. **In-Memory RAM Accelerator (Configurable Budget & 0ms Latency)**  
    Maintains an ultra-fast local memory index within your configured budget (`16MB – 1024MB`, default `64MB`). Provides instant cached lookups and multi-turn conversational deduplication without disk I/O bottlenecks.
 
-5. **Instant Local Response Cache (Saves 100% | 0ms Latency)**  
-   Resolves repeated developer questions and identical queries instantly from an on-device hybrid cache. Delivers instantaneous responses with **0 tokens consumed**.
+5. **Safety-Bound Exact Local Response Cache**
+   Replays an answer only when the request, conversation, workspace snapshot, evidence, model, tools, compiler configuration, policy, and extension version are identical. Approximate matches never replay answer text. Eligible exact hits avoid a downstream model request; realized savings depend on the provider and request.
 
 6. **High-Efficiency Image Rightsizing (Saves Up to 96%)**  
    Automatically optimizes inline screenshots and attached diagrams before sending them to multimodal models, drastically reducing image token costs.

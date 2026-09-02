@@ -11,8 +11,8 @@
 import * as vscode from 'vscode';
 import { TargetProvider, TokenOptimizationConfig } from '../types';
 import { OptimizationEventBus, PromptOptimizationEvent } from '../events/optimizationEvent';
-import { TokenCounter } from '../engine/tokenizer';
 import { CostCalculator } from '../cost/costCalculator';
+import { costReconciliationLedger } from '../cost/reconciliationLedger';
 import { CanonicalRequestCompiler } from '../protocol/canonicalCompiler';
 import { ProtocolError, VsCodeProtocolAdapter } from '../protocol/canonicalProtocol';
 import { prepareCanonicalEgress } from '../protocol/canonicalEgress';
@@ -92,12 +92,10 @@ export class TokenOptimizerLanguageModelProvider {
         const upstreamMessages = this.protocol.toUpstreamMessages(prepared.messages);
         const response = await targetModel.sendRequest(upstreamMessages, prepared.options as any, token);
 
-        let completeResponseText = '';
         const responseStream: AsyncIterable<unknown> = (response as any).stream || this.textFallback(response.text);
         for await (const fragment of responseStream) {
             if (token.isCancellationRequested) return;
             if (fragment instanceof vscode.LanguageModelTextPart) {
-                completeResponseText += fragment.value;
                 progress.report(fragment);
             } else if (fragment instanceof vscode.LanguageModelToolCallPart || fragment instanceof vscode.LanguageModelToolResultPart || fragment instanceof vscode.LanguageModelDataPart) {
                 progress.report(fragment);
@@ -110,41 +108,65 @@ export class TokenOptimizerLanguageModelProvider {
         this.compiler.commit(compiled);
         this.onOptimizationComplete();
 
-        // Post-Inference Reconcile Event from live Model Provider proxy turn using authentic pricing
-        const outputTokens = TokenCounter.countTokens(completeResponseText);
+        // Reconcile only when the provider reports complete input/output usage.
         const responseUsage = (response as any)?.usage || (response as any)?.result?.usage;
-        const confirmedCachedTokens = responseUsage?.cachedTokens ?? 
-            (responseUsage?.cache_read_input_tokens ?? 0);
-
         const modelId = targetModel.id || targetModel.name || detectedFamily || 'claude-3-7-sonnet';
-        const costReconciled = CostCalculator.calculateReconciledCost(
-            stats.optimizedTokens,
-            confirmedCachedTokens,
-            outputTokens,
-            stats.originalTokens,
-            modelId
-        );
-
-        const reconciledEvent: PromptOptimizationEvent = {
-            ...stats.event,
-            id: compiled.requestId,
-            timestamp: Date.now(),
-            state: 'COST_RECONCILED',
-            provider: (targetModel.vendor || effectiveProvider) as any,
-            model: modelId,
-            cachedTokens: confirmedCachedTokens,
-            outputTokens: outputTokens,
-            actualRawCostUSD: costReconciled.actualRawCostUSD,
-            actualOptimizedCostUSD: costReconciled.actualOptimizedCostUSD,
-            actualSavingsUSD: costReconciled.actualSavingsUSD,
-            isCostReconciled: true,
-            traceId: `${compiled.requestId}:reconciled`
-        };
-        OptimizationEventBus.getInstance().emit(reconciledEvent);
+        const providerId = targetModel.vendor || effectiveProvider;
+        const verifiedUsage = CostCalculator.parseVerifiedProviderUsage(responseUsage, compiled.requestId, providerId, modelId);
+        if (verifiedUsage) {
+            costReconciliationLedger.begin({
+                requestId: compiled.requestId,
+                provider: providerId,
+                model: modelId,
+                unoptimizedInputTokens: stats.originalTokens
+            });
+            try {
+                const costReconciled = costReconciliationLedger.reconcile(compiled.requestId, verifiedUsage);
+                const reconciledEvent: PromptOptimizationEvent = {
+                    ...stats.event,
+                    id: compiled.requestId,
+                    timestamp: Date.now(),
+                    state: 'COST_RECONCILED',
+                    provider: providerId as any,
+                    model: modelId,
+                    cachedTokens: verifiedUsage.cacheReadInputTokens,
+                    outputTokens: verifiedUsage.outputTokens,
+                    actualRawCostUSD: costReconciled.actualRawCostUSD,
+                    actualOptimizedCostUSD: costReconciled.actualOptimizedCostUSD,
+                    actualSavingsUSD: costReconciled.actualSavingsUSD,
+                    isCostReconciled: true,
+                    costStatus: 'reconciled',
+                    pricingCatalogVersion: costReconciled.pricingCatalogVersion,
+                    pricingSource: costReconciled.pricingSource,
+                    pricingCurrency: costReconciled.currency,
+                    traceId: `${compiled.requestId}:reconciled`
+                };
+                OptimizationEventBus.getInstance().emit(reconciledEvent);
+            } catch {
+                costReconciliationLedger.abandon(compiled.requestId);
+                this.emitCostUnavailable(stats.event, compiled.requestId, providerId, modelId);
+            }
+        } else {
+            this.emitCostUnavailable(stats.event, compiled.requestId, providerId, modelId);
+        }
     }
 
     private async *textFallback(text: AsyncIterable<string>): AsyncIterable<vscode.LanguageModelTextPart> {
         for await (const fragment of text) yield new vscode.LanguageModelTextPart(fragment);
+    }
+
+    private emitCostUnavailable(base: PromptOptimizationEvent, requestId: string, provider: string, model: string): void {
+        OptimizationEventBus.getInstance().emit({
+            ...base,
+            id: requestId,
+            timestamp: Date.now(),
+            state: 'PROMPT_COMPLETED',
+            provider,
+            model,
+            isCostReconciled: false,
+            costStatus: 'unavailable',
+            traceId: `${requestId}:cost-unavailable`
+        });
     }
 
     public async provideLanguageModelChatInformation(

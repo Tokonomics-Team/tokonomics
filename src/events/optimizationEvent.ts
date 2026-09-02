@@ -58,6 +58,10 @@ export interface PromptOptimizationEvent {
     actualOptimizedCostUSD?: number;
     actualSavingsUSD?: number;
     isCostReconciled: boolean;
+    costStatus?: 'projected' | 'reconciled' | 'unavailable';
+    pricingCatalogVersion?: string;
+    pricingSource?: string;
+    pricingCurrency?: string;
 
     // Quality and safety metrics
     predictedCQ: number;

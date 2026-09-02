@@ -251,11 +251,13 @@ export const lm = {
                     nextModelResponseParts = undefined;
                     return {
                         stream: (async function* () { for (const part of parts) yield part; })(),
-                        text: []
+                        text: [],
+                        usage: { inputTokens: 500, outputTokens: 20, cachedTokens: 0 }
                     };
                 }
                 return ({
-                text: ['Refactored function implementation with zero vulnerabilities.']
+                text: ['Refactored function implementation with zero vulnerabilities.'],
+                usage: { inputTokens: 500, outputTokens: 20, cachedTokens: 0 }
                 });
             }
         }

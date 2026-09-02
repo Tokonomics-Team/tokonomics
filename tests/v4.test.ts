@@ -64,24 +64,32 @@ export async function runV4EngineTests() {
     console.log(`[PromptMinifier] Original: ${minifiedPrompt.originalTokens} -> Minified: ${minifiedPrompt.minifiedTokens} (${minifiedPrompt.reductionPercentage}% saved)`);
     console.log('✓ Declarative Prompt Minifier verified.');
 
-    // 4. ResponseCache Tier-2 Approximate Matching (MinHash / Shingle Jaccard)
-    console.log('[ResponseCache] Testing Tier-2 Semantic Approximate Shingle Matching...');
+    // 4. Similarity may guide retrieval but never replay an approximate answer.
+    console.log('[ResponseCache] Testing exact-only replay with response-free similarity hints...');
     const cache = new ResponseCache(10, 60000, 0.85);
     const originalQ = 'How do I configure the database connection pool in PostgreSQL?';
     const rephrasedQ = 'How do I configure the database connection pool in PostgreSQL please?';
     const answer = 'Set poolSize: 20 and timeoutMs: 10000 in config.json.';
 
-    cache.store(originalQ, 'src/db.ts', answer, 'question');
-    const exactHit = cache.lookup(originalQ, 'src/db.ts', 'question');
+    const originalRequest = {
+        requestText: originalQ,
+        conversation: [],
+        workspace: { roots: ['root'], snapshotGeneration: 1, ignorePolicyVersion: 'v1', files: [{ path: 'src/db.ts', contentHash: 'db-v1', sourceVersion: '1' }] },
+        evidence: [], model: { provider: 'openai', id: 'gpt-test' }, tools: [],
+        compilerConfiguration: {}, policies: {}, extensionVersion: 'test', safety: { intent: 'question' }
+    };
+    cache.store(originalRequest, answer, 'completed');
+    const exactHit = cache.lookup(originalRequest);
     assert.strictEqual(exactHit.hit, true);
-    assert.strictEqual(exactHit.tier, 'exact_hash', 'Original query should hit exact hash tier');
+    assert.strictEqual(exactHit.tier, 'exact_sha256', 'Original request should hit exact SHA-256 tier');
 
-    const approxHit = cache.lookup(rephrasedQ, 'src/db.ts', 'question');
-    assert.strictEqual(approxHit.hit, true, 'Rephrased query should hit semantic approximate tier');
-    assert.strictEqual(approxHit.tier, 'semantic_approximate');
-    assert.ok((approxHit.similarityScore || 0) >= 0.85, 'Similarity score should exceed 0.85');
-    console.log(`[ResponseCache] Exact Hit -> Tier 1 (1.00 score) | Approximate Hit -> Tier 2 (${approxHit.similarityScore} score)`);
-    console.log('✓ Hybrid Response Cache (Tier-1 + Tier-2 Approximate) verified.');
+    const rephrasedRequest = { ...originalRequest, requestText: rephrasedQ };
+    const approxHit = cache.lookup(rephrasedRequest);
+    assert.strictEqual(approxHit.hit, false, 'Rephrased query must never replay a cached answer');
+    const hints = cache.findHints(rephrasedRequest);
+    assert.ok(hints.length > 0 && hints[0].similarityScore >= 0.85, 'Similar request may be returned as a response-free hint');
+    assert.strictEqual('response' in hints[0], false, 'Hints must not expose cached answer text');
+    console.log('✓ Exact-only Response Cache and non-answer hints verified.');
 
     // 5. ToolSchemaMinifier (Deferred Code-Mode On-Demand Tools)
     console.log('[ToolSchemaMinifier] Testing Deferred Code-Mode Meta-Tool Resolution...');

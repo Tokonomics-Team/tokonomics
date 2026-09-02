@@ -73,8 +73,8 @@ Request lifecycle -> append-only ledger -> dashboard and diagnostics
 | 2 | Canonical compiler and protocol-safe adapters | Approved and complete | Granted |
 | 3 | Versioned incremental workspace intelligence | Approved and complete | Granted |
 | 4 | Evidence-aware retrieval and preservation | Approved and complete | Granted |
-| 5 | Global token budgeting and selection | Implemented; pending owner review | Granted |
-| 6 | Correct caching and token economics | Blocked on approval | Yes |
+| 5 | Global token budgeting and selection | Approved and complete | Granted |
+| 6 | Correct caching and token economics | Implemented; pending owner review | Granted |
 | 7 | Authoritative observability and dashboard | Blocked on approval | Yes |
 | 8 | Performance, concurrency, and resilience | Blocked on approval | Yes |
 | 9 | Integration certification and release hardening | Blocked on approval | Yes |
@@ -391,8 +391,7 @@ Make the selected Context IR exactly control the rendered prompt and total budge
   assignment-hash conformance, mandatory-evidence, and DP-versus-brute-force optimality
   tests. The normative rules are recorded in `GLOBAL_BUDGET_CONTRACT.md`.
 
-Phase 6 remains blocked until the repository owner reviews this implementation and
-explicitly approves the next phase.
+Phase 5 was approved when the repository owner explicitly requested the next phase.
 
 ## Phase 6 - Correct caching and token economics
 
@@ -417,6 +416,37 @@ Prevent unsafe response reuse and report defensible provider-specific economics.
 - Adversarial tests produce zero false answer hits.
 - Workspace changes invalidate every dependent exact response.
 - Estimated and reconciled costs are visibly distinct and fixture-verified.
+
+### Implementation record
+
+- Replaced the FNV query/file key with a canonical SHA-256 fingerprint over the request,
+  ordered conversation, complete versioned workspace snapshot, selected evidence,
+  exact provider/model, tools, compiler configuration, policies, and extension version.
+- Moved production response lookup after compilation and model selection, where all
+  fingerprint inputs are known. Any indexed workspace generation or content change
+  produces a miss, and explicit file invalidation removes every dependent entry.
+- Removed approximate answer replay. Similar queries can expose response-free opaque
+  hints only; they never expose answer text or increment cache-hit metrics.
+- Added fail-closed exclusions for mutation, tool, partial-stream, cancellation,
+  failure, unresolved-workspace, and time-sensitive cases. Only completed non-empty
+  responses are stored.
+- Added a pinned, versioned, source-attributed pricing catalog with provider/model
+  aliases, currencies, effective dates, cache read/write/storage rates, and auditable
+  enterprise overrides. Unknown live provider/model prices fail closed.
+- Stopped counting prompt-cache eligibility as savings. Cache-read scenarios remain
+  labelled projections, while only complete provider-reported usage can populate
+  actual cost and verified cached-token fields.
+- Added request-bound reconciliation that rejects unknown IDs, provider/model mismatch,
+  incomplete usage, invalid cache counts, and duplicate reconciliation. The net-cost
+  formula includes cache creation/read/storage, output, additional model calls, and
+  optimization compute; economic losses remain negative rather than being hidden.
+- Added adversarial fingerprint, unsafe-terminal-state, workspace invalidation,
+  non-answer hint, catalog provenance/override, formula, usage parsing, mismatch,
+  duplicate, unknown-price, and negative-savings tests. Normative rules are recorded
+  in `CACHE_AND_COST_CONTRACT.md`.
+
+Phase 7 remains blocked until the repository owner reviews this implementation and
+explicitly approves the next phase.
 
 ## Phase 7 - Authoritative observability and dashboard
 

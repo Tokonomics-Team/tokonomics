@@ -89,31 +89,44 @@ export async function runV3EngineTests() {
     console.log('✓ Incremental File Watch Indexer verified.');
 
     // 5. ResponseCache Tests
-    console.log('[ResponseCache] Testing exact-hash response caching & safety guards...');
+    console.log('[ResponseCache] Testing complete SHA-256 request caching & safety guards...');
     const cache = new ResponseCache(10, 5000); // 5 sec TTL
     const q1 = 'What does this project do?';
     const a1 = 'Enterprise AI Token Optimizer compresses context for VS Code.';
+    const cacheRequest = {
+        requestText: q1,
+        conversation: [],
+        workspace: { roots: ['root'], snapshotGeneration: 1, ignorePolicyVersion: 'v1', files: [{ path: 'README.md', contentHash: 'readme-v1', sourceVersion: '1' }] },
+        evidence: [],
+        model: { provider: 'anthropic', id: 'claude-test' },
+        tools: [],
+        compilerConfiguration: { mode: 'compiler' },
+        policies: { trusted: true },
+        extensionVersion: 'test',
+        safety: { intent: 'question' }
+    };
 
     // Store question
-    const stored = cache.store(q1, 'README.md', a1, 'question');
+    const stored = cache.store(cacheRequest, a1, 'completed');
     assert.strictEqual(stored, true, 'Should allow caching read-only question');
 
     // Lookup hit
-    const hit1 = cache.lookup(q1, 'README.md', 'question');
+    const hit1 = cache.lookup(cacheRequest);
     assert.strictEqual(hit1.hit, true, 'Should find cached response on exact hash match');
     assert.strictEqual(hit1.response, a1, 'Cached text should match stored response');
 
     // Uncacheable edit intent test
-    const editStore = cache.store('Refactor this code', 'src/auth.ts', 'diff patch', 'edit');
+    const editRequest = { ...cacheRequest, requestText: 'Refactor this code', safety: { intent: 'edit' } };
+    const editStore = cache.store(editRequest, 'diff patch', 'completed');
     assert.strictEqual(editStore, false, 'Should NEVER cache edit responses');
-    const editLookup = cache.lookup('Refactor this code', 'src/auth.ts', 'edit');
+    const editLookup = cache.lookup(editRequest);
     assert.strictEqual(editLookup.hit, false, 'Should NEVER return cache hit for edit intent');
 
     // File invalidation test
     const invalidatedCount = cache.invalidateForFile('README.md');
     assert.strictEqual(invalidatedCount, 1, 'Should invalidate 1 entry for README.md');
-    const hitAfterInvalidation = cache.lookup(q1, 'README.md', 'question');
+    const hitAfterInvalidation = cache.lookup(cacheRequest);
     assert.strictEqual(hitAfterInvalidation.hit, false, 'Should miss cache after file invalidation');
 
-    console.log('✓ Semantic Response Cache (Exact-Hash + Safety Guards) verified.');
+    console.log('✓ Exact Response Cache (SHA-256 + Safety Guards) verified.');
 }
