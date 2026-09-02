@@ -37,6 +37,10 @@ export const chat = {
     }
 };
 
+export const languages = {
+    getDiagnostics: (_uri?: any) => [] as any[]
+};
+
 export const window = {
     createStatusBarItem: (alignment?: any, priority?: number) => ({
         text: '',

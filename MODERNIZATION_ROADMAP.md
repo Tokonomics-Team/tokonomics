@@ -71,8 +71,8 @@ Request lifecycle -> append-only ledger -> dashboard and diagnostics
 | 0 | Measurement truth and release safety | Approved and complete | Granted |
 | 1 | Privacy, security, trust, and packaging | Approved and complete | Granted |
 | 2 | Canonical compiler and protocol-safe adapters | Approved and complete | Granted |
-| 3 | Versioned incremental workspace intelligence | Implemented; pending owner review | Granted |
-| 4 | Evidence-aware retrieval and preservation | Blocked on approval | Yes |
+| 3 | Versioned incremental workspace intelligence | Approved and complete | Granted |
+| 4 | Evidence-aware retrieval and preservation | Implemented; pending owner review | Granted |
 | 5 | Global token budgeting and selection | Blocked on approval | Yes |
 | 6 | Correct caching and token economics | Blocked on approval | Yes |
 | 7 | Authoritative observability and dashboard | Blocked on approval | Yes |
@@ -275,8 +275,7 @@ Make retrieval current, coherent, bounded, and scalable.
   consent separation, request-generation coherence, PageRank budget, and memory-envelope
   tests. The normative design is recorded in `WORKSPACE_SNAPSHOT_CONTRACT.md`.
 
-Phase 4 remains blocked until the repository owner reviews this implementation and
-explicitly approves the next phase.
+The repository owner subsequently reviewed Phase 3 and explicitly approved Phase 4.
 
 ## Phase 4 - Evidence-aware retrieval and preservation
 
@@ -300,6 +299,42 @@ Optimize task success per token by selecting structured evidence.
 - Critical-evidence recall reaches the agreed benchmark target.
 - Task success is statistically non-inferior to unoptimized context.
 - Inclusion and exclusion decisions are explainable and reproducible.
+
+### Implementation record
+
+- Added a deterministic evidence contract builder that maps the governor's task policy
+  into applicable required, optional, and forbidden categories. Error evidence is
+  required only when the request actually carries an error signal, and narrow tasks
+  explicitly exclude broad history or generated-spec evidence.
+- Added snapshot-bound candidate production for symbols, AST skeletons, reference
+  edges, dependency definitions, tests, diagnostics, stack traces, opted-in editor
+  buffers, request diffs, configuration files, and repository rank. Every candidate
+  records its content hash, snapshot generation, source, file/range identity,
+  dependencies, scores, mandatory state, and provenance.
+- Added deterministic reciprocal-rank fusion, required-category-first selection,
+  maximal-marginal-relevance diversity, staged direct/dependency/broad expansion, and
+  explicit inclusion/exclusion reasons. Forbidden evidence cannot enter selection and
+  repository-rank hints alone cannot satisfy a required-evidence obligation.
+- Integrated retrieval into the canonical compiler boundary. Workspace reads still
+  require explicit automatic-context consent, one request consumes only its pinned
+  Phase 3 snapshot, and the selected bundle is rendered once with snapshot and content
+  provenance. The previous chat-side RAM-slice append path has been removed.
+- Connected the existing slice-confidence evaluator to production SDG slicing. Parser
+  failure, reflection, dynamic dispatch/imports, FFI, dependency injection, callbacks,
+  global mutation, or failed structured obligations retain the original lexical scope
+  or full code rather than emitting an unsafe slice.
+- Added a structured fail-closed preservation gate for message role/name/order,
+  explicitly requested symbols and declarations, cited file ranges, diagnostics,
+  dependencies, and textual tool-call pairs. Missing critical retrieval evidence or
+  failed obligations restores the original request.
+- Added automated tests covering evidence-policy applicability, critical-fact recall,
+  deterministic decisions, multi-file diversity, forbidden evidence, conservative
+  fallback, structured corruption, consent separation, rendered provenance, pinned
+  snapshots, and adversarial dynamic slicing. The normative behavior is recorded in
+  `EVIDENCE_RETRIEVAL_CONTRACT.md`.
+
+Phase 5 remains blocked until the repository owner reviews this implementation and
+explicitly approves the next phase.
 
 ## Phase 5 - Global token budgeting and selection
 

@@ -115,7 +115,8 @@ export async function runPhase3WorkspaceSnapshotTests(): Promise<void> {
         const compiled = await compilationPromise;
         assert.strictEqual(compiled.compilation.snapshotGeneration, pinned.generation,
             'one request observed more than one workspace generation');
-        assert.strictEqual(retrievals, 1);
+        assert.strictEqual(retrievals, 0, 'Phase 4 retrieval must consume only the request-pinned snapshot');
+        assert.strictEqual(compiled.compilation.evidenceRetrieval?.contract.taskType, 'explain');
 
         const map = index.generateRepoMap([aFile], 256, pinned);
         assert.strictEqual(map.totalFilesIndexed, pinned.files.size);

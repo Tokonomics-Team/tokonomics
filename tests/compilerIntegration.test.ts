@@ -72,7 +72,8 @@ export class CheckoutController {
     }
 
     if (result.reductionPercentage < 20) {
-        throw new Error(`Context compiler token reduction too low: ${result.reductionPercentage}%`);
+        throw new Error(`Context compiler token reduction too low: ${result.reductionPercentage}%; ${result.trace.decisions
+            .filter(decision => decision.action === 'preserve').map(decision => `${decision.itemId}=${decision.reason}`).join(' | ')}`);
     }
 
     if (result.contextQuality.predictedCQ < 85.0) {

@@ -28,6 +28,10 @@ import { ContextGovernorDecision, EvidenceCategory } from '../governor/governorT
 
 import { PreservationGate } from '../evaluation/preservationGate';
 import { VersionedWorkspaceIndex, WorkspaceSnapshot } from '../workspace/workspaceIndex';
+import { SliceConfidenceEvaluator } from '../ast/sliceConfidence';
+import { EvidenceAwareRetriever } from '../retrieval/evidenceRetriever';
+import { EvidenceRetrievalResult, EvidenceSignal } from '../retrieval/evidenceTypes';
+import { StructuredPreservationGate } from '../retrieval/structuredPreservation';
 
 export interface ContextCompileRequest {
     messages: MessagePayload[];
@@ -44,6 +48,7 @@ export interface ContextCompileRequest {
     deferSideEffects?: boolean;
     workspaceSnapshot?: WorkspaceSnapshot;
     allowWorkspaceRetrieval?: boolean;
+    evidenceSignals?: readonly EvidenceSignal[];
 }
 
 export interface CancellationLike { readonly isCancellationRequested: boolean; }
@@ -67,6 +72,7 @@ export interface ContextCompileResult {
     event: PromptOptimizationEvent;
     committed: boolean;
     snapshotGeneration?: number;
+    evidenceRetrieval?: EvidenceRetrievalResult;
 }
 
 export class PipelineOrchestrator {
@@ -78,6 +84,8 @@ export class PipelineOrchestrator {
     private exactDedup: ExactDedupEngine = new ExactDedupEngine();
     private cachePlanner: CachePlanner = new CachePlanner();
     private compressor: RuleBasedCompressor = new RuleBasedCompressor();
+    private sliceConfidenceEvaluator = new SliceConfidenceEvaluator();
+    private evidenceRetriever = new EvidenceAwareRetriever();
 
     constructor(
         private astEngine: AstPrunerEngine = new AstPrunerEngine(),
@@ -156,6 +164,35 @@ export class PipelineOrchestrator {
         }
         let cqReport: ContextQualityReport;
         let cachePlanResult: CachePlanResult | undefined;
+        let evidenceRetrieval: EvidenceRetrievalResult | undefined;
+
+        if (request.allowWorkspaceRetrieval && request.workspaceSnapshot && !request.preserveProtocol) {
+            evidenceRetrieval = this.evidenceRetriever.retrieve({
+                query: userPrompt,
+                taskType: governorDecision.taskType,
+                snapshot: request.workspaceSnapshot,
+                activeFilePath: request.activeFilePath,
+                signals: request.evidenceSignals
+            });
+            decisions.push({
+                itemId: 'evidence_aware_retrieval',
+                action: evidenceRetrieval.conservativeFallback ? 'preserve' : 'include',
+                reason: evidenceRetrieval.conservativeFallback
+                    ? `Evidence contract incomplete; missing [${evidenceRetrieval.missingRequired.join(', ')}]. Conservative fallback required.`
+                    : `Evidence contract satisfied with ${evidenceRetrieval.selected.length} snapshot-bound candidates (${evidenceRetrieval.stagesExecuted.join(' -> ')}).`,
+                confidence: evidenceRetrieval.criticalRecall,
+                evidence: ['EvidenceContract', 'ReciprocalRankFusion', 'MMRDiversity', `snapshot:${request.workspaceSnapshot.generation}`]
+            });
+            for (const retrievalDecision of evidenceRetrieval.decisions) {
+                decisions.push({
+                    itemId: retrievalDecision.candidateId,
+                    action: retrievalDecision.action,
+                    reason: retrievalDecision.reason,
+                    confidence: retrievalDecision.action === 'include' ? 0.95 : 0.8,
+                    evidence: ['EvidenceAwareRetriever']
+                });
+            }
+        }
 
         if (request.preserveProtocol || governorDecision.optimizationAggressiveness === 'none') {
             // Critical risk override: Full context preserved
@@ -168,9 +205,13 @@ export class PipelineOrchestrator {
             optimizedMessages = await this.executeHybridPipeline(request, decisions);
         } else {
             // --- TOKONOMICS FULL CONTEXT COMPILER PIPELINE ---
-            const compilerRes = await this.executeCompilerPipeline(request, decisions);
+            const compilerRes = await this.executeCompilerPipeline(request, decisions, evidenceRetrieval);
             optimizedMessages = compilerRes.messages;
             cachePlanResult = compilerRes.cachePlan;
+        }
+
+        if (evidenceRetrieval && !evidenceRetrieval.conservativeFallback) {
+            optimizedMessages = this.renderEvidenceBundle(optimizedMessages, evidenceRetrieval, request.workspaceSnapshot?.generation, decisions);
         }
 
         this.throwIfCancelled(request.cancellation);
@@ -185,6 +226,21 @@ export class PipelineOrchestrator {
                 itemId: 'protocol_structure_guardrail', action: 'preserve',
                 reason: 'Compiler output changed message role, name, order, or cardinality; original protocol structure restored.',
                 confidence: 1, evidence: ['CanonicalProtocol']
+            });
+        }
+
+        const structuredCheck = StructuredPreservationGate.evaluate(
+            request.messages,
+            optimizedMessages,
+            (request.messages.filter(message => message.role === 'user').pop()?.content || request.userIntent || '')
+                .replace(/```[\s\S]*?```/g, '')
+        );
+        if (!structuredCheck.passed) {
+            optimizedMessages = request.messages.map(message => ({ ...message }));
+            decisions.push({
+                itemId: 'structured_preservation_guardrail', action: 'preserve',
+                reason: `Structured obligations failed: ${structuredCheck.missing.join(', ')}`,
+                confidence: 1, evidence: ['StructuredPreservationGate']
             });
         }
 
@@ -203,12 +259,14 @@ export class PipelineOrchestrator {
         }
 
         // 2b. Audit against Deterministic Evidence Safety Gate
-        const providedCategories: EvidenceCategory[] = ['targetImplementation', 'apiContract', 'callers'];
-        if (userPrompt.toLowerCase().includes('test') || userPrompt.toLowerCase().includes('spec')) {
-            providedCategories.push('tests');
-        }
-        if (userPrompt.toLowerCase().includes('error') || userPrompt.toLowerCase().includes('exception')) {
+        const providedCategories: EvidenceCategory[] = evidenceRetrieval
+            ? [...evidenceRetrieval.covered]
+            : ['targetImplementation', 'apiContract', 'callers'];
+        if (!evidenceRetrieval && /\b(?:error|exception|traceback|TS\d{3,5})\b/i.test(userPrompt)) {
             providedCategories.push('errorStackTrace');
+        }
+        if (!evidenceRetrieval && /\b(?:test|spec)\b/i.test(userPrompt)) {
+            providedCategories.push('tests');
         }
         const safetyAudit = governor.validateEvidenceSafety(governorDecision, providedCategories);
         if (!safetyAudit.passed && safetyAudit.actionTaken === 'fail_closed_fallback') {
@@ -220,6 +278,9 @@ export class PipelineOrchestrator {
                 confidence: 1.0,
                 evidence: ['EvidenceSafetyGate']
             });
+        }
+        if (evidenceRetrieval?.conservativeFallback) {
+            optimizedMessages = request.messages.map(message => ({ ...message }));
         }
 
         // 3. Dynamic Real Context Quality (CQ) Evaluation (No static constants)
@@ -329,7 +390,8 @@ export class PipelineOrchestrator {
             governorDecision,
             event,
             committed: false,
-            snapshotGeneration: request.workspaceSnapshot?.generation
+            snapshotGeneration: request.workspaceSnapshot?.generation,
+            evidenceRetrieval
         };
         if (!request.deferSideEffects) this.commitCompilation(result);
         return result;
@@ -424,7 +486,8 @@ export class PipelineOrchestrator {
      */
     private async executeCompilerPipeline(
         request: ContextCompileRequest,
-        decisions: Decision[]
+        decisions: Decision[],
+        evidenceRetrieval?: EvidenceRetrievalResult
     ): Promise<{ messages: MessagePayload[]; cqReport: ContextQualityReport; cachePlan?: CachePlanResult }> {
         const profile = ModelProfileRegistry.getProfile(request.targetProvider || 'claude-3-5-sonnet');
         const tokenBudget = request.maxTokenBudget || 4000;
@@ -477,7 +540,41 @@ export class PipelineOrchestrator {
                         continue;
                     }
 
-                    const sliceRes = this.sdgSlicer.computeIntentAwareSlice(rawCode, focalKeywords, request.cursorLine || 15);
+                    let sliceRes: any;
+                    try {
+                        sliceRes = this.sdgSlicer.computeIntentAwareSlice(rawCode, focalKeywords, request.cursorLine || 15);
+                        const risk = this.sliceConfidenceEvaluator.evaluateSliceRisk(
+                            rawCode,
+                            rawCode.split(/\r?\n/).length,
+                            sliceRes.slicedCode.split(/\r?\n/).length
+                        );
+                        const slicePreservation = StructuredPreservationGate.evaluate(
+                            [{ role: msg.role, name: msg.name, content: rawCode }],
+                            [{ role: msg.role, name: msg.name, content: sliceRes.slicedCode }],
+                            userInstruction
+                        );
+                        if (risk.recommendedAction !== 'use_slice' || !slicePreservation.passed) {
+                            sliceRes = { ...sliceRes, slicedCode: rawCode, reductionPercentage: 0 };
+                            decisions.push({
+                                itemId: `slice_safety_${i}_${blockIndex}`,
+                                action: 'preserve',
+                                reason: !slicePreservation.passed
+                                    ? `Structured slice obligations failed: ${slicePreservation.missing.join(', ')}`
+                                    : `Dynamic dependency risk requires ${risk.recommendedAction}: ${risk.detectedRiskFactors.join(', ')}`,
+                                confidence: 1 - risk.unknownDependencyRisk,
+                                evidence: ['SliceConfidenceEvaluator', 'StructuredPreservationGate']
+                            });
+                        }
+                    } catch (error) {
+                        sliceRes = { slicedCode: rawCode, reductionPercentage: 0 };
+                        decisions.push({
+                            itemId: `slice_analysis_${i}_${blockIndex}`,
+                            action: 'preserve',
+                            reason: `Slice analysis failed closed: ${error instanceof Error ? error.message : 'unknown error'}`,
+                            confidence: 1,
+                            evidence: ['SliceConfidenceEvaluator']
+                        });
+                    }
                     const entityId = `entity_code_${i}_${blockIndex++}`;
 
                     const entity: ContextEntity = {
@@ -505,22 +602,21 @@ export class PipelineOrchestrator {
         }
 
         // 2b. Request-pinned workspace candidate enrichment
-        if (request.allowWorkspaceRetrieval && request.workspaceSnapshot && this.workspaceIndex) {
-            const ramSlices = this.workspaceIndex.searchRelevantSlices(userInstruction, 3, request.workspaceSnapshot);
-            for (let r = 0; r < ramSlices.length; r++) {
-                const s = ramSlices[r];
-                const ramEntityId = `snapshot_slice_${request.workspaceSnapshot.generation}_${r}_${s.name}`;
+        if (evidenceRetrieval && !evidenceRetrieval.conservativeFallback) {
+            for (let r = 0; r < evidenceRetrieval.selected.length; r++) {
+                const candidate = evidenceRetrieval.selected[r];
+                const ramEntityId = `evidence_${r}_${candidate.contentHash.slice(0, 12)}`;
                 candidateEntities.push({
                     id: ramEntityId,
-                    filePath: s.file,
-                    symbolName: s.name,
-                    kind: s.kind as any,
-                    baseUtility: 60 - (r * 10),
-                    signatures: [s.signature],
-                    fullCode: `// [${s.file}:${s.line}]\n${s.signature} {\n  /* implementation */\n}`
+                    filePath: candidate.filePath || `request/${candidate.sourceKind}`,
+                    symbolName: candidate.symbolName || candidate.category,
+                    kind: 'module',
+                    baseUtility: candidate.mandatory ? 100 : Math.max(20, 70 - (r * 5)),
+                    signatures: [candidate.content.split(/\r?\n/)[0] || candidate.category],
+                    fullCode: candidate.content
                 });
             }
-        } else if (this.ramManager) {
+        } else if (!request.workspaceSnapshot && this.ramManager) {
             const ramSlices = this.ramManager.searchRelevantSlices(userInstruction, 3);
             for (let r = 0; r < ramSlices.length; r++) {
                 const s = ramSlices[r];
@@ -645,5 +741,31 @@ export class PipelineOrchestrator {
             cqReport,
             cachePlan
         };
+    }
+
+    private renderEvidenceBundle(
+        messages: MessagePayload[],
+        retrieval: EvidenceRetrievalResult,
+        snapshotGeneration: number | undefined,
+        decisions: Decision[]
+    ): MessagePayload[] {
+        if (retrieval.selected.length === 0) return messages;
+        const evidenceText = retrieval.selected.map(candidate => {
+            const location = candidate.filePath
+                ? `${candidate.filePath}${candidate.lineStart ? `:${candidate.lineStart}${candidate.lineEnd && candidate.lineEnd !== candidate.lineStart ? `-${candidate.lineEnd}` : ''}` : ''}`
+                : candidate.sourceKind;
+            return `--- ${candidate.category} | ${location} | ${candidate.sourceKind} | ${candidate.contentHash.slice(0, 12)} ---\n${candidate.content}`;
+        }).join('\n\n');
+        const rendered = messages.map(message => ({ ...message }));
+        const targetIndex = rendered.map(message => message.role).lastIndexOf('user');
+        if (targetIndex < 0) return rendered;
+        rendered[targetIndex].content = `${rendered[targetIndex].content}\n\n<tokonomics-evidence snapshot="${snapshotGeneration}">\n${evidenceText}\n</tokonomics-evidence>`;
+        decisions.push({
+            itemId: 'rendered_evidence_bundle', action: 'include',
+            reason: `Rendered ${retrieval.selected.length} selected candidates with snapshot and provenance metadata.`,
+            confidence: retrieval.criticalRecall,
+            evidence: ['EvidenceAwareRetriever', `snapshot:${snapshotGeneration}`]
+        });
+        return rendered;
     }
 }

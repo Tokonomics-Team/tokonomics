@@ -3,6 +3,7 @@ import { PipelineOrchestrator, ContextCompileResult, CancellationLike } from '..
 import { MessagePayload, TargetProvider } from '../types';
 import { CanonicalMessage, VsCodeProtocolAdapter } from './canonicalProtocol';
 import { WorkspaceSnapshot } from '../workspace/workspaceIndex';
+import { EvidenceSignal } from '../retrieval/evidenceTypes';
 
 export interface CanonicalCompileRequest {
     messages: CanonicalMessage[];
@@ -17,6 +18,7 @@ export interface CanonicalCompileRequest {
     cancellation?: CancellationLike;
     workspaceSnapshot?: WorkspaceSnapshot;
     allowWorkspaceRetrieval?: boolean;
+    evidenceSignals?: readonly EvidenceSignal[];
 }
 
 export interface CanonicalCompileResult {
@@ -53,7 +55,8 @@ export class CanonicalRequestCompiler {
             preserveProtocol: structuredPassThrough,
             deferSideEffects: true,
             workspaceSnapshot: request.workspaceSnapshot,
-            allowWorkspaceRetrieval: request.allowWorkspaceRetrieval
+            allowWorkspaceRetrieval: request.allowWorkspaceRetrieval,
+            evidenceSignals: request.evidenceSignals
         });
 
         const messages = structuredPassThrough

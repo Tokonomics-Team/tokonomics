@@ -37,6 +37,7 @@ import { CanonicalRequestCompiler } from '../protocol/canonicalCompiler';
 import { canonicalTextMessage, VsCodeProtocolAdapter } from '../protocol/canonicalProtocol';
 import { prepareCanonicalEgress } from '../protocol/canonicalEgress';
 import { VersionedWorkspaceIndex } from '../workspace/workspaceIndex';
+import { EvidenceSignal } from '../retrieval/evidenceTypes';
 
 export function registerChatParticipant(
     context: vscode.ExtensionContext,
@@ -457,6 +458,7 @@ export function registerChatParticipant(
             let activeFileContext = '';
             let fileInfo = '';
             let activeFileName = '';
+            const evidenceSignals: EvidenceSignal[] = [];
 
             if (doc && mayReadWorkspace && !ignoreFilter.isIgnored(doc.fileName)) {
                 activeFileName = doc.fileName;
@@ -477,7 +479,22 @@ export function registerChatParticipant(
                     const safePath = sourcePolicy.assertReadable(doc.fileName).displayPath;
                     activeFileContext = `\n\n\`\`\`${lang}\n// Context File: <workspace>/${safePath}\n${normalizedCode}\n\`\`\``;
                     fileInfo = ` (with context from ${path.basename(doc.fileName)})`;
+                    if (contextMode === 'automatic' && (doc.isDirty || selectedText.trim().length > 30)) {
+                        evidenceSignals.push({ source: 'open_editor', content: normalizedCode, filePath: doc.fileName, version: doc.version });
+                    }
                 }
+            }
+
+            if (doc && contextMode === 'automatic' && typeof vscode.languages?.getDiagnostics === 'function') {
+                for (const diagnostic of vscode.languages.getDiagnostics(doc.uri)) {
+                    evidenceSignals.push({
+                        source: 'diagnostic', content: diagnostic.message, filePath: doc.fileName,
+                        lineStart: diagnostic.range.start.line + 1, lineEnd: diagnostic.range.end.line + 1, version: doc.version
+                    });
+                }
+            }
+            for (const diff of request.prompt.matchAll(/```diff\s*\n([\s\S]*?)```/gi)) {
+                evidenceSignals.push({ source: 'diff', content: diff[1] });
             }
 
             const config: TokenOptimizationConfig = {
@@ -527,15 +544,8 @@ export function registerChatParticipant(
                 response.markdown(`> ${ModelRouter.formatSuggestion(routing)}\n\n`);
             }
 
-            // Phase 6: In-Memory BM25 Symbol Slices (Surgical RAM context retrieval)
-            let referencedSlicesContext = '';
-            const slices = mayReadWorkspace && contextMode === 'automatic' ? workspaceIndex.searchRelevantSlices(request.prompt, 2, requestSnapshot) : [];
-            const filteredSlices = slices.filter(s => !doc || !s.file.includes(path.basename(doc.fileName)));
-            if (filteredSlices.length > 0) {
-                referencedSlicesContext = `\n\n// 🔍 In-Memory Referenced Slices (RAM Index):\n` + filteredSlices.map(s => `// [${s.file}:${s.line}] ${s.kind} ${s.name}: ${s.signature}`).join('\n');
-            }
-
-            const fullPrompt = `${request.prompt}${activeFileContext}${referencedSlicesContext}`;
+            // The compiler owns workspace evidence rendering; do not append a second RAM slice bundle.
+            const fullPrompt = `${request.prompt}${activeFileContext}`;
 
             // Phase 8: Image Rightsizing (inspired by TokenShift)
             const imageConf = vscode.workspace.getConfiguration('tokenOptimizer');
@@ -582,13 +592,14 @@ export function registerChatParticipant(
                 userIntent: diffAnalysis.intent,
                 cancellation: token,
                 workspaceSnapshot: requestSnapshot,
-                allowWorkspaceRetrieval: contextMode === 'automatic'
+                allowWorkspaceRetrieval: contextMode === 'automatic',
+                evidenceSignals
             });
             const compileResult = compiled.compilation;
             const prepared = prepareCanonicalEgress(compiled.messages, {}, {
                 workspaceRoots: workspaceRoots(),
                 workspaceTrusted: workspaceTrusted(),
-                containsWorkspaceData: activeFileContext.length > 0 || referencedSlicesContext.length > 0,
+                containsWorkspaceData: activeFileContext.length > 0 || (contextMode === 'automatic' && requestSnapshot.files.size > 0),
                 isCancellationRequested: token.isCancellationRequested
             });
             const originalTokens = compileResult.originalTokens;
