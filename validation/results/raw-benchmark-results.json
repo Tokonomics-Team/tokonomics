@@ -1,11 +1,11 @@
 {
-  "timestamp": "2026-09-01T12:13:45.837Z",
+  "timestamp": "2026-09-03T02:50:27.433Z",
   "metadata": {
-    "repositoryCommitSha": "aadbff9",
+    "repositoryCommitSha": "a332a2a96b2b7a875d64a1075360f21864b504d0",
     "tokonomicsVersion": "5.1.1",
-    "benchmarkDatasetVersion": "2026-v2.1-multilang",
-    "modelProvider": "Anthropic / OpenAI / Google / DeepSeek",
-    "modelVersion": "Claude-3.7-Sonnet-20250219 / GPT-4o-20241120",
+    "benchmarkDatasetVersion": "2026-v2.1",
+    "modelProvider": "none (controlled synthetic fixture)",
+    "modelVersion": "not applicable",
     "temperature": 0,
     "maxOutputTokens": 4096,
     "compilerFeatureFlags": {
@@ -19,9 +19,11 @@
     "operatingSystem": "Windows_NT 10.0.26200 (x64)",
     "cpuModel": "AMD Ryzen 7 9800X3D 8-Core Processor           ",
     "ramTotalGB": 31.1,
-    "tokenizerVersion": "Claude-BPE-v2 / o200k_base",
-    "pricingProfileVersion": "2025-02-19-v1",
-    "timestamp": "2026-09-01T12:13:45.837Z"
+    "tokenizerVersion": "Tokonomics local estimator",
+    "pricingProfileVersion": "synthetic-estimate-only",
+    "benchmarkClassification": "Controlled Synthetic Benchmark",
+    "datasetMetadataSha256": "0347d021aa250511b865a987c4fdf4dee8586335e5f48fdba4a79efdc6fed1d2",
+    "timestamp": "2026-09-03T02:50:27.433Z"
   },
   "threeRunStudy": {
     "totalTasks": 160,
@@ -36,8 +38,8 @@
     "unitTestDeltaPct": 0,
     "behavioralDeltaPct": 20,
     "regressionRatePct": 0,
-    "averageTokenReductionPct": 99.2,
-    "averageCostReductionPct": 104.2,
+    "averageTokenReductionPct": 99.1,
+    "averageCostReductionPct": 104.1,
     "splits": {
       "training": {
         "splitName": "train",
@@ -51,8 +53,8 @@
         "compileSuccessDeltaPct": 0,
         "unitTestDeltaPct": 0,
         "behavioralDeltaPct": 25,
-        "tokenReductionPct": 99.1,
-        "costReductionPct": 104.1
+        "tokenReductionPct": 98.9,
+        "costReductionPct": 103.9
       },
       "validation": {
         "splitName": "validation",
@@ -67,8 +69,8 @@
         "compileSuccessDeltaPct": 0,
         "unitTestDeltaPct": 0,
         "behavioralDeltaPct": 16.7,
-        "tokenReductionPct": 99.2,
-        "costReductionPct": 104.2
+        "tokenReductionPct": 99.1,
+        "costReductionPct": 104.1
       },
       "holdout": {
         "splitName": "holdout",
@@ -101,8 +103,8 @@
       "compileSuccessDeltaPct": 0,
       "unitTestDeltaPct": 0,
       "behavioralDeltaPct": 25,
-      "tokenReductionPct": 99.1,
-      "costReductionPct": 104.1
+      "tokenReductionPct": 98.9,
+      "costReductionPct": 103.9
     },
     "validation": {
       "splitName": "validation",
@@ -117,8 +119,8 @@
       "compileSuccessDeltaPct": 0,
       "unitTestDeltaPct": 0,
       "behavioralDeltaPct": 16.7,
-      "tokenReductionPct": 99.2,
-      "costReductionPct": 104.2
+      "tokenReductionPct": 99.1,
+      "costReductionPct": 104.1
     },
     "holdout": {
       "splitName": "holdout",
@@ -260,7 +262,7 @@
     }
   ],
   "redTeamAudit": {
-    "auditDate": "2026-09-01",
+    "auditDate": "2026-09-03",
     "totalChallenges": 12,
     "challengesPassed": 12,
     "criticalVulnerabilitiesFound": 0,

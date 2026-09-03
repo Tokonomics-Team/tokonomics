@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "classification": "installed-vsix-extension-host-evidence",
+  "generatedAt": "2026-09-03T02:50:24.496Z",
+  "mode": "full-matrix",
+  "artifact": {
+    "path": "tokonomics-5.1.1.vsix",
+    "sha256": "78dcf5e8220e2aecaf21f9802e803a84794072f53c530f27e119eaeb85e45b39"
+  },
+  "results": [
+    {
+      "id": "minimum",
+      "requestedVersion": "1.106.0",
+      "channel": "minimum-supported",
+      "requiredForRelease": true,
+      "status": "passed",
+      "actualVersion": "1.106.0",
+      "hostCommit": "ac4cbdf48759c7d8c3eb91ffe6bb04316e263c57",
+      "hostQuality": "stable",
+      "installedPayloadMatched": true,
+      "trustedWorkspacePassed": true,
+      "restrictedWorkspaceRuntime": "not-executed-development-host-forces-trust",
+      "manifestNormalization": "host-owned __metadata removed before comparison",
+      "durationMs": 2658
+    },
+    {
+      "id": "stable",
+      "requestedVersion": "stable",
+      "channel": "current-stable",
+      "requiredForRelease": true,
+      "status": "passed",
+      "actualVersion": "1.135.0",
+      "hostCommit": "08d4889f9ec4a1685d257b9b95de036c8e1ce1e5",
+      "hostQuality": "stable",
+      "installedPayloadMatched": true,
+      "trustedWorkspacePassed": true,
+      "restrictedWorkspaceRuntime": "not-executed-development-host-forces-trust",
+      "manifestNormalization": "host-owned __metadata removed before comparison",
+      "durationMs": 2951
+    },
+    {
+      "id": "insiders",
+      "requestedVersion": "insiders",
+      "channel": "pre-release",
+      "requiredForRelease": true,
+      "status": "passed",
+      "actualVersion": "1.137.0-insider",
+      "hostCommit": "a3c780be1ff7381b665d0592052fb1c7c9e93ab6",
+      "hostQuality": "insider",
+      "installedPayloadMatched": true,
+      "trustedWorkspacePassed": true,
+      "restrictedWorkspaceRuntime": "not-executed-development-host-forces-trust",
+      "manifestNormalization": "host-owned __metadata removed before comparison",
+      "durationMs": 3167
+    }
+  ],
+  "allRequiredPassed": true,
+  "releaseCertified": false,
+  "cleanupWarning": null,
+  "limitations": [
+    "Provider availability and account-backed model behavior remain environment-dependent."
+  ]
+}

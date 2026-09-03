@@ -1,0 +1,75 @@
+{
+  "_type": "https://in-toto.io/Statement/v1",
+  "subject": [
+    {
+      "name": "tokonomics-5.1.1.vsix",
+      "digest": {
+        "sha256": "78dcf5e8220e2aecaf21f9802e803a84794072f53c530f27e119eaeb85e45b39"
+      }
+    }
+  ],
+  "predicateType": "https://slsa.dev/provenance/v1",
+  "predicate": {
+    "buildDefinition": {
+      "buildType": "https://tokonomics.dev/build/vsix/v1",
+      "externalParameters": {
+        "package": "tokonomics@5.1.1",
+        "command": "npm run vsce:package -- --no-dependencies"
+      },
+      "internalParameters": {
+        "signed": false,
+        "networkRequiredForBuild": false
+      },
+      "resolvedDependencies": [
+        {
+          "uri": "package.json",
+          "digest": {
+            "sha256": "823dce8ba397444c21ba79538683cb749da2b21a5b3b68d3240761d64d2a1686"
+          }
+        },
+        {
+          "uri": "package-lock.json",
+          "digest": {
+            "sha256": "c2a11ed22c26d21bc790d70928506911cc7314fa80e0b8b4c4c0157c10f48c5b"
+          }
+        },
+        {
+          "uri": "esbuild.js",
+          "digest": {
+            "sha256": "0363739032f094cca193b0a8dfa021f705a14505636e0b304c2cd7ad88c9d4f3"
+          }
+        },
+        {
+          "uri": ".vscodeignore",
+          "digest": {
+            "sha256": "ffb54478b1141bcc0f63d43394903acecb6e0c963768f89c387827d84766bec7"
+          }
+        }
+      ]
+    },
+    "runDetails": {
+      "builder": {
+        "id": "https://tokonomics.dev/local-builder/v1"
+      },
+      "metadata": {
+        "invocationId": "cfc5afb1-dada-4c83-a824-13db3cf9c31a",
+        "startedOn": "2026-09-03T02:50:15.270Z",
+        "finishedOn": "2026-09-03T02:50:15.271Z"
+      },
+      "byproducts": [
+        {
+          "name": "repository-commit",
+          "content": "a332a2a96b2b7a875d64a1075360f21864b504d0"
+        },
+        {
+          "name": "node",
+          "content": "v24.19.0"
+        },
+        {
+          "name": "platform",
+          "content": "win32/x64/10.0.26200"
+        }
+      ]
+    }
+  }
+}

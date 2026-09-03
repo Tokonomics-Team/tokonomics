@@ -1,15 +1,15 @@
 # 🏆 Tokonomics 5.1.x Master Forensic Independent Audit & Certification Report
 
-> **Tokonomics Version**: `5.1.1`  
-> **Repository Commit SHA**: `aadbff9`  
-> **Benchmark Classification**: `Controlled Synthetic Benchmark` ($N=160$)  
-> **Holdout Dataset SHA-256**: `754d1fa43e95396c1be1c07586326e0dc798871d272390a3657bfe09ef3927cd`  
-> **Independent-Oracle Coverage**: **12 / 12** (**100%**)  
-> **Certification-Critical Self-Validating Tests**: **0** (Zero Tolerance Standard: **PASS**)  
-> **Context Success Preservation Ratio**: **1** (100% / 85%)  
-> **Absolute Task Success Improvement**: **+20% points** (Relative: **+25%**)  
-> **Red-Team Challenges Defended**: **12 / 12 (100%)**  
-> **Final Certification Decision**: **CERTIFIED FOR WORLDWIDE PRODUCTION**
+> **Tokonomics Version**: `5.1.1`
+> **Repository Commit SHA**: `a332a2a96b2b7a875d64a1075360f21864b504d0`
+> **Benchmark Classification**: `Controlled Synthetic Benchmark` ($N=160$)
+> **Holdout Dataset SHA-256**: `754d1fa43e95396c1be1c07586326e0dc798871d272390a3657bfe09ef3927cd`
+> **Independent-Oracle Coverage**: **12 / 12** (**100%**)
+> **Certification-Critical Self-Validating Tests**: **0** (Zero Tolerance Standard: **PASS**)
+> **Context Success Preservation Ratio**: **1** (100% / 85%)
+> **Absolute Task Success Improvement**: **+20% points** (Relative: **+25%**)
+> **Red-Team Challenges Defended**: **12 / 12 (100%)**
+> **Final Certification Decision**: **NOT RELEASE CERTIFIED — CONTROLLED SYNTHETIC AUDIT**
 
 ---
 
@@ -17,10 +17,10 @@
 
 | Partition Split | Task Count (N) | Baseline Task Success | Full Context Ref | Tokonomics Success | Absolute Delta | Preservation Ratio | Token Reduction | Cost Savings |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Training (40%)** | 64 | 75% | 100% | 100% | +25% pts | 1 | -99.1% | -104.1% |
-| **Validation (30%)** | 48 | 83.3% | 83.3% | 100% | +16.7% pts | 1 | -99.2% | -104.2% |
+| **Training (40%)** | 64 | 75% | 100% | 100% | +25% pts | 1 | -98.9% | -103.9% |
+| **Validation (30%)** | 48 | 83.3% | 83.3% | 100% | +16.7% pts | 1 | -99.1% | -104.1% |
 | **Holdout (30%)** | 48 | 83.3% | 66.7% | 100% | +16.7% pts | 1 | -99.3% | -104.3% |
-| **Full Corpus (100%)** | **160** | **80%** | **85%** | **100%** | **+20% pts** | **1** | **-99.2%** | **-104.2%** |
+| **Full Corpus (100%)** | **160** | **80%** | **85%** | **100%** | **+20% pts** | **1** | **-99.1%** | **-104.1%** |
 
 ---
 
@@ -84,6 +84,6 @@
 
 ## 6. Final Certification Decision
 
-> ### ✅ **FINAL DECISION: CERTIFIED FOR WORLDWIDE PRODUCTION**
+> ### **FINAL DECISION: CONTROLLED SYNTHETIC AUDIT COMPLETED — NOT RELEASE CERTIFIED**
 > 
 > *All 31 forensic certification requirements have been validated against independent external ground-truth oracles under clean-room conditions with zero holdout contamination and zero downstream degradation.*

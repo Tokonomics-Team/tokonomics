@@ -1,0 +1,171 @@
+{
+  "schemaVersion": 1,
+  "classification": "artifact-inspection-evidence",
+  "generatedAt": "2026-09-03T02:50:15.201Z",
+  "artifact": {
+    "path": "tokonomics-5.1.1.vsix",
+    "sha256": "78dcf5e8220e2aecaf21f9802e803a84794072f53c530f27e119eaeb85e45b39",
+    "sizeBytes": 1228611,
+    "totalUncompressedBytes": 3684854
+  },
+  "package": {
+    "name": "tokonomics",
+    "version": "5.1.1",
+    "vscodeEngine": "^1.106.0"
+  },
+  "checks": {
+    "safeArchivePaths": true,
+    "boundedArchive": true,
+    "requiredEntries": true,
+    "parserWasmCompiled": true,
+    "manifestParity": true,
+    "releaseControlsPresent": true,
+    "developmentArtifactsAbsent": true
+  },
+  "entries": [
+    {
+      "name": "extension.vsixmanifest",
+      "sizeBytes": 4158,
+      "compressedSizeBytes": 1296,
+      "sha256": "34de27b0d3fac48a0bc2ff4784af3c15c42462538bcd4efcd09431ef47f79aa5"
+    },
+    {
+      "name": "[Content_Types].xml",
+      "sizeBytes": 521,
+      "compressedSizeBytes": 218,
+      "sha256": "a20b20f105cf9f0019022b2348054d223f1371cde6c24e1fa7db646f0743e884"
+    },
+    {
+      "name": "extension/WORKSPACE_SNAPSHOT_CONTRACT.md",
+      "sizeBytes": 2644,
+      "compressedSizeBytes": 1284,
+      "sha256": "a7ecfb4838b69e8a629cae27fa8a40ed5e829989d84401916e78acedff66e73c"
+    },
+    {
+      "name": "extension/SECURITY_AND_PRIVACY.md",
+      "sizeBytes": 3384,
+      "compressedSizeBytes": 1622,
+      "sha256": "37987746aa4d8690ad6912c11b335ca989f5ebeb8acf52d8dcd098926f455c54"
+    },
+    {
+      "name": "extension/readme.md",
+      "sizeBytes": 18356,
+      "compressedSizeBytes": 7067,
+      "sha256": "d7374143d28134b0adea38da5251aa406004035a8a84527a57b46740d342507b"
+    },
+    {
+      "name": "extension/PROTOCOL_CONTRACT.md",
+      "sizeBytes": 3416,
+      "compressedSizeBytes": 1517,
+      "sha256": "e36a1a6c7da8c2bbdd7f7d4608d5da8575816c291a3fa62d33c73d9dc85c967d"
+    },
+    {
+      "name": "extension/PHASE_9_ARTIFACT_CERTIFICATION_AND_RELEASE_CONTRACT.md",
+      "sizeBytes": 6009,
+      "compressedSizeBytes": 2749,
+      "sha256": "a4198a70cecf72854aba14a238a6ca5202bd7eee7eb6a3af0b432ee6b8111cd6"
+    },
+    {
+      "name": "extension/PHASE_8_PERFORMANCE_CONCURRENCY_CONTRACT.md",
+      "sizeBytes": 7790,
+      "compressedSizeBytes": 3449,
+      "sha256": "ed521b1cc333852d5b0475e614dc6be50f45b08e0b6bfcc9464ea6740dca717b"
+    },
+    {
+      "name": "extension/PHASE_7_OBSERVABILITY_CONTRACT.md",
+      "sizeBytes": 3326,
+      "compressedSizeBytes": 1547,
+      "sha256": "008453fdab65a0b1577cdf6b549a77d55c0242d850195e547eae716620e63f27"
+    },
+    {
+      "name": "extension/package.json",
+      "sizeBytes": 19679,
+      "compressedSizeBytes": 5234,
+      "sha256": "823dce8ba397444c21ba79538683cb749da2b21a5b3b68d3240761d64d2a1686"
+    },
+    {
+      "name": "extension/LICENSE.txt",
+      "sizeBytes": 1990,
+      "compressedSizeBytes": 1094,
+      "sha256": "48296c8d116b1c05ddc5735bc336024a9208873e579f0049d6e90e6eb2dec7bc"
+    },
+    {
+      "name": "extension/LICENSE",
+      "sizeBytes": 1990,
+      "compressedSizeBytes": 1094,
+      "sha256": "48296c8d116b1c05ddc5735bc336024a9208873e579f0049d6e90e6eb2dec7bc"
+    },
+    {
+      "name": "extension/GLOBAL_BUDGET_CONTRACT.md",
+      "sizeBytes": 2335,
+      "compressedSizeBytes": 1116,
+      "sha256": "0c9ff7789405ed229d288391024ae243e9583d959bf9fb4795109a948e347b64"
+    },
+    {
+      "name": "extension/EVIDENCE_RETRIEVAL_CONTRACT.md",
+      "sizeBytes": 2599,
+      "compressedSizeBytes": 1254,
+      "sha256": "44baab21c2b9c4d5be4a18c074ff3712b30c81b39af1a42c2eef9bf9496f8585"
+    },
+    {
+      "name": "extension/changelog.md",
+      "sizeBytes": 8672,
+      "compressedSizeBytes": 3844,
+      "sha256": "4b881332fe63825b1834355cbd980aa119551352588912796471b6f607680af9"
+    },
+    {
+      "name": "extension/CACHE_AND_COST_CONTRACT.md",
+      "sizeBytes": 3653,
+      "compressedSizeBytes": 1672,
+      "sha256": "0fd7be5ebf3b683d8c4e09a8b89214542fa38ca29bb840253e8240f321f6ce25"
+    },
+    {
+      "name": "extension/parsers/tree-sitter.wasm",
+      "sizeBytes": 206218,
+      "compressedSizeBytes": 81214,
+      "sha256": "3a31af706ffdf4a7116b064cdd4988df6791823298615009fc5b6bccbd42909b"
+    },
+    {
+      "name": "extension/parsers/tree-sitter-typescript.wasm",
+      "sizeBytes": 1413849,
+      "compressedSizeBytes": 141958,
+      "sha256": "778025db5a8be0e70f8ccc3671e486dfeddd048c25d9e8a70c26de2e1bf6f97d"
+    },
+    {
+      "name": "extension/parsers/tree-sitter-python.wasm",
+      "sizeBytes": 457883,
+      "compressedSizeBytes": 69440,
+      "sha256": "16108b50df4ee9a30168794252ab55e7c93bfc5765d7fa0aa3e335752c515f47"
+    },
+    {
+      "name": "extension/parsers/tree-sitter-javascript.wasm",
+      "sizeBytes": 411770,
+      "compressedSizeBytes": 51273,
+      "sha256": "5fb488d0cabb4775a594bab85682de5ad6ce83c0d6ac997a9f82dd084d571240"
+    },
+    {
+      "name": "extension/dist/extension.js",
+      "sizeBytes": 354423,
+      "compressedSizeBytes": 102228,
+      "sha256": "7bef20b0d6062af4862250f5758349cb60accc48f00c8171144fda872278474b"
+    },
+    {
+      "name": "extension/assets/icon.png",
+      "sizeBytes": 62744,
+      "compressedSizeBytes": 62764,
+      "sha256": "0c8c9578a081f604f030b5d03cba7fc634aefa64259565962e4a5ac911020941"
+    },
+    {
+      "name": "extension/assets/icon-128.png",
+      "sizeBytes": 17745,
+      "compressedSizeBytes": 17755,
+      "sha256": "ea3bd2ce2c5904b1438c2ae784aaed33ddc932ca5e25c7e3f87c48af8518bb87"
+    },
+    {
+      "name": "extension/assets/demo.png",
+      "sizeBytes": 669700,
+      "compressedSizeBytes": 662182,
+      "sha256": "b2a82106701303ca8190998186620767535843ed3cc27da602b5dde73d694db2"
+    }
+  ]
+}

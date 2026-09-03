@@ -1,0 +1,56 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:eea9db2e-550d-479e-ae4c-ae898ccf9c0c",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-09-03T02:50:15.270Z",
+    "tools": [
+      {
+        "vendor": "Tokonomics",
+        "name": "generate-supply-chain.js",
+        "version": "1"
+      }
+    ],
+    "component": {
+      "type": "application",
+      "name": "tokonomics",
+      "version": "5.1.1",
+      "bom-ref": "pkg:npm/tokonomics@5.1.1"
+    },
+    "properties": [
+      {
+        "name": "tokonomics:artifact:sha256",
+        "value": "78dcf5e8220e2aecaf21f9802e803a84794072f53c530f27e119eaeb85e45b39"
+      },
+      {
+        "name": "tokonomics:artifact:fileCount",
+        "value": "24"
+      }
+    ]
+  },
+  "components": [
+    {
+      "type": "library",
+      "name": "@vscode/tree-sitter-wasm",
+      "version": "0.3.1",
+      "bom-ref": "pkg:npm/%40vscode%2Ftree-sitter-wasm@0.3.1",
+      "purl": "pkg:npm/%40vscode%2Ftree-sitter-wasm@0.3.1",
+      "scope": "required",
+      "properties": [
+        {
+          "name": "tokonomics:packaging",
+          "value": "bundled-and-parser-assets-copied"
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "pkg:npm/tokonomics@5.1.1",
+      "dependsOn": [
+        "pkg:npm/%40vscode%2Ftree-sitter-wasm@0.3.1"
+      ]
+    }
+  ]
+}
