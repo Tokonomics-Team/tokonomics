@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "extensionEngine": "^1.106.0",
+  "hosts": [
+    {
+      "id": "minimum",
+      "version": "1.106.0",
+      "channel": "minimum-supported",
+      "requiredForRelease": true
+    },
+    {
+      "id": "stable",
+      "version": "stable",
+      "channel": "current-stable",
+      "requiredForRelease": true
+    },
+    {
+      "id": "insiders",
+      "version": "insiders",
+      "channel": "pre-release",
+      "requiredForRelease": true
+    }
+  ]
+}

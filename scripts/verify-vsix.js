@@ -2,68 +2,57 @@
 
 const fs = require('fs');
 const path = require('path');
-const yauzl = require('yauzl');
+const { inspectVsix } = require('./lib/vsix-artifact');
 
 const root = path.resolve(__dirname, '..');
-const manifest = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
-const artifact = path.join(root, `${manifest.name}-${manifest.version}.vsix`);
-const required = new Set([
-    'extension/dist/extension.js',
-    'extension/package.json',
-    'extension/parsers/tree-sitter.wasm',
-    'extension/parsers/tree-sitter-typescript.wasm',
-    'extension/parsers/tree-sitter-javascript.wasm',
-    'extension/parsers/tree-sitter-python.wasm'
-]);
-
-function readEntry(zip, entry) {
-    return new Promise((resolve, reject) => {
-        zip.openReadStream(entry, (error, stream) => {
-            if (error) return reject(error);
-            const chunks = [];
-            stream.on('data', chunk => chunks.push(chunk));
-            stream.on('error', reject);
-            stream.on('end', () => resolve(Buffer.concat(chunks)));
-        });
-    });
-}
+const sourceManifest = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
+const artifact = path.join(root, `${sourceManifest.name}-${sourceManifest.version}.vsix`);
+const reportPath = path.join(root, 'validation', 'reports', 'vsix-inspection.json');
+const required = [
+    'extension.vsixmanifest', '[Content_Types].xml', 'extension/dist/extension.js', 'extension/package.json',
+    'extension/readme.md', 'extension/changelog.md', 'extension/LICENSE.txt',
+    'extension/parsers/tree-sitter.wasm', 'extension/parsers/tree-sitter-typescript.wasm',
+    'extension/parsers/tree-sitter-javascript.wasm', 'extension/parsers/tree-sitter-python.wasm'
+];
+const forbiddenPath = /(^|\/)(?:src|tests?|validation|scripts|out|out_test|\.git|\.github|\.vscode-test)(?:\/|$)|(?:\.map|\.ts|\.log|\.env|\.pem|\.key|package-lock\.json)$/i;
 
 async function verify() {
-    if (!fs.existsSync(artifact)) throw new Error(`VSIX artifact not found: ${artifact}`);
-    await new Promise((resolve, reject) => {
-        yauzl.open(artifact, { lazyEntries: true, validateEntrySizes: true }, (openError, zip) => {
-            if (openError) return reject(openError);
-            const found = new Set();
-            zip.on('error', reject);
-            zip.on('entry', async entry => {
-                try {
-                    if (required.has(entry.fileName)) {
-                        if (found.has(entry.fileName)) throw new Error(`Duplicate required VSIX entry: ${entry.fileName}`);
-                        found.add(entry.fileName);
-                        const bytes = await readEntry(zip, entry);
-                        if (entry.fileName.endsWith('.wasm')) await WebAssembly.compile(bytes);
-                        if (entry.fileName === 'extension/package.json') {
-                            const packagedManifest = JSON.parse(bytes.toString('utf8'));
-                            if (packagedManifest.capabilities?.untrustedWorkspaces?.supported !== 'limited') {
-                                throw new Error('Packaged manifest does not declare limited untrusted-workspace support.');
-                            }
-                        }
-                    }
-                    zip.readEntry();
-                } catch (error) {
-                    zip.close();
-                    reject(error);
-                }
-            });
-            zip.on('end', () => {
-                const missing = [...required].filter(name => !found.has(name));
-                if (missing.length) reject(new Error(`VSIX is missing required entries: ${missing.join(', ')}`));
-                else resolve();
-            });
-            zip.readEntry();
-        });
-    });
-    console.log(`VSIX integrity verified: ${path.basename(artifact)} (${required.size} required entries, all WASM modules valid).`);
+    const inspected = await inspectVsix(artifact);
+    const errors = [];
+    for (const name of required) if (!inspected.entries.has(name)) errors.push(`Missing required entry: ${name}`);
+    for (const name of inspected.entries.keys()) if (forbiddenPath.test(name)) errors.push(`Forbidden private/development artifact: ${name}`);
+    if (errors.length) throw new Error(errors.join('; '));
+
+    const packagedManifest = JSON.parse(inspected.entries.get('extension/package.json').bytes.toString('utf8'));
+    if (packagedManifest.name !== sourceManifest.name || packagedManifest.version !== sourceManifest.version) throw new Error('Packaged identity differs from source manifest.');
+    if (packagedManifest.main !== './dist/extension.js') throw new Error('Packaged main entry is not the inspected production bundle.');
+    if (packagedManifest.engines?.vscode !== sourceManifest.engines.vscode) throw new Error('Packaged VS Code engine range differs from source manifest.');
+    if (packagedManifest.capabilities?.untrustedWorkspaces?.supported !== 'limited') throw new Error('Packaged manifest must declare limited untrusted-workspace support.');
+    if ((packagedManifest.activationEvents || []).includes('*')) throw new Error('Wildcard activation is forbidden.');
+    const commandIds = (packagedManifest.contributes?.commands || []).map(command => command.command);
+    if (new Set(commandIds).size !== commandIds.length) throw new Error('Packaged command identifiers are not unique.');
+    for (const key of ['tokenOptimizer.releaseChannel', 'tokenOptimizer.stagedRolloutPercent', 'tokenOptimizer.emergencyDisableOptimization', 'tokenOptimizer.disabledCapabilities']) {
+        if (!packagedManifest.contributes?.configuration?.properties?.[key]) throw new Error(`Packaged release control is missing: ${key}`);
+    }
+
+    for (const name of required.filter(name => name.endsWith('.wasm'))) await WebAssembly.compile(inspected.entries.get(name).bytes);
+    const bundle = inspected.entries.get('extension/dist/extension.js').bytes.toString('utf8');
+    for (const marker of ['validation/', 'tests/', 'sourceMappingURL=', 'CERTIFIED FOR WORLDWIDE PRODUCTION']) {
+        if (bundle.includes(marker)) throw new Error(`Production bundle contains forbidden marker: ${marker}`);
+    }
+
+    const report = {
+        schemaVersion: 1,
+        classification: 'artifact-inspection-evidence',
+        generatedAt: new Date().toISOString(),
+        artifact: { path: path.basename(artifact), sha256: inspected.sha256, sizeBytes: inspected.sizeBytes, totalUncompressedBytes: inspected.totalUncompressedBytes },
+        package: { name: packagedManifest.name, version: packagedManifest.version, vscodeEngine: packagedManifest.engines.vscode },
+        checks: { safeArchivePaths: true, boundedArchive: true, requiredEntries: true, parserWasmCompiled: true, manifestParity: true, releaseControlsPresent: true, developmentArtifactsAbsent: true },
+        entries: [...inspected.entries.values()].map(({ name, sizeBytes, compressedSizeBytes, sha256 }) => ({ name, sizeBytes, compressedSizeBytes, sha256 }))
+    };
+    fs.mkdirSync(path.dirname(reportPath), { recursive: true });
+    fs.writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`, 'utf8');
+    console.log(`VSIX integrity verified: ${path.basename(artifact)} (${report.entries.length} files, SHA-256 ${inspected.sha256}).`);
 }
 
 verify().catch(error => {

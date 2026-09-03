@@ -124,7 +124,7 @@
           },
           {
             "name": "logs",
-            "description": "View and export 100% anonymized diagnostic logs and crash report"
+            "description": "View and export bounded, locally sanitized diagnostic logs and crash report"
           },
           {
             "name": "analyze",
@@ -363,7 +363,7 @@
         "tokenOptimizer.enableDiffOutputOptimization": {
           "type": "boolean",
           "default": true,
-          "description": "Automatically detect code edit/refactor intent and instruct models to output unified diff patches instead of entire files (saves 40-70% output tokens)."
+          "description": "Detect code edit/refactor intent and request unified diff patches instead of complete files; realized output-token changes depend on the model and task."
         },
         "tokenOptimizer.enableModelRouting": {
           "type": "boolean",
@@ -407,7 +407,7 @@
         "tokenOptimizer.enableImageRightsizing": {
           "type": "boolean",
           "default": true,
-          "description": "Automatically compress and downscale inline base64 images and large screenshot references before sending to AI models. Saves 60-96% on image token costs."
+          "description": "Apply bounded local rightsizing to eligible inline images and workspace-contained screenshot references before model submission."
         },
         "tokenOptimizer.imageMaxDimension": {
           "type": "number",
@@ -441,7 +441,45 @@
             "legacy"
           ],
           "default": "compiler",
-          "description": "Context compilation engine mode (compiler: Phase 1-16 SOTA compiler with SDG program slicing; hybrid: transitional; legacy: basic AST pruner)."
+          "description": "Context compilation mode (compiler: full evidence-aware pipeline; hybrid: transitional; legacy: basic AST pruner)."
+        },
+        "tokenOptimizer.releaseChannel": {
+          "type": "string",
+          "enum": [
+            "stable",
+            "canary",
+            "disabled"
+          ],
+          "default": "stable",
+          "description": "Local release channel control. Canary uses deterministic staged enrollment; disabled preserves requests verbatim."
+        },
+        "tokenOptimizer.stagedRolloutPercent": {
+          "type": "number",
+          "default": 100,
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Percentage of installations enrolled when releaseChannel is canary. Assignment is deterministic and remains local."
+        },
+        "tokenOptimizer.emergencyDisableOptimization": {
+          "type": "boolean",
+          "default": false,
+          "description": "Emergency local kill switch. When enabled, model requests retain their canonical payload without optimization."
+        },
+        "tokenOptimizer.disabledCapabilities": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "compiler",
+              "workspaceIndex",
+              "responseCache",
+              "imageRightsizing",
+              "localInference"
+            ]
+          },
+          "default": [],
+          "description": "Granular local kill switches used for staged rollout and incident containment."
         }
       }
     }
@@ -456,8 +494,12 @@
     "certify:fast": "node scripts/run-tests.js",
     "certify": "node scripts/certify.js",
     "certify:deep": "node scripts/certify-deep.js",
+    "certify:release": "node scripts/certify-release.js",
     "verify:phase0": "node scripts/verify-phase0.js",
     "verify:vsix": "node scripts/verify-vsix.js",
+    "verify:host:local": "node scripts/run-extension-host-matrix.js --local",
+    "verify:host:all": "node scripts/run-extension-host-matrix.js --all",
+    "generate:supply-chain": "node scripts/generate-supply-chain.js",
     "validate": "node scripts/validate.js",
     "validate:all": "node scripts/validate-all.js",
     "audit:clean-room": "node scripts/clean-room-audit.js",
@@ -474,8 +516,10 @@
   "devDependencies": {
     "@types/node": "^20.14.0",
     "@types/vscode": "1.106.0",
+    "@vscode/test-electron": "3.1.0",
     "@vscode/vsce": "^3.9.2",
     "esbuild": "^0.28.2",
-    "typescript": "^5.4.5"
+    "typescript": "^5.4.5",
+    "yauzl": "3.4.0"
   }
 }

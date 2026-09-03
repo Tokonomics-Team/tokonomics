@@ -126,7 +126,8 @@ export class PipelineOrchestrator {
         const flags = FeatureFlagRegistry.getFlags();
         const mode = flags.pipelineMode;
         const pipelineFallbackReasons = [...(request.fallbackReasons || [])];
-        let forcePassThrough = false;
+        let forcePassThrough = flags.forcePassThrough;
+        if (forcePassThrough) pipelineFallbackReasons.push('release_control_pass_through');
 
         // 0. Deterministic Context Governor Evaluation (Zero LLM/SLM)
         const governor = DeterministicContextGovernor.getInstance();

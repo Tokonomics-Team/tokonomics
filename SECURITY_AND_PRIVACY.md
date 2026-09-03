@@ -46,3 +46,10 @@ The production build copies a version-pinned Microsoft VS Code Tree-sitter runti
 the TypeScript, JavaScript, and Python grammars into the VSIX. Certification opens the
 actual VSIX, checks trust metadata and required entries, and compiles every shipped WASM
 module. A missing or invalid asset fails certification.
+
+The inspector also rejects non-canonical or duplicate archive paths, symlinks, encryption,
+oversized entries/archives, suspicious compression ratios, source maps, and private or
+development directories. Installation evidence compares every payload file with the inspected
+VSIX; only VS Code's host-owned `package.json.__metadata` field is normalized. The generated
+SBOM and unsigned provenance are hash-bound evidence, not a digital signature or automatic
+permission to publish.

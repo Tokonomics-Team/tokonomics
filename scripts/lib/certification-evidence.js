@@ -45,7 +45,15 @@ function captureRepositoryMetadata(rootDir, artifactPath) {
     const lockRoot = packageLock.packages && packageLock.packages['']
         ? packageLock.packages['']
         : {};
-    const status = git(rootDir, ['status', '--porcelain'], 'unavailable');
+    const rawStatus = git(rootDir, ['status', '--porcelain'], 'unavailable');
+    const statusEntries = rawStatus === '' ? [] : rawStatus.split(/\r?\n/).filter(Boolean);
+    const isGeneratedEvidence = entry => {
+        const file = entry.slice(3).replace(/\\/g, '/');
+        return (/^validation\/reports\/.*\.(?:json|md)$/i.test(file) && !file.endsWith('/README.md'))
+            || /^validation\/results\/.*\.json$/i.test(file);
+    };
+    const sourceStatus = statusEntries.filter(entry => !isGeneratedEvidence(entry));
+    const generatedEvidenceStatus = statusEntries.filter(isGeneratedEvidence);
     const artifactExists = Boolean(artifactPath && fs.existsSync(artifactPath));
 
     return {
@@ -54,8 +62,9 @@ function captureRepositoryMetadata(rootDir, artifactPath) {
         repository: {
             commitSha: git(rootDir, ['rev-parse', 'HEAD']),
             branch: git(rootDir, ['branch', '--show-current']),
-            clean: status === '',
-            status: status === '' ? [] : status.split(/\r?\n/).filter(Boolean)
+            clean: sourceStatus.length === 0,
+            status: sourceStatus,
+            generatedEvidenceStatus
         },
         package: {
             name: packageJson.name,
@@ -154,13 +163,13 @@ function deriveValidationDecision(metadata, gates) {
 function createCertificationReport(metadata, gates, options = {}) {
     const required = gates.filter(gate => gate.required);
     const passed = gates.filter(gate => gate.status === 'passed');
-    const decision = deriveValidationDecision(metadata, gates);
+    const decision = options.decision || deriveValidationDecision(metadata, gates);
 
     return {
         schemaVersion: 1,
         generatedAt: new Date().toISOString(),
         mode: options.mode || 'standard',
-        classification: 'development-validation',
+        classification: options.classification || 'development-validation',
         releaseCertified: false,
         decision,
         summary: {

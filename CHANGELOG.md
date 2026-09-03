@@ -2,6 +2,11 @@
 
 All notable user updates, feature additions, and performance improvements to **Tokonomics** are documented here.
 
+> Historical percentages and absolute language such as "100%", "zero loss", or
+> "production-safe" below describe controlled fixtures or the wording used at the time.
+> They are not production guarantees. Current public claims are governed by
+> `validation/claims/claim-registry.json` and exact-artifact Phase 9 evidence.
+
 ## [5.1.1] - 2026-09-01
 ### 🧠 State-of-the-Art Deterministic Context Governor & Validated Accuracy Improvements
 - **Deterministic Context Governor (`src/governor/`)**: Production-safe, zero-LLM/zero-SLM intelligence layer operating in $<0.001\text{ ms}$ latency. Deterministically classifies task intent across 9 categories (`debug`, `refactor`, `feature`, `test`, `explain`, `review`, `architecture`, `search`, `completion`) and evaluates task risk using local signals.

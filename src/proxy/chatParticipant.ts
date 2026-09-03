@@ -41,6 +41,7 @@ import { VersionedWorkspaceIndex } from '../workspace/workspaceIndex';
 import { EvidenceSignal } from '../retrieval/evidenceTypes';
 import { CpuWorkerBoundary } from '../performance/cpuWorkerBoundary';
 import { BoundedPriorityScheduler } from '../performance/boundedScheduler';
+import { KillSwitchCapability } from '../release/releaseControl';
 
 export function registerChatParticipant(
     context: vscode.ExtensionContext,
@@ -52,10 +53,11 @@ export function registerChatParticipant(
     requestCompiler?: CanonicalRequestCompiler,
     providedWorkspaceIndex?: VersionedWorkspaceIndex,
     cpuWorkerBoundary?: CpuWorkerBoundary,
-    inferenceScheduler?: BoundedPriorityScheduler
+    inferenceScheduler?: BoundedPriorityScheduler,
+    capabilityEnabled: (capability: KillSwitchCapability) => boolean = () => true
 ) {
     if (!vscode.chat || typeof vscode.chat.createChatParticipant !== 'function') {
-        return;
+        return false;
     }
 
     const workspaceTrusted = () => vscode.workspace.isTrusted !== false;
@@ -83,8 +85,8 @@ export function registerChatParticipant(
         const command = request.command;
         let requestSnapshot = workspaceIndex.captureSnapshot();
 
-        if (!workspaceTrusted() && (command === 'map' || command === 'pack' || command === 'analyze')) {
-            response.markdown('Workspace context is disabled in Restricted Mode. Trust this workspace before reading or analyzing project files.');
+        if ((!workspaceTrusted() || !capabilityEnabled('workspaceIndex')) && (command === 'map' || command === 'pack' || command === 'analyze')) {
+            response.markdown('Workspace context is disabled by workspace trust or the local release safety controls.');
             return;
         }
 
@@ -431,7 +433,8 @@ export function registerChatParticipant(
         try {
             if (token.isCancellationRequested) return;
             const conf = vscode.workspace.getConfiguration('tokenOptimizer');
-            const contextMode = conf.get<'off' | 'selection' | 'referenced' | 'automatic'>('workspaceContextMode', 'selection');
+            const configuredContextMode = conf.get<'off' | 'selection' | 'referenced' | 'automatic'>('workspaceContextMode', 'selection');
+            const contextMode = capabilityEnabled('workspaceIndex') ? configuredContextMode : 'off';
             if (contextMode === 'automatic' && requestSnapshot.files.size === 0) {
                 requestSnapshot = await workspaceIndex.ensureInitialized();
             }
@@ -539,7 +542,7 @@ export function registerChatParticipant(
             // Phase 8: Image Rightsizing (inspired by TokenShift)
             const imageConf = vscode.workspace.getConfiguration('tokenOptimizer');
             const imageRightsizer = new ImageRightsizer({
-                enabled: imageConf.get<boolean>('enableImageRightsizing', true),
+                enabled: capabilityEnabled('imageRightsizing') && imageConf.get<boolean>('enableImageRightsizing', true),
                 maxDimension: imageConf.get<number>('imageMaxDimension', 512),
                 quality: 70
             });
@@ -684,7 +687,7 @@ export function registerChatParticipant(
                     cancelled: token.isCancellationRequested
                 }
             };
-            if (config.enableResponseCache !== false) {
+            if (capabilityEnabled('responseCache') && config.enableResponseCache !== false) {
                 const cacheHit = cache.lookup(exactCacheRequest);
                 if (cacheHit.hit && cacheHit.response) {
                     compiler.commit(compiled);
@@ -794,7 +797,7 @@ export function registerChatParticipant(
                 }
             } else emitCostUnavailable();
 
-            if (config.enableResponseCache !== false && completeResponseText.length > 20) {
+            if (capabilityEnabled('responseCache') && config.enableResponseCache !== false && completeResponseText.length > 20) {
                 cache.store(exactCacheRequest, completeResponseText, 'completed');
             }
         } catch (err: any) {
@@ -808,4 +811,5 @@ export function registerChatParticipant(
 
     participant.iconPath = vscode.Uri.file(context.asAbsolutePath('assets/icon.png'));
     context.subscriptions.push(participant);
+    return true;
 }

@@ -530,8 +530,7 @@ records. The contract, fallback matrix, queue policy, hardware tiers, and measur
 100/1,000/10,000-file baseline are recorded in
 `PHASE_8_PERFORMANCE_CONCURRENCY_CONTRACT.md`.
 
-Phase 9 remains blocked until the repository owner reviews this implementation and
-explicitly approves the next phase.
+Phase 9 was explicitly approved by the repository owner and is implemented below.
 
 ## Phase 9 - Integration certification and release hardening
 
@@ -557,6 +556,25 @@ Certify the exact artifact installed by users rather than mocked source behavior
 - Clean-room VSIX tests pass for supported VS Code versions.
 - Certification reports derive solely from the current artifact and independent evidence.
 - Marketplace claims match generated evidence and confidence intervals.
+
+### Implementation status (2026-09-03)
+
+Implemented locally. The release pipeline now creates and boundedly inspects an exact
+VSIX, hashes every packaged entry, compiles all shipped parsers, rejects unsafe archives
+and private/development content, produces CycloneDX SBOM and artifact-bound provenance,
+and installs the payload into isolated real Extension Hosts. The compatibility runner
+records minimum, Stable, and Insiders results without treating missing hosts as passes.
+
+Runtime release controls provide deterministic local canary enrollment, a complete
+verbatim emergency pass-through, and granular compiler/index/cache/image/local-inference
+kill switches. Automated tests cover adversarial prompts, secrets, Unicode, binary-like
+text, large inputs, paths, archive traversal, encryption, size/compression attacks,
+manifest isolation, and rollback behavior. The normative gate, rollout, evidence, and
+rollback rules are documented in
+`PHASE_9_ARTIFACT_CERTIFICATION_AND_RELEASE_CONTRACT.md`.
+
+Phase 10 remains blocked until the repository owner reviews Phase 9 evidence and
+explicitly approves experimental work.
 
 ## Phase 10 - Evaluated state-of-the-art experiments
 

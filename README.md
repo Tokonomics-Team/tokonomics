@@ -3,7 +3,7 @@
 
 [![Website](https://img.shields.io/badge/Website-tokonomics--team.github.io-00f0ff.svg)](https://tokonomics-team.github.io/tokonomics)
 [![Version](https://img.shields.io/badge/version-5.1.1-blue.svg)](https://marketplace.visualstudio.com)
-[![VS Code](https://img.shields.io/badge/VS%20Code-%5E1.90.0-purple.svg)](https://code.visualstudio.com)
+[![VS Code](https://img.shields.io/badge/VS%20Code-%5E1.106.0-purple.svg)](https://code.visualstudio.com)
 [![Benchmarks](https://img.shields.io/badge/Benchmarks-Controlled%20Synthetic-yellow.svg)]()
 [![Validation](https://img.shields.io/badge/Release%20Certification-Pending-orange.svg)]()
 [![Context Governor](https://img.shields.io/badge/Deterministic%20Governor-Active%20(0ms)-blueviolet.svg)]()
@@ -47,9 +47,9 @@
 
 ---
 
-## 🧠 State-of-the-Art Deterministic Context Governor
+## 🧠 Deterministic Context Governor
 
-Tokonomics 5.1 introduces a **Production-Safe Deterministic Context Governor** — a zero-overhead intelligence layer that runs entirely on-device to steer how context is assembled, prioritized, and safeguarded before sending prompts to the AI model:
+Tokonomics 5.1 includes a deterministic local governor that steers how context is assembled, prioritized, and safeguarded before prompts are sent to the selected AI model:
 
 1. **Instant Task Intent Classification (< 0.001 ms)**  
    Deterministically identifies whether you are **debugging, refactoring, building a feature, writing tests, reviewing code, or exploring architecture** using local lexical signals, editor state, terminal errors, and LSP diagnostics — completely offline with **zero LLM/SLM latency**.
@@ -92,7 +92,7 @@ Type `@tokonomics` followed by a slash command:
 | `@tokonomics /pack <path>` | Pack and compact workspace files into an AST-pruned context skeleton |
 | `@tokonomics /analyze` | Run a real-time token audit on your currently active editor file |
 | `@tokonomics /compact` | Compact code or conversational prompt context |
-| `@tokonomics /logs` | View and export 100% anonymized diagnostic logs and crash report |
+| `@tokonomics /logs` | View and export bounded, locally sanitized diagnostic logs and crash report |
 | `@tokonomics /ram` | View in-memory RAM cache status, indexed symbols, and memory budget |
 
 ### 4. Right-Click Context Menu & Command Palette
@@ -106,22 +106,22 @@ Type `@tokonomics` followed by a slash command:
 1. **Deterministic Context Governor & Evidence Safety Gate**  
    Automatically aligns retrieval depth and compression aggressiveness with task risk. High-risk refactorings retain comprehensive type context, while high-level explorations are compressed for maximum speed and savings.
 
-2. **Intelligent Code Context Right-Sizing (Saves 65% – 88%)**  
+2. **Intelligent Code Context Right-Sizing**
    Extracts essential structural signatures, types, and architectural interfaces while discarding redundant implementation noise. Supported across **TypeScript, JavaScript, Python, Go, Rust, C, C++, Java, C#, PHP, and SQL**.
 
 3. **Backward System Dependence Graph (SDG) Program Slicing**  
    Performs inter-procedural data flow and control flow analysis to include only the exact functions and variables that affect the target code, eliminating irrelevant methods from large files.
 
-4. **In-Memory RAM Accelerator (Configurable Budget & 0ms Latency)**  
+4. **In-Memory RAM Accelerator (Configurable Budget)**
    Maintains an ultra-fast local memory index within your configured budget (`16MB – 1024MB`, default `64MB`). Provides instant cached lookups and multi-turn conversational deduplication without disk I/O bottlenecks.
 
 5. **Safety-Bound Exact Local Response Cache**
    Replays an answer only when the request, conversation, workspace snapshot, evidence, model, tools, compiler configuration, policy, and extension version are identical. Approximate matches never replay answer text. Eligible exact hits avoid a downstream model request; realized savings depend on the provider and request.
 
-6. **High-Efficiency Image Rightsizing (Saves Up to 96%)**  
-   Automatically optimizes inline screenshots and attached diagrams before sending them to multimodal models, drastically reducing image token costs.
+6. **Bounded Image Rightsizing**
+   Locally rightsizes eligible inline screenshots and workspace-contained references. Actual payload and provider-token changes depend on the image, model, and provider accounting.
 
-7. **Intelligent Codebase Structural Mapping (Saves 99%)**  
+7. **Token-Budgeted Codebase Structural Mapping**
    Generates compact, high-value workspace structural maps tailored to an exact 1,024-token budget, eliminating massive whole-repository context dumps.
 
 8. **Smart Model Routing & Enterprise Policy Governance**  
@@ -129,9 +129,9 @@ Type `@tokonomics` followed by a slash command:
 
 ---
 
-## 🏆 Forensic Independent Audit & Validation Results
+## 🏆 Controlled Synthetic Audit & Validation Results
 
-Tokonomics has undergone a comprehensive **40-phase independent forensic audit** evaluating mathematical correctness, independent ground-truth oracles, 3-run experimental comparisons, and red-team defenses:
+The repository contains a controlled synthetic harness evaluating mathematical invariants, separate oracle implementations, repeated fixture comparisons, and red-team cases. These results validate the harness and transformations, not upstream-model or production outcomes:
 
 ### 1. Controlled 3-Run Scientific Experimentation (N = 160 Tasks)
 
@@ -144,7 +144,7 @@ Evaluated across **160 multi-language benchmark tasks** using official TypeScrip
 | **Holdout Split (30%)** | 48 | 80.0% | 100.0% | **100.0%** | **+20.0% pts** | **1.0 (100.0%)** | **-80.5%** | **-85.5%** |
 | **Full Corpus (100%)** | **160** | **80.0%** | **100.0%** | **100.0%** | **+20.0% pts** | **1.0 (100.0%)** | **-80.5%** | **-85.5%** |
 
-*(Holdout dataset is cryptographically locked via SHA-256 to guarantee zero tuning contamination).*
+*(Fixture metadata is SHA-256 locked so changes are detectable; this does not independently prove absence of tuning contamination.)*
 
 ### 2. Multi-Tier Sub-Millisecond Latency Profile
 - **Level A (Microbenchmark)**: `0.0004 ms` p50 (token hashing, BPE lookup)
@@ -153,9 +153,9 @@ Evaluated across **160 multi-language benchmark tasks** using official TypeScrip
 - **Level D (Extension Runtime)**: `0.45 ms` p50 (real VS Code Chat Provider entry-to-exit turnaround)
 
 ### 3. Subsystem Independent Oracles & Invariants
-- **100% Independent Oracle Coverage**: 12 / 12 subsystems audited against external ground-truth oracles with **0 self-validating tests** in the certification path.
+- **Synthetic oracle coverage**: 12 / 12 designated subsystems have separate fixture-oracle checks in the controlled harness.
 - **Multi-Choice 7^N Solver Optimality**: 0.0% optimality gap verified against exhaustive combinatorial brute-force across all representation tiers (R_exclude to R5).
-- **Zero False Negatives**: 100% symbol recall on critical execution paths across 15 adversarial language patterns (reflection, dynamic dispatch, DI containers, FFI).
+- **Fixture recall**: the checked critical symbols were retained across 15 controlled adversarial language patterns.
 - **12 Red-Team Adversarial Challenges Defended**: Memory leak 100-cycle stress, 50-request concurrency, ReDoS protection, workspace path containment, and 100% VSIX air-gap package isolation.
 
 ### 4. Multi-Language Optimization Across 8 Stacks
@@ -174,11 +174,11 @@ Evaluated across **160 multi-language benchmark tasks** using official TypeScrip
 
 Tokonomics is engineered for individual developers, AI engineers, and enterprise development teams using AI coding assistants and API proxies:
 
-- **Anthropic Claude (Claude 3.7 Sonnet, Claude 3.5 Sonnet, Claude Opus)**: Automatically stabilizes the 1,024-token prompt prefix to unlock Anthropic's **90% prompt caching discount**.
-- **OpenAI (GPT-4o, GPT-4o mini, o1, o3-mini)**: Compresses multi-turn conversation payloads and stabilizes static headers for OpenAI's **50% cached token discount**.
+- **Anthropic Claude family**: Can stabilize eligible prompt prefixes; any discount requires provider-reported cache usage and current provider pricing.
+- **OpenAI model family**: Can compact conversation payloads and stabilize static headers; realized cached-token pricing is provider-dependent.
 - **GitHub Copilot & Cursor**: Reduces conversational code bloat, rightsizes attached files, and prevents context window exhaustion during deep refactoring tasks.
 - **DeepSeek & Gemini (DeepSeek-V3, DeepSeek-R1, Gemini 2.5 Pro/Flash)**: Minimizes token overhead for reasoning models that require large context allocations.
-- **Enterprise AI FinOps & Rate Limit Prevention**: Mitigates 429 Rate Limit spikes and reduces monthly cloud API bills across engineering organizations by up to 88%.
+- **Token-economics visibility**: Reports request-bound estimates and provider-reconciled values when usage and current pricing evidence are available.
 
 ---
 
@@ -233,21 +233,21 @@ We welcome feedback, bug reports, and feature requests!
 
 ## 🌐 Compatibility with VS Code, Cursor, VSCodium & Gitpod
 
-Tokonomics is built on standard VS Code APIs and runs across all major environments:
+Tokonomics is built on VS Code APIs. The current artifact matrix verifies the exact VSIX on Windows using VS Code 1.106.0, current Stable, and current Insiders. Other hosts require separate qualification:
 
-- 🟢 **Microsoft VS Code**: 100% Native (Chat Participant `@tokonomics` + Language Model Proxy).
-- 🟢 **Cursor**: 100% Compatible (Context Packing, Repo Map, Diff Viewer, Dashboard).
-- 🟢 **VSCodium / Eclipse Theia**: 100% Compatible via Open VSX Registry.
-- 🟢 **Gitpod / GitHub Codespaces**: 100% Compatible in browser & desktop containers.
+- 🟢 **Microsoft VS Code**: Windows artifact matrix passed on minimum, Stable, and Insiders hosts.
+- ⚪ **Cursor**: Not certified by the current artifact matrix.
+- ⚪ **VSCodium / Eclipse Theia**: Not certified by the current artifact matrix.
+- ⚪ **Gitpod / GitHub Codespaces, WSL, SSH, and Dev Containers**: Require environment-specific qualification.
 
 ---
 
-## 🔒 100% Privacy & Local Security Guarantees
+## 🔒 Privacy and Local Security Model
 
-1. **Local-Only Execution**: All token optimization algorithms, memory caches, and image compression execute strictly within your local machine process.
-2. **Zero Network Calls to Extension Backend**: Tokonomics has **no backend servers**, collects **no analytics**, and makes **zero external HTTP requests**.
+1. **Local Context Processing**: Tokonomics context algorithms and session caches execute in the extension process; compiled prompts still go to the selected upstream provider.
+2. **No Tokonomics Intermediary**: The extension has no Tokonomics-operated backend or analytics endpoint. VS Code, installed extensions, and the selected provider may perform their own network activity.
 3. **Automatic Secret Redaction**: ReDoS-safe scanner automatically redacts API keys (AWS, OpenAI, Anthropic, GitHub) and private keys before prompts are sent to your chosen AI model.
-4. **WASM Memory Safe**: Deterministic memory management prevents extension host leaks.
+4. **Bounded Resources**: Queues, caches, worker inputs, and parser/index memory have explicit limits; this reduces but cannot categorically eliminate host defects.
 
 ---
 

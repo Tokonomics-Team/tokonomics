@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-01",
+  "updatedAt": "2026-09-03",
   "policy": "Only verified claims may be stated without qualification. Qualified and experimental claims must disclose their scope. Unverified claims may not be used as release or marketplace promises.",
   "claims": [
     {
@@ -9,7 +9,7 @@
       "status": "qualified",
       "publicLocations": ["README.md", "package.json"],
       "evidence": ["src/extension.ts", "src/evaluation/networkAuditEngine.ts"],
-      "limitations": "Optimized prompts are still sent to the user-selected upstream model provider. Phase 1 must certify all egress paths and workspace-trust behavior from the packaged extension."
+      "limitations": "Optimized prompts are still sent to the user-selected upstream model provider. The Windows artifact matrix verifies installed activation and trust declarations, but provider-account and remote-host behavior remain environment-dependent."
     },
     {
       "id": "token-reduction-range",
@@ -73,7 +73,15 @@
       "status": "retired",
       "publicLocations": ["validation/reports/README.md"],
       "evidence": [],
-      "limitations": "Legacy self-generated certification is superseded. Release certification requires packaged Extension Host testing in Phase 9."
+      "limitations": "Legacy self-generated certification is superseded. Phase 9 artifact evidence supports a human release decision but does not establish worldwide production certification."
+    },
+    {
+      "id": "installed-vsix-windows-compatibility",
+      "claim": "The exact inspected Tokonomics VSIX passes the configured Windows Extension Host matrix for minimum, Stable, and Insiders VS Code.",
+      "status": "qualified",
+      "publicLocations": ["README.md", "validation/reports/README.md"],
+      "evidence": ["validation/compatibility-matrix.json", "validation/reports/extension-host-matrix.json", "validation/reports/vsix-inspection.json"],
+      "limitations": "Evidence is artifact-hash-bound and Windows-specific. It does not certify Cursor, VSCodium, Theia, browser, remote, container, provider-account, billing, or upstream-model behavior."
     }
   ]
 }

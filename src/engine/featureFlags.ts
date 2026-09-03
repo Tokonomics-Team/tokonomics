@@ -8,6 +8,8 @@ export type PipelineMode = 'legacy' | 'hybrid' | 'compiler';
 export type CompressionProviderType = 'noop' | 'rule' | 'lingua2' | 'slm' | 'legacy';
 
 export interface CompilerFeatureFlags {
+    // Emergency release override: preserve canonical request payloads verbatim.
+    forcePassThrough: boolean;
     // Pipeline mode: 'legacy' (100% v4.1.2), 'hybrid' (transitional), 'compiler' (full compiler)
     pipelineMode: PipelineMode;
 
@@ -45,6 +47,7 @@ export interface CompilerFeatureFlags {
 }
 
 export const DEFAULT_FEATURE_FLAGS: CompilerFeatureFlags = {
+    forcePassThrough: false,
     pipelineMode: 'legacy',
     enableLspIntelligence: false,
     enableDeltaContext: false,
@@ -89,10 +92,11 @@ export class FeatureFlagRegistry {
         }
 
         const get = <T>(key: string, def: T): T => (conf && typeof conf.get === 'function' ? conf.get(key, def) : def);
-        const mode = get<PipelineMode>('pipelineMode', 'legacy');
+        const mode = get<PipelineMode>('pipelineMode', 'compiler');
         
         this.currentFlags = {
             ...DEFAULT_FEATURE_FLAGS,
+            forcePassThrough: get<boolean>('emergencyDisableOptimization', false),
             pipelineMode: mode,
             enableLspIntelligence: mode !== 'legacy' && get<boolean>('enableLspIntelligence', true),
             enableDeltaContext: mode !== 'legacy' && get<boolean>('enableDeltaContext', true),
@@ -131,6 +135,10 @@ export class FeatureFlagRegistry {
 
     public static setPipelineMode(mode: PipelineMode): void {
         this.currentFlags.pipelineMode = mode;
+    }
+
+    public static setReleasePassThrough(enabled: boolean): void {
+        this.currentFlags.forcePassThrough = enabled;
     }
 
     public static resetToDefault(): void {

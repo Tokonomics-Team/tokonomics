@@ -13,6 +13,7 @@ const rootDir = path.resolve(__dirname, '..');
 const packageJson = JSON.parse(fs.readFileSync(path.join(rootDir, 'package.json'), 'utf8'));
 const artifactPath = path.join(rootDir, `${packageJson.name}-${packageJson.version}.vsix`);
 const deepMode = process.argv.includes('--deep');
+const releaseMode = process.argv.includes('--release');
 
 function buildGates() {
     const gates = [
@@ -63,8 +64,43 @@ function buildGates() {
             args: ['scripts/verify-vsix.js'],
             required: true,
             inheritOutput: true
+        },
+        {
+            id: 'supply-chain',
+            description: 'Generate CycloneDX SBOM and artifact-bound provenance',
+            command: process.execPath,
+            args: ['scripts/generate-supply-chain.js'],
+            required: true,
+            inheritOutput: true
+        },
+        {
+            id: 'extension-host-matrix',
+            description: releaseMode ? 'Install and test exact VSIX on minimum, stable, and Insiders hosts' : 'Install and test exact VSIX on the local stable host',
+            command: process.execPath,
+            args: ['scripts/run-extension-host-matrix.js', releaseMode ? '--all' : '--local'],
+            required: true,
+            inheritOutput: true
+        },
+        {
+            id: 'dependency-audit',
+            description: 'Registry-backed dependency vulnerability audit',
+            command: 'npm',
+            args: ['audit', '--audit-level=moderate'],
+            required: true,
+            inheritOutput: true
         }
     ];
+
+    if (deepMode || releaseMode) {
+        gates.push({
+            id: 'clean-room-audit',
+            description: 'Controlled differential, oracle, mutation, and adversarial audit',
+            command: 'npm',
+            args: ['run', 'audit:clean-room'],
+            required: releaseMode,
+            inheritOutput: true
+        });
+    }
 
     if (deepMode) {
         gates.push({
@@ -104,8 +140,26 @@ async function main() {
         ...sourceMetadata,
         artifact: artifactMetadata.artifact
     };
+    const requiredPassed = gates.filter(gate => gate.required).every(gate => gate.status === 'passed');
+    const decision = !requiredPassed ? 'ARTIFACT_VALIDATION_FAILED'
+        : !metadata.package.metadataConsistent ? 'ARTIFACT_VALIDATION_FAILED_METADATA_MISMATCH'
+        : !metadata.repository.clean ? 'ARTIFACT_VALIDATION_PASSED_DIRTY_SOURCE'
+        : releaseMode ? 'ARTIFACT_CERTIFIED_AWAITING_HUMAN_RELEASE_APPROVAL' : 'LOCAL_ARTIFACT_VALIDATION_PASSED_MATRIX_INCOMPLETE';
     const report = createCertificationReport(metadata, gates, {
-        mode: deepMode ? 'deep' : 'standard'
+        mode: releaseMode ? 'release-matrix' : deepMode ? 'deep' : 'standard',
+        classification: 'artifact-certification',
+        decision,
+        limitations: releaseMode
+            ? [
+                'Passing artifact gates does not authorize publication; release remains a human decision.',
+                'Account-backed provider availability, billing, and upstream model quality are environment-dependent.',
+                'Controlled synthetic benchmarks do not establish production task-success or savings claims.'
+            ]
+            : [
+                'Only the locally installed stable host was executed; minimum and Insiders remain required release gates.',
+                'Account-backed provider availability, billing, and upstream model quality were not certified.',
+                'Controlled synthetic benchmarks do not establish production task-success or savings claims.'
+            ]
     });
     const paths = writeCertificationReport(rootDir, report);
 

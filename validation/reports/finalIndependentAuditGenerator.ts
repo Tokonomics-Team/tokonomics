@@ -52,7 +52,6 @@ export class FinalIndependentAuditGenerator {
         if (!fs.existsSync(resultsDir)) {
             fs.mkdirSync(resultsDir, { recursive: true });
         }
-        const rawResultsPath = path.join(resultsDir, `raw-benchmark-results-${Date.now()}.json`);
         const rawCanonicalPath = path.join(resultsDir, 'raw-benchmark-results.json');
         const rawData = {
             timestamp: new Date().toISOString(),
@@ -64,7 +63,6 @@ export class FinalIndependentAuditGenerator {
             metamorphicResults,
             redTeamAudit
         };
-        fs.writeFileSync(rawResultsPath, JSON.stringify(rawData, null, 2));
         fs.writeFileSync(rawCanonicalPath, JSON.stringify(rawData, null, 2));
 
         // 3. Assemble 31-Section Master JSON Audit Document

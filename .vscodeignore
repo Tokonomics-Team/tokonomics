@@ -9,6 +9,7 @@ scripts/**
 tsconfig.json
 esbuild.js
 .git/**
+.github/**
 .gitignore
 .DS_Store
 .tokenopt/**
@@ -31,3 +32,4 @@ MODERNIZATION_ROADMAP.md
 *.log
 *.vsix
 *.map
+package-lock.json

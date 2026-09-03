@@ -25,6 +25,7 @@ import { VersionedWorkspaceIndex } from './workspace/workspaceIndex';
 import { RequestLedger } from './events/requestLedger';
 import { BoundedPriorityScheduler } from './performance/boundedScheduler';
 import { CpuWorkerBoundary } from './performance/cpuWorkerBoundary';
+import { KillSwitchCapability, ReleaseControl, ReleaseControlSnapshot } from './release/releaseControl';
 
 let statusBarManager: StatusBarManager | undefined;
 
@@ -44,13 +45,28 @@ export async function activate(context: vscode.ExtensionContext) {
 
     const workspaceIsTrusted = () => vscode.workspace.isTrusted !== false;
     const workspaceRoots = () => (vscode.workspace.workspaceFolders || []).map(folder => folder.uri.fsPath);
-    const automaticWorkspaceIndexing = () => vscode.workspace.getConfiguration('tokenOptimizer')
-        .get<'off' | 'selection' | 'referenced' | 'automatic'>('workspaceContextMode', 'selection') === 'automatic';
     const optConf = vscode.workspace.getConfiguration('tokenOptimizer');
-
-    // Initialize pipeline mode from user configuration (default: compiler)
-    const initialPipelineMode = optConf.get<'compiler' | 'hybrid' | 'legacy'>('pipelineMode', 'compiler');
-    FeatureFlagRegistry.setPipelineMode(initialPipelineMode);
+    const evaluateReleaseControl = (): ReleaseControlSnapshot => {
+        const conf = vscode.workspace.getConfiguration('tokenOptimizer');
+        return ReleaseControl.evaluate({
+            channel: conf.get<'stable' | 'canary' | 'disabled'>('releaseChannel', 'stable'),
+            stagedRolloutPercent: conf.get<number>('stagedRolloutPercent', 100),
+            emergencyDisableOptimization: conf.get<boolean>('emergencyDisableOptimization', false),
+            disabledCapabilities: conf.get<string[]>('disabledCapabilities', [])
+        }, vscode.env.machineId || 'anonymous');
+    };
+    let releaseControl = evaluateReleaseControl();
+    const capabilityEnabled = (capability: KillSwitchCapability) => !releaseControl.disabledCapabilities.has(capability);
+    const loadRuntimeFlags = () => {
+        FeatureFlagRegistry.loadFromConfiguration(vscode.workspace.getConfiguration('tokenOptimizer'));
+        releaseControl = evaluateReleaseControl();
+        FeatureFlagRegistry.setReleasePassThrough(releaseControl.forcePassThrough);
+        if (!capabilityEnabled('localInference')) FeatureFlagRegistry.setFlag('enableLocalSlm', false);
+    };
+    const automaticWorkspaceIndexing = () => capabilityEnabled('workspaceIndex')
+        && vscode.workspace.getConfiguration('tokenOptimizer')
+            .get<'off' | 'selection' | 'referenced' | 'automatic'>('workspaceContextMode', 'selection') === 'automatic';
+    loadRuntimeFlags();
 
     // 1. Construct lightweight services. Parser/index I/O stays lazy and trust-gated.
     const workScheduler = new BoundedPriorityScheduler(2, 128, 8);
@@ -141,6 +157,7 @@ export async function activate(context: vscode.ExtensionContext) {
     // Dynamic configuration listener
     context.subscriptions.push(
         vscode.workspace.onDidChangeConfiguration(e => {
+            if (e.affectsConfiguration('tokenOptimizer')) loadRuntimeFlags();
             if (e.affectsConfiguration('tokenOptimizer.ramBudgetMB')) {
                 workspaceIndex.updateBudgetMB(vscode.workspace.getConfiguration('tokenOptimizer').get<number>('ramBudgetMB', 64));
             }
@@ -151,11 +168,13 @@ export async function activate(context: vscode.ExtensionContext) {
                     workspaceIndex.setTrusted(workspaceIsTrusted());
                 }
             }
-            if (e.affectsConfiguration('tokenOptimizer.pipelineMode')) {
-                const conf = vscode.workspace.getConfiguration('tokenOptimizer');
-                const newMode = conf.get<'compiler' | 'hybrid' | 'legacy'>('pipelineMode', 'compiler');
-                FeatureFlagRegistry.setPipelineMode(newMode);
-                console.log(`[Tokonomics] Pipeline mode updated to: ${newMode}`);
+            if (e.affectsConfiguration('tokenOptimizer.disabledCapabilities') || e.affectsConfiguration('tokenOptimizer.releaseChannel')
+                || e.affectsConfiguration('tokenOptimizer.emergencyDisableOptimization') || e.affectsConfiguration('tokenOptimizer.stagedRolloutPercent')) {
+                if (automaticWorkspaceIndexing()) void workspaceIndex.rebuild();
+                else {
+                    workspaceIndex.setTrusted(false);
+                    workspaceIndex.setTrusted(workspaceIsTrusted());
+                }
             }
         })
     );
@@ -206,6 +225,7 @@ export async function activate(context: vscode.ExtensionContext) {
     };
 
     // 4. Register Language Model Provider Proxy
+    let languageModelProviderRegistered = false;
     try {
         const provider = new TokenOptimizerLanguageModelProvider(
             requestCompiler,
@@ -220,6 +240,7 @@ export async function activate(context: vscode.ExtensionContext) {
                 provider
             );
             context.subscriptions.push(providerDisposable);
+            languageModelProviderRegistered = true;
             console.log('[Tokonomics] Registered vscode.lm chat provider proxy with vendor: tokonomics');
         }
     } catch (err) {
@@ -227,8 +248,9 @@ export async function activate(context: vscode.ExtensionContext) {
     }
 
     // 5. Register VS Code Native Chat Participant (@tokonomics)
+    let chatParticipantRegistered = false;
     try {
-        registerChatParticipant(
+        chatParticipantRegistered = registerChatParticipant(
             context,
             metricsTracker,
             astEngine,
@@ -238,7 +260,8 @@ export async function activate(context: vscode.ExtensionContext) {
             requestCompiler,
             workspaceIndex,
             cpuWorkerBoundary,
-            inferenceScheduler
+            inferenceScheduler,
+            capabilityEnabled
         );
     } catch (err) {
         console.warn('[Tokonomics] Chat participant registration note:', err);
@@ -400,6 +423,18 @@ export async function activate(context: vscode.ExtensionContext) {
     );
 
     logger.info('Lifecycle', 'Tokonomics extension activation complete.');
+    return Object.freeze({
+        schemaVersion: 1,
+        getCertificationDiagnostics: () => Object.freeze({
+            workspaceTrusted: workspaceIsTrusted(),
+            workspaceRootCount: workspaceRoots().length,
+            languageModelProviderRegistered,
+            chatParticipantRegistered,
+            releaseChannel: releaseControl.channel,
+            releaseControlReason: releaseControl.reason,
+            forcePassThrough: releaseControl.forcePassThrough
+        })
+    });
 }
 
 export function deactivate() {
