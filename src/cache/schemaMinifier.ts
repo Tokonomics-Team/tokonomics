@@ -32,6 +32,7 @@ const META_TOOL_THRESHOLD = 15;
 
 export class ToolSchemaMinifier {
     private static toolRegistry: Map<string, any> = new Map();
+    private static readonly MAX_REGISTERED_TOOLS = 256;
 
     /**
      * Registers tools for deferred on-demand resolution.
@@ -40,10 +41,21 @@ export class ToolSchemaMinifier {
         for (const tool of tools) {
             const name = tool.name || tool.function?.name;
             if (name) {
+                try { if (Buffer.byteLength(JSON.stringify(tool)) > 256 * 1024) continue; } catch { continue; }
+                // Refresh insertion order so frequently used definitions survive eviction.
+                this.toolRegistry.delete(name);
                 this.toolRegistry.set(name, tool);
+                while (this.toolRegistry.size > this.MAX_REGISTERED_TOOLS) {
+                    const oldest = this.toolRegistry.keys().next().value;
+                    if (oldest === undefined) break;
+                    this.toolRegistry.delete(oldest);
+                }
             }
         }
     }
+
+    public static getRegistrySize(): number { return this.toolRegistry.size; }
+    public static clearRegistry(): void { this.toolRegistry.clear(); }
 
     /**
      * Resolves a single tool schema on-demand by name.

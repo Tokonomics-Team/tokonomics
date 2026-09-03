@@ -52,6 +52,7 @@ export class DashboardWebviewPanel {
     private disposables: vscode.Disposable[] = [];
     private cachedWorkspaceScan: WorkspaceScanResult | null = null;
     private lastActiveDocUri: vscode.Uri | undefined;
+    private cachedDiagnosis?: { key: string; value: ActiveFileDiagnosis };
 
     private constructor(
         panel: vscode.WebviewPanel, 
@@ -151,7 +152,7 @@ export class DashboardWebviewPanel {
                     `⚡ Optimized "${diagnosis.fileName}": Reduced ${origTokens.toLocaleString()} ➔ ${pruneResult.prunedTokenCount.toLocaleString()} tokens (${pruneResult.reductionPercentage}% saved in ${pruneResult.durationMs}ms)! Pruned skeleton copied to clipboard.`
                 );
             } else if (message.command === 'scanWorkspace') {
-                this.cachedWorkspaceScan = this.performWorkspaceScan();
+                this.cachedWorkspaceScan = await this.performWorkspaceScan();
                 this.updateContent();
                 vscode.window.showInformationMessage(`Workspace scan complete: ${this.cachedWorkspaceScan.totalFiles} files audited.`);
             }
@@ -187,9 +188,6 @@ export class DashboardWebviewPanel {
 
     public updateContent() {
         const activeFileDiagnosis = this.diagnoseActiveFile();
-        if (!this.cachedWorkspaceScan) {
-            this.cachedWorkspaceScan = this.performWorkspaceScan();
-        }
 
         const summary = LiveMetricsAggregator.getInstance().getAggregateSummary('session');
         const recentEvents = LiveMetricsAggregator.getInstance().getRecentEvents(50);
@@ -208,6 +206,8 @@ export class DashboardWebviewPanel {
         let lang = doc?.languageId || 'typescript';
         let lineCount = doc?.lineCount || 0;
         let filePath = doc?.fileName || '';
+        const documentKey = doc ? `${doc.uri.toString()}:${doc.version}` : undefined;
+        if (documentKey && this.cachedDiagnosis?.key === documentKey) return this.cachedDiagnosis.value;
 
         if ((!text || text.trim().length === 0) && this.lastActiveDocUri && fs.existsSync(this.lastActiveDocUri.fsPath)) {
             try {
@@ -228,7 +228,7 @@ export class DashboardWebviewPanel {
         const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || '';
         const relPath = workspaceRoot && filePath ? path.relative(workspaceRoot, filePath).replace(/\\/g, '/') : path.basename(filePath || 'source.ts');
 
-        return {
+        const diagnosis = {
             fileName: path.basename(filePath || 'source.ts'),
             relPath,
             fullPath: filePath,
@@ -239,6 +239,8 @@ export class DashboardWebviewPanel {
             reductionPercentage: pruneResult.reductionPercentage,
             durationMs: pruneResult.durationMs
         };
+        if (documentKey) this.cachedDiagnosis = { key: documentKey, value: diagnosis };
+        return diagnosis;
     }
 
     private getNonce(): string {
@@ -250,7 +252,7 @@ export class DashboardWebviewPanel {
         return text;
     }
 
-    private performWorkspaceScan(): WorkspaceScanResult {
+    private async performWorkspaceScan(): Promise<WorkspaceScanResult> {
         const startTime = Date.now();
         const root = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
         if (!root || !fs.existsSync(root)) {
@@ -265,26 +267,27 @@ export class DashboardWebviewPanel {
         let totalRawTokens = 0;
         let totalPrunedTokens = 0;
 
-        const scanDir = (dir: string) => {
-            if (totalFiles >= 50) return; // Bounded to 50 files to ensure zero UI freezing
+        const directories = [root];
+        while (directories.length > 0 && totalFiles < 50) {
+            const dir = directories.pop()!;
             try {
-                const entries = fs.readdirSync(dir, { withFileTypes: true });
+                const entries = await fs.promises.readdir(dir, { withFileTypes: true });
                 for (const entry of entries) {
                     if (totalFiles >= 50) break;
                     const full = path.join(dir, entry.name);
                     const rel = path.relative(root, full).replace(/\\/g, '/');
                     if (entry.isDirectory()) {
                         if (!ignoreFilter.isIgnored(rel + '/')) {
-                            scanDir(full);
+                            directories.push(full);
                         }
                     } else if (entry.isFile()) {
                         if (!ignoreFilter.isIgnored(rel)) {
                             const ext = path.extname(entry.name).toLowerCase();
                             if (allowedExts.includes(ext)) {
                                 try {
-                                    const stat = fs.statSync(full);
+                                    const stat = await fs.promises.stat(full);
                                     if (stat.size > 500 * 1024) continue; // Skip files > 500KB for UI responsiveness
-                                    const content = fs.readFileSync(full, 'utf8');
+                                    const content = await fs.promises.readFile(full, 'utf8');
                                     const count = TokenCounter.countTokens(content);
                                     totalRawTokens += count;
                                     const pruned = engine.pruneCodeContext(content, ext.replace('.', ''));
@@ -296,9 +299,8 @@ export class DashboardWebviewPanel {
                     }
                 }
             } catch {}
-        };
-
-        scanDir(root);
+            await new Promise<void>(resolve => setTimeout(resolve, 0));
+        }
         const saved = totalRawTokens - totalPrunedTokens;
         const pct = totalRawTokens > 0 ? Math.round((saved / totalRawTokens) * 100) : 0;
         return {
@@ -333,7 +335,7 @@ export class DashboardWebviewPanel {
         summary: AggregateMetricsSummary,
         recentEvents: PromptOptimizationEvent[],
         activeFile: ActiveFileDiagnosis | null,
-        workspaceScan: WorkspaceScanResult
+        workspaceScan: WorkspaceScanResult | null
     ): string {
         const latestEvent = recentEvents[recentEvents.length - 1];
         const nonce = this.getNonce();

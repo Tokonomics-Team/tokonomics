@@ -6,6 +6,8 @@ import { TokenCounter } from '../engine/tokenizer';
 import { TokenIgnoreFilter } from '../ignore/tokenIgnore';
 import { RepoMapResult } from '../repo/repoMap';
 import { CanonicalWorkspaceFile, WorkspaceIdentity, WorkspaceRootIdentity } from './workspaceIdentity';
+import { BoundedPriorityScheduler, WorkCancelledError, WorkContext, WorkQueueFullError, WorkSupersededError } from '../performance/boundedScheduler';
+import { CpuWorkerBoundary } from '../performance/cpuWorkerBoundary';
 
 export interface WorkspaceIndexSymbol {
     readonly name: string;
@@ -52,6 +54,17 @@ export interface WorkspaceIndexOptions {
     maxFileBytes?: number;
     debounceMs?: number;
     trusted?: boolean;
+    scheduler?: BoundedPriorityScheduler;
+    prepareParser?: () => Promise<void>;
+    maxCandidateFiles?: number;
+    maxPendingUpdates?: number;
+    workerBoundary?: CpuWorkerBoundary;
+}
+
+interface PendingWorkspaceUpdate {
+    identified: CanonicalWorkspaceFile;
+    sequence: number;
+    buffer?: { text: string; version: number };
 }
 
 class ReadonlyMapView<K, V> implements ReadonlyMap<K, V> {
@@ -84,18 +97,29 @@ class ReadonlySetView<T> implements ReadonlySet<T> {
 }
 
 const SOURCE_EXTENSIONS = new Set(['.ts', '.js', '.tsx', '.jsx', '.py', '.go', '.rs', '.java', '.cs', '.cpp', '.h', '.php', '.sql']);
+let workspaceIndexInstance = 0;
 
 export class VersionedWorkspaceIndex {
+    private readonly schedulerKey = `workspace:full-index:${++workspaceIndexInstance}`;
     private identity: WorkspaceIdentity;
     private rootPaths: string[];
     private filters = new Map<string, TokenIgnoreFilter>();
     private snapshot: WorkspaceSnapshot;
     private sequences = new Map<string, number>();
-    private pending = new Map<string, ReturnType<typeof setTimeout>>();
+    private pendingUpdates = new Map<string, PendingWorkspaceUpdate>();
+    private pendingTimer?: ReturnType<typeof setTimeout>;
+    private updateBatch?: Promise<void>;
+    private rebuildAfterStorm = false;
+    private initializing?: { epoch: number; promise: Promise<WorkspaceSnapshot> };
     private epoch = 0;
     private budgetBytes: number;
     private readonly maxFileBytes: number;
     private readonly debounceMs: number;
+    private readonly scheduler?: BoundedPriorityScheduler;
+    private readonly prepareParser?: () => Promise<void>;
+    private readonly maxCandidateFiles: number;
+    private readonly maxPendingUpdates: number;
+    private readonly workerBoundary?: CpuWorkerBoundary;
     private trusted: boolean;
 
     constructor(
@@ -109,8 +133,12 @@ export class VersionedWorkspaceIndex {
         this.budgetBytes = Math.max(1, options.budgetMB ?? 64) * 1024 * 1024;
         this.maxFileBytes = options.maxFileBytes ?? 300 * 1024;
         this.debounceMs = options.debounceMs ?? 75;
-        if (this.trusted) this.reloadFilters();
-        this.snapshot = this.emptySnapshot(0);
+        this.scheduler = options.scheduler;
+        this.prepareParser = options.prepareParser;
+        this.maxCandidateFiles = Math.max(100, options.maxCandidateFiles ?? 50_000);
+        this.maxPendingUpdates = Math.max(16, options.maxPendingUpdates ?? 128);
+        this.workerBoundary = options.workerBoundary;
+        this.snapshot = this.emptySnapshot(0, this.trusted ? 'uninitialized' : 'untrusted');
     }
 
     public captureSnapshot(): WorkspaceSnapshot { return this.snapshot; }
@@ -125,29 +153,27 @@ export class VersionedWorkspaceIndex {
         if (trusted) this.reloadFilters();
         if (!trusted) {
             this.epoch++;
-            for (const timer of this.pending.values()) clearTimeout(timer);
-            this.pending.clear();
+            this.clearPendingUpdates();
             this.sequences.clear();
-            this.snapshot = this.emptySnapshot(this.snapshot.generation + 1);
+            this.snapshot = this.emptySnapshot(this.snapshot.generation + 1, 'untrusted');
         }
     }
 
     public async rebuild(): Promise<WorkspaceSnapshot> {
         this.epoch++;
         if (this.trusted) this.reloadFilters();
-        this.snapshot = this.emptySnapshot(this.snapshot.generation + 1);
+        this.snapshot = this.emptySnapshot(this.snapshot.generation + 1, this.ignoreVersion());
         return this.initialize();
     }
 
     public async replaceRoots(roots: readonly string[], build = true): Promise<WorkspaceSnapshot> {
         this.epoch++;
-        for (const timer of this.pending.values()) clearTimeout(timer);
-        this.pending.clear();
+        this.clearPendingUpdates();
         this.rootPaths = [...roots];
         this.identity = new WorkspaceIdentity(roots, this.trusted);
         this.sequences.clear();
         if (this.trusted) this.reloadFilters(); else this.filters.clear();
-        this.snapshot = this.emptySnapshot(this.snapshot.generation + 1);
+        this.snapshot = this.emptySnapshot(this.snapshot.generation + 1, this.trusted ? 'uninitialized' : 'untrusted');
         return build ? this.initialize() : this.snapshot;
     }
 
@@ -168,24 +194,55 @@ export class VersionedWorkspaceIndex {
         };
     }
 
-    public async initialize(): Promise<WorkspaceSnapshot> {
+    public getOperationalStats(): { pendingUpdates: number; maxPendingUpdates: number; initializing: boolean; rebuildAfterStorm: boolean } {
+        return {
+            pendingUpdates: this.pendingUpdates.size,
+            maxPendingUpdates: this.maxPendingUpdates,
+            initializing: !!this.initializing,
+            rebuildAfterStorm: this.rebuildAfterStorm
+        };
+    }
+
+    public async initialize(priority: 'index' | 'warming' = 'index'): Promise<WorkspaceSnapshot> {
         if (!this.trusted) return this.snapshot;
         const epoch = this.epoch;
+        if (this.initializing?.epoch === epoch) return this.initializing.promise;
+        const owner = this;
+        const cancellation = { get isCancellationRequested() { return epoch !== owner.epoch || !owner.trusted; } };
+        const run = (context?: WorkContext) => this.buildInitialSnapshot(epoch, context);
+        const promise = this.scheduler
+            ? this.scheduler.schedule({ key: this.schedulerKey, priority, cancellation }, context => run(context))
+            : run();
+        const observed = promise.catch(error => {
+            if (error instanceof WorkCancelledError || error instanceof WorkSupersededError) return this.snapshot;
+            throw error;
+        }).finally(() => {
+            if (this.initializing?.promise === observed) this.initializing = undefined;
+        });
+        this.initializing = { epoch, promise: observed };
+        return observed;
+    }
+
+    private async buildInitialSnapshot(epoch: number, context?: WorkContext): Promise<WorkspaceSnapshot> {
+        if (this.prepareParser) await this.prepareParser();
+        context?.checkpoint();
         this.reloadFilters();
-        const candidates = this.collectCandidates().sort((a, b) => this.priority(a) - this.priority(b) || a.localeCompare(b));
+        const scanSequences = new Map(this.sequences);
+        const candidates = (await this.collectCandidates(context)).sort((a, b) => this.priority(a) - this.priority(b) || a.localeCompare(b));
         const records: WorkspaceFileRecord[] = [];
         let estimated = this.baseMemoryBytes();
-        for (const file of candidates) {
+        for (let index = 0; index < candidates.length; index++) {
+            const file = candidates[index];
+            if (index % 32 === 0) context ? await context.yield() : await new Promise<void>(resolve => setTimeout(resolve, 0));
             const identified = this.identity.identify(file);
             if (!identified) continue;
             // A scan observes the current sequence; it never supersedes an editor/file event.
-            const sequence = this.sequences.get(identified.key) || 0;
+            const sequence = scanSequences.get(identified.key) || 0;
             const record = await this.readRecord(identified, sequence);
             if (!record || (this.sequences.get(identified.key) || 0) !== sequence) continue;
             if (estimated + record.memoryBytes > this.budgetBytes) continue;
             estimated += record.memoryBytes;
             records.push(record);
-            await new Promise<void>(resolve => setTimeout(resolve, 0));
         }
         if (epoch !== this.epoch || !this.trusted) return this.snapshot;
         const files = new Map(this.snapshot.files);
@@ -201,12 +258,12 @@ export class VersionedWorkspaceIndex {
         const identified = this.identity.identify(filePath);
         if (!identified) return;
         const sequence = this.nextSequence(identified.key);
-        const existing = this.pending.get(identified.key);
-        if (existing) clearTimeout(existing);
-        this.pending.set(identified.key, setTimeout(() => {
-            this.pending.delete(identified.key);
-            void this.upsertIdentified(identified, sequence, buffer);
-        }, this.debounceMs));
+        if (!this.pendingUpdates.has(identified.key) && this.pendingUpdates.size >= this.maxPendingUpdates) {
+            this.rebuildAfterStorm = true;
+            return;
+        }
+        this.pendingUpdates.set(identified.key, { identified, sequence, buffer });
+        this.schedulePendingFlush();
     }
 
     public async upsert(filePath: string, buffer?: { text: string; version: number }): Promise<boolean> {
@@ -222,9 +279,7 @@ export class VersionedWorkspaceIndex {
         const identified = this.identity.identify(filePath);
         if (!identified) return false;
         this.nextSequence(identified.key);
-        const timer = this.pending.get(identified.key);
-        if (timer) clearTimeout(timer);
-        this.pending.delete(identified.key);
+        this.pendingUpdates.delete(identified.key);
         if (!this.snapshot.files.has(identified.key)) return false;
         const files = new Map(this.snapshot.files);
         files.delete(identified.key);
@@ -317,9 +372,60 @@ export class VersionedWorkspaceIndex {
         };
     }
 
+    public async generateRepoMapAsync(
+        activeFiles: readonly string[] = [],
+        tokenBudget = 1024,
+        snapshot: WorkspaceSnapshot = this.snapshot,
+        cancellation?: { readonly isCancellationRequested: boolean }
+    ): Promise<RepoMapResult> {
+        if (!this.workerBoundary || !this.scheduler) return this.generateRepoMap(activeFiles, tokenBudget, snapshot);
+        const start = performance.now();
+        try {
+            const activeKeys = activeFiles.map(file => this.identity.identify(file)?.key).filter((key): key is string => !!key);
+            const ranked = await this.scheduler.schedule({ priority: 'foreground', cancellation }, async context => {
+                context.checkpoint();
+                return this.workerBoundary!.rankWorkspace({
+                    files: [...snapshot.files.values()].map(file => ({
+                        key: file.key, relativePath: file.relativePath, references: file.references,
+                        symbols: file.symbols.map(symbol => ({ name: symbol.name, kind: symbol.kind, file: symbol.file, line: symbol.line, signature: symbol.signature }))
+                    })),
+                    activeKeys
+                }, cancellation);
+            });
+            const lines: string[] = [];
+            let tokens = 0;
+            for (const symbol of ranked) {
+                const line = `${symbol.file}:${symbol.line} ${symbol.kind} ${symbol.signature}`;
+                const next = TokenCounter.countTokens(line + '\n');
+                if (tokens + next > tokenBudget) break;
+                lines.push(line);
+                tokens += next;
+            }
+            return { mapText: lines.join('\n') || '// No source files indexed in workspace.', tokenCount: tokens || 8,
+                totalFilesIndexed: snapshot.files.size, rankedSymbolsCount: lines.length, durationMs: Math.round(performance.now() - start) };
+        } catch (error) {
+            if (error instanceof WorkCancelledError) throw error;
+            return this.generateFallbackMap(tokenBudget, snapshot, start);
+        }
+    }
+
+    private generateFallbackMap(tokenBudget: number, snapshot: WorkspaceSnapshot, start: number): RepoMapResult {
+        const lines: string[] = [];
+        let tokens = 0;
+        for (const symbol of snapshot.symbols) {
+            const line = `${symbol.file}:${symbol.line} ${symbol.kind} ${symbol.signature}`;
+            const next = TokenCounter.countTokens(line + '\n');
+            if (tokens + next > tokenBudget) break;
+            lines.push(line);
+            tokens += next;
+        }
+        return { mapText: lines.join('\n') || '// Repository ranking unavailable; no indexed symbols.', tokenCount: tokens || 8,
+            totalFilesIndexed: snapshot.files.size, rankedSymbolsCount: lines.length, durationMs: Math.round(performance.now() - start) };
+    }
+
     public dispose(): void {
-        for (const timer of this.pending.values()) clearTimeout(timer);
-        this.pending.clear();
+        this.epoch++;
+        this.clearPendingUpdates();
     }
 
     private async upsertIdentified(identified: CanonicalWorkspaceFile, sequence: number, buffer?: { text: string; version: number }): Promise<boolean> {
@@ -373,9 +479,9 @@ export class VersionedWorkspaceIndex {
             roots: this.identity.roots, ignorePolicyVersion: this.ignoreVersion(), files: new ReadonlyMapView(files), symbols, memoryBytes });
     }
 
-    private emptySnapshot(generation: number): WorkspaceSnapshot {
+    private emptySnapshot(generation: number, ignorePolicyVersion: string = this.trusted ? 'uninitialized' : 'untrusted'): WorkspaceSnapshot {
         return Object.freeze({ generation, createdAt: Date.now(), roots: this.identity.roots,
-            ignorePolicyVersion: this.ignoreVersion(), files: new ReadonlyMapView(new Map()), symbols: Object.freeze([]), memoryBytes: this.baseMemoryBytes() });
+            ignorePolicyVersion, files: new ReadonlyMapView(new Map()), symbols: Object.freeze([]), memoryBytes: this.baseMemoryBytes() });
     }
 
     private reloadFilters(): void {
@@ -394,20 +500,75 @@ export class VersionedWorkspaceIndex {
         return hash.digest('hex').slice(0, 16);
     }
 
-    private collectCandidates(): string[] {
+    private async collectCandidates(context?: WorkContext): Promise<string[]> {
         const results: string[] = [];
-        const walk = (dir: string, filter: TokenIgnoreFilter) => {
+        const pendingDirectories = this.identity.roots.map(root => ({ path: root.path, filter: this.filters.get(root.id)! }));
+        let inspected = 0;
+        while (pendingDirectories.length > 0 && results.length < this.maxCandidateFiles) {
+            context?.checkpoint();
+            const current = pendingDirectories.pop()!;
             let entries: fs.Dirent[];
-            try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+            try { entries = await fs.promises.readdir(current.path, { withFileTypes: true }); } catch { continue; }
             for (const entry of entries) {
-                const full = path.join(dir, entry.name);
-                if (filter.isIgnored(full)) continue;
-                if (entry.isDirectory()) walk(full, filter);
+                const full = path.join(current.path, entry.name);
+                if (current.filter.isIgnored(full)) continue;
+                if (entry.isDirectory()) pendingDirectories.push({ path: full, filter: current.filter });
                 else if (entry.isFile() && SOURCE_EXTENSIONS.has(path.extname(entry.name).toLowerCase())) results.push(full);
+                if (++inspected % 256 === 0) {
+                    if (context) await context.yield(); else await new Promise<void>(resolve => setTimeout(resolve, 0));
+                }
+                if (results.length >= this.maxCandidateFiles) break;
+            }
+        }
+        return results;
+    }
+
+    private schedulePendingFlush(): void {
+        if (this.pendingTimer) return;
+        this.pendingTimer = setTimeout(() => {
+            this.pendingTimer = undefined;
+            void this.flushPendingUpdates();
+        }, this.debounceMs);
+    }
+
+    private async flushPendingUpdates(): Promise<void> {
+        if (this.updateBatch) {
+            await this.updateBatch.catch(() => undefined);
+            if (this.pendingUpdates.size > 0 || this.rebuildAfterStorm) this.schedulePendingFlush();
+            return;
+        }
+        const batch = [...this.pendingUpdates.values()];
+        this.pendingUpdates.clear();
+        const epoch = this.epoch;
+        const run = async (context?: WorkContext) => {
+            for (let index = 0; index < batch.length; index++) {
+                if (epoch !== this.epoch || !this.trusted) throw new WorkCancelledError();
+                await this.upsertIdentified(batch[index].identified, batch[index].sequence, batch[index].buffer);
+                if (index % 16 === 15) context ? await context.yield() : await new Promise<void>(resolve => setTimeout(resolve, 0));
             }
         };
-        for (const root of this.identity.roots) walk(root.path, this.filters.get(root.id)!);
-        return results;
+        const owner = this;
+        const scheduled = this.scheduler
+            ? this.scheduler.schedule({ priority: 'index', cancellation: { get isCancellationRequested() { return epoch !== owner.epoch || !owner.trusted; } } }, context => run(context))
+            : run();
+        this.updateBatch = scheduled.catch(error => {
+            if (!(error instanceof WorkCancelledError || error instanceof WorkSupersededError)) this.rebuildAfterStorm = true;
+        }).finally(() => { this.updateBatch = undefined; });
+        await this.updateBatch;
+        if (this.rebuildAfterStorm) {
+            this.rebuildAfterStorm = false;
+            try { await this.initialize(); } catch (error) {
+                if (!(error instanceof WorkQueueFullError)) console.warn('[WorkspaceIndex] Recovery rebuild failed:', error);
+            }
+        }
+        if (this.pendingUpdates.size > 0) this.schedulePendingFlush();
+    }
+
+    private clearPendingUpdates(): void {
+        if (this.pendingTimer) clearTimeout(this.pendingTimer);
+        this.pendingTimer = undefined;
+        this.pendingUpdates.clear();
+        this.rebuildAfterStorm = false;
     }
 
     private extractSymbols(content: string, file: string): WorkspaceIndexSymbol[] {

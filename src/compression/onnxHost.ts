@@ -7,6 +7,7 @@ export interface OnnxHostConfig {
     maxMemoryMB: number; // Default 100MB
     executionProvider: 'wasm' | 'webgpu' | 'cpu';
     numThreads: number;
+    maxSessions: number;
 }
 
 export class OnnxMemoryBoundedHost {
@@ -18,7 +19,8 @@ export class OnnxMemoryBoundedHost {
         this.config = {
             maxMemoryMB: config?.maxMemoryMB ?? 100,
             executionProvider: config?.executionProvider ?? 'wasm',
-            numThreads: config?.numThreads ?? 1
+            numThreads: config?.numThreads ?? 1,
+            maxSessions: config?.maxSessions ?? 4
         };
     }
 
@@ -34,22 +36,28 @@ export class OnnxMemoryBoundedHost {
      * Registers a loaded model session and tracks memory consumption
      */
     public registerSession(modelId: string, estimatedBytes: number, sessionObj?: any): boolean {
+        const existing = this.loadedSessions.get(modelId);
+        const existingBytes = typeof existing?.bytes === 'number' ? existing.bytes : 0;
+        if (!existing && this.loadedSessions.size >= this.config.maxSessions) return false;
+        if (existing) this.allocatedBytes = Math.max(0, this.allocatedBytes - existingBytes);
         if (!this.canAllocateModel(estimatedBytes)) {
+            this.allocatedBytes += existingBytes;
             return false;
         }
 
         this.allocatedBytes += estimatedBytes;
-        this.loadedSessions.set(modelId, sessionObj || { id: modelId, bytes: estimatedBytes });
+        this.loadedSessions.set(modelId, { session: sessionObj, id: modelId, bytes: estimatedBytes });
         return true;
     }
 
     /**
      * Unloads a model session to reclaim memory buffer
      */
-    public unloadSession(modelId: string, estimatedBytes: number): void {
-        if (this.loadedSessions.has(modelId)) {
+    public unloadSession(modelId: string, estimatedBytes?: number): void {
+        const existing = this.loadedSessions.get(modelId);
+        if (existing) {
             this.loadedSessions.delete(modelId);
-            this.allocatedBytes = Math.max(0, this.allocatedBytes - estimatedBytes);
+            this.allocatedBytes = Math.max(0, this.allocatedBytes - (typeof existing.bytes === 'number' ? existing.bytes : estimatedBytes || 0));
         }
     }
 

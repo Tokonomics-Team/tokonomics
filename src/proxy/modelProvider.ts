@@ -17,6 +17,7 @@ import { CanonicalRequestCompiler } from '../protocol/canonicalCompiler';
 import { ProtocolError, VsCodeProtocolAdapter } from '../protocol/canonicalProtocol';
 import { prepareCanonicalEgress } from '../protocol/canonicalEgress';
 import { WorkspaceSnapshot } from '../workspace/workspaceIndex';
+import { BoundedPriorityScheduler, WorkQueueFullError } from '../performance/boundedScheduler';
 
 export class TokenOptimizerLanguageModelProvider {
     private readonly protocol = new VsCodeProtocolAdapter();
@@ -24,7 +25,8 @@ export class TokenOptimizerLanguageModelProvider {
     constructor(
         private compiler: CanonicalRequestCompiler,
         private onOptimizationComplete: () => void,
-        private captureWorkspaceSnapshot?: () => WorkspaceSnapshot
+        private captureWorkspaceSnapshot?: () => WorkspaceSnapshot,
+        private inferenceScheduler?: BoundedPriorityScheduler
     ) {}
 
     public async provideTokenCount(
@@ -92,26 +94,27 @@ export class TokenOptimizerLanguageModelProvider {
             isCancellationRequested: token.isCancellationRequested
         });
         const upstreamMessages = this.protocol.toUpstreamMessages(prepared.messages);
-        const response = await targetModel.sendRequest(upstreamMessages, prepared.options as any, token);
-
-        const responseStream: AsyncIterable<unknown> = (response as any).stream || this.textFallback(response.text);
-        for await (const fragment of responseStream) {
-            if (token.isCancellationRequested) {
-                this.compiler.fail(compiled, 'CANCELLED');
-                return;
+        const performInference = async (checkpoint: () => void) => {
+            checkpoint();
+            const response = await targetModel.sendRequest(upstreamMessages, prepared.options as any, token);
+            const responseStream: AsyncIterable<unknown> = (response as any).stream || this.textFallback(response.text);
+            for await (const fragment of responseStream) {
+                checkpoint();
+                if (fragment instanceof vscode.LanguageModelTextPart) {
+                    progress.report(fragment);
+                } else if (fragment instanceof vscode.LanguageModelToolCallPart || fragment instanceof vscode.LanguageModelToolResultPart || fragment instanceof vscode.LanguageModelDataPart) {
+                    progress.report(fragment);
+                } else {
+                    throw new ProtocolError('UNSUPPORTED_OUTPUT_PART', 'The upstream model returned an unknown response part; it was not silently dropped.');
+                }
             }
-            if (fragment instanceof vscode.LanguageModelTextPart) {
-                progress.report(fragment);
-            } else if (fragment instanceof vscode.LanguageModelToolCallPart || fragment instanceof vscode.LanguageModelToolResultPart || fragment instanceof vscode.LanguageModelDataPart) {
-                progress.report(fragment);
-            } else {
-                throw new ProtocolError('UNSUPPORTED_OUTPUT_PART', 'The upstream model returned an unknown response part; it was not silently dropped.');
-            }
-        }
-        if (token.isCancellationRequested) {
-            this.compiler.fail(compiled, 'CANCELLED');
-            return;
-        }
+            checkpoint();
+            return response;
+        };
+        const checkpoint = () => { if (token.isCancellationRequested) throw new Error('CANCELLED'); };
+        const response = this.inferenceScheduler
+            ? await this.inferenceScheduler.schedule({ key: `provider:${compiled.requestId}`, priority: 'foreground', cancellation: token }, context => performInference(context.checkpoint))
+            : await performInference(checkpoint);
 
         this.compiler.commit(compiled);
         this.onOptimizationComplete();
@@ -160,7 +163,9 @@ export class TokenOptimizerLanguageModelProvider {
             this.emitCostUnavailable(stats.event, compiled.requestId, providerId, modelId);
         }
         } catch (error) {
-            this.compiler.fail(compiled, token.isCancellationRequested ? 'CANCELLED' : error instanceof ProtocolError ? error.code : 'UPSTREAM_PROVIDER_ERROR');
+            this.compiler.fail(compiled, token.isCancellationRequested ? 'CANCELLED' : error instanceof ProtocolError ? error.code
+                : error instanceof WorkQueueFullError ? 'PROVIDER_QUEUE_FULL' : 'UPSTREAM_PROVIDER_ERROR');
+            if (token.isCancellationRequested) return;
             throw error;
         }
     }

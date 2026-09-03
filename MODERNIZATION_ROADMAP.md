@@ -486,8 +486,7 @@ The normative definitions and verification matrix are documented in
 reconciliation, immutable append semantics, local-midnight and rolling-window expiry,
 unavailable values, cache/cost truth, privacy, and failure accounting.
 
-Phase 8 remains blocked until the repository owner reviews this implementation and
-explicitly approves the next phase.
+Phase 8 was explicitly approved by the repository owner and is implemented below.
 
 ## Phase 8 - Performance, concurrency, and resilience
 
@@ -513,6 +512,26 @@ Protect the extension host and maintain predictable behavior under load and fail
 - Rapid edits converge to the newest state.
 - Activation, compilation, update, memory, event-loop, and cancellation targets pass on
   documented hardware tiers.
+
+### Implementation status (2026-09-03)
+
+Implemented locally. Activation is registration-only with lazy trust-gated parser and
+index preparation. Bounded priority schedulers now govern compilation/workspace work
+and complete provider inference streams. Workspace scans use asynchronous discovery,
+coalesced epochs, sequence-pinned publication, event-loop yielding, one bounded update
+buffer, and recovery rebuilds after storms. Repository ranking and large inline-image
+decoding run in resource-limited cancellable workers. Image file inspection is async,
+bounded, and workspace-contained. Tool, schema, model, diff, ONNX, project-memory, and
+cost-reconciliation state now have explicit ceilings or expiry.
+
+Fail-closed boundaries preserve canonical input on parser/compiler/retrieval/tokenizer
+or worker failure, and provider saturation/errors become terminal coded lifecycle
+records. The contract, fallback matrix, queue policy, hardware tiers, and measured
+100/1,000/10,000-file baseline are recorded in
+`PHASE_8_PERFORMANCE_CONCURRENCY_CONTRACT.md`.
+
+Phase 9 remains blocked until the repository owner reviews this implementation and
+explicitly approves the next phase.
 
 ## Phase 9 - Integration certification and release hardening
 

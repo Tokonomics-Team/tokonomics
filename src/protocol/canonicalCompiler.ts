@@ -6,6 +6,7 @@ import { WorkspaceSnapshot } from '../workspace/workspaceIndex';
 import { EvidenceSignal } from '../retrieval/evidenceTypes';
 import { CanonicalPayloadTokenEstimator } from '../tokenizer/canonicalPayload';
 import { OptimizationEventBus } from '../events/optimizationEvent';
+import { BoundedPriorityScheduler, WorkQueueFullError } from '../performance/boundedScheduler';
 
 export interface CanonicalCompileRequest {
     messages: CanonicalMessage[];
@@ -34,9 +35,32 @@ export interface CanonicalCompileResult {
 export class CanonicalRequestCompiler {
     private readonly protocol = new VsCodeProtocolAdapter();
 
-    constructor(private readonly orchestrator: PipelineOrchestrator) {}
+    constructor(
+        private readonly orchestrator: PipelineOrchestrator,
+        private readonly scheduler?: BoundedPriorityScheduler,
+        private readonly prepare?: () => Promise<void>
+    ) {}
 
     public async compile(request: CanonicalCompileRequest): Promise<CanonicalCompileResult> {
+        const requestId = request.requestId || `tok_${randomUUID()}`;
+        const normalized = { ...request, requestId };
+        if (!this.scheduler) return this.compileNow(normalized);
+        return this.scheduler.schedule({
+            key: `compile:${requestId}`,
+            priority: 'foreground',
+            cancellation: request.cancellation
+        }, async context => {
+            context.checkpoint();
+            if (this.prepare) await this.prepare();
+            context.checkpoint();
+            return this.compileNow(normalized);
+        }).catch(error => {
+            if (error instanceof WorkQueueFullError) return this.compileNow(normalized, 'foreground_queue_full_pass_through');
+            throw error;
+        });
+    }
+
+    private async compileNow(request: CanonicalCompileRequest, fallbackReason?: string): Promise<CanonicalCompileResult> {
         const requestId = request.requestId || `tok_${randomUUID()}`;
         const structuredPassThrough = this.protocol.isStructured(request.messages);
         const textMessages: MessagePayload[] = request.messages.map(message => ({
@@ -57,11 +81,12 @@ export class CanonicalRequestCompiler {
             cursorLine: request.cursorLine,
             userIntent: request.userIntent,
             cancellation: request.cancellation,
-            preserveProtocol: structuredPassThrough,
+            preserveProtocol: structuredPassThrough || !!fallbackReason,
             deferSideEffects: true,
             workspaceSnapshot: request.workspaceSnapshot,
             allowWorkspaceRetrieval: request.allowWorkspaceRetrieval,
-            evidenceSignals: request.evidenceSignals
+            evidenceSignals: request.evidenceSignals,
+            fallbackReasons: fallbackReason ? [fallbackReason] : undefined
         });
 
         const messages = structuredPassThrough

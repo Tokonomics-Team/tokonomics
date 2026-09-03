@@ -92,7 +92,9 @@ export class ResponseCache {
     constructor(
         private readonly maxSize: number = 100,
         private readonly ttlMs: number = 30 * 60 * 1000,
-        private readonly hintSimilarityThreshold: number = 0.88
+        private readonly hintSimilarityThreshold: number = 0.88,
+        private readonly maxEntryBytes: number = 2 * 1024 * 1024,
+        private readonly maxMemoryBytes: number = 32 * 1024 * 1024
     ) {}
 
     public lookup(request: ResponseCacheRequest): CacheLookupResult {
@@ -139,7 +141,7 @@ export class ResponseCache {
             cancelled: request.safety.cancelled || terminalState === 'cancelled',
             failed: request.safety.failed || terminalState === 'failed'
         };
-        if (terminalState !== 'completed' || this.ineligibilityReason(safety) || !response.trim()) return false;
+        if (terminalState !== 'completed' || this.ineligibilityReason(safety) || !response.trim() || Buffer.byteLength(response) > this.maxEntryBytes) return false;
 
         this.sweepExpired();
         const fingerprint = ResponseCache.fingerprint(request);
@@ -157,7 +159,8 @@ export class ResponseCache {
             dependentFiles: new Set(request.workspace.files.map(file => file.path))
         });
         this.touch(fingerprint);
-        return true;
+        while (this.estimateMemoryBytes() > this.maxMemoryBytes && this.insertionOrder.length > 0) this.delete(this.insertionOrder[0]);
+        return this.cache.has(fingerprint);
     }
 
     /** Similar entries may guide retrieval, but never expose or replay cached answers. */

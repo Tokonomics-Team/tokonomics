@@ -55,6 +55,7 @@ export interface ContextCompileRequest {
     workspaceSnapshot?: WorkspaceSnapshot;
     allowWorkspaceRetrieval?: boolean;
     evidenceSignals?: readonly EvidenceSignal[];
+    fallbackReasons?: readonly string[];
 }
 
 export interface CancellationLike { readonly isCancellationRequested: boolean; }
@@ -124,6 +125,8 @@ export class PipelineOrchestrator {
         const startTime = performance.now();
         const flags = FeatureFlagRegistry.getFlags();
         const mode = flags.pipelineMode;
+        const pipelineFallbackReasons = [...(request.fallbackReasons || [])];
+        let forcePassThrough = false;
 
         // 0. Deterministic Context Governor Evaluation (Zero LLM/SLM)
         const governor = DeterministicContextGovernor.getInstance();
@@ -135,7 +138,15 @@ export class PipelineOrchestrator {
         });
 
         // 1. Calculate Baseline Tokens
-        const originalTokens = TokenCounter.countMessagesTokens(request.messages) + Math.max(0, request.fixedProtocolTokens || 0);
+        let originalTokens: number;
+        try {
+            originalTokens = TokenCounter.countMessagesTokens(request.messages) + Math.max(0, request.fixedProtocolTokens || 0);
+        } catch {
+            originalTokens = request.messages.reduce((sum, message) => sum + Math.ceil(message.content.length / 3) + 4, 0)
+                + Math.max(0, request.fixedProtocolTokens || 0);
+            pipelineFallbackReasons.push('tokenizer_failure_conservative_estimate');
+            forcePassThrough = true;
+        }
 
         let optimizedMessages: MessagePayload[] = [];
         const decisions: Decision[] = [
@@ -174,13 +185,20 @@ export class PipelineOrchestrator {
         const modelProfile = ModelProfileRegistry.getProfile(request.targetModel || request.targetProvider || 'claude-3-5-sonnet');
 
         if (request.allowWorkspaceRetrieval && request.workspaceSnapshot && !request.preserveProtocol) {
-            evidenceRetrieval = this.evidenceRetriever.retrieve({
-                query: userPrompt,
-                taskType: governorDecision.taskType,
-                snapshot: request.workspaceSnapshot,
-                activeFilePath: request.activeFilePath,
-                signals: request.evidenceSignals
-            });
+            try {
+                evidenceRetrieval = this.evidenceRetriever.retrieve({
+                    query: userPrompt,
+                    taskType: governorDecision.taskType,
+                    snapshot: request.workspaceSnapshot,
+                    activeFilePath: request.activeFilePath,
+                    signals: request.evidenceSignals
+                });
+            } catch {
+                pipelineFallbackReasons.push('retrieval_failure_pass_through');
+                forcePassThrough = true;
+            }
+        }
+        if (evidenceRetrieval) {
             decisions.push({
                 itemId: 'evidence_aware_retrieval',
                 action: evidenceRetrieval.conservativeFallback ? 'preserve' : 'include',
@@ -188,7 +206,7 @@ export class PipelineOrchestrator {
                     ? `Evidence contract incomplete; missing [${evidenceRetrieval.missingRequired.join(', ')}]. Conservative fallback required.`
                     : `Evidence contract satisfied with ${evidenceRetrieval.selected.length} snapshot-bound candidates (${evidenceRetrieval.stagesExecuted.join(' -> ')}).`,
                 confidence: evidenceRetrieval.criticalRecall,
-                evidence: ['EvidenceContract', 'ReciprocalRankFusion', 'MMRDiversity', `snapshot:${request.workspaceSnapshot.generation}`]
+                evidence: ['EvidenceContract', 'ReciprocalRankFusion', 'MMRDiversity', `snapshot:${request.workspaceSnapshot?.generation ?? 'unavailable'}`]
             });
             for (const retrievalDecision of evidenceRetrieval.decisions) {
                 decisions.push({
@@ -201,21 +219,31 @@ export class PipelineOrchestrator {
             }
         }
 
-        if (request.preserveProtocol || governorDecision.optimizationAggressiveness === 'none') {
+        if (forcePassThrough || request.preserveProtocol || governorDecision.optimizationAggressiveness === 'none') {
             // Critical risk override: Full context preserved
             optimizedMessages = request.messages.map(m => ({ ...m }));
-        } else if (mode === 'legacy') {
-            // --- 100% LEGACY V4.1.2 PIPELINE (WITH PROSE PRESERVATION) ---
-            optimizedMessages = await this.executeLegacyPipeline(request, decisions);
-        } else if (mode === 'hybrid') {
-            // --- HYBRID TRANSITIONAL PIPELINE ---
-            optimizedMessages = await this.executeHybridPipeline(request, decisions);
         } else {
-            // --- TOKONOMICS FULL CONTEXT COMPILER PIPELINE ---
-            const compilerRes = await this.executeCompilerPipeline(request, decisions);
-            optimizedMessages = compilerRes.messages;
-            cachePlanResult = compilerRes.cachePlan;
-            codeRenderedAssignments = compilerRes.renderedAssignments;
+            try {
+                if (mode === 'legacy') {
+                    optimizedMessages = await this.executeLegacyPipeline(request, decisions);
+                } else if (mode === 'hybrid') {
+                    optimizedMessages = await this.executeHybridPipeline(request, decisions);
+                } else {
+                    const compilerRes = await this.executeCompilerPipeline(request, decisions);
+                    optimizedMessages = compilerRes.messages;
+                    cachePlanResult = compilerRes.cachePlan;
+                    codeRenderedAssignments = compilerRes.renderedAssignments;
+                }
+            } catch (error) {
+                if (error instanceof CompilationCancelledError) throw error;
+                optimizedMessages = request.messages.map(message => ({ ...message }));
+                pipelineFallbackReasons.push(`${mode}_pipeline_failure_pass_through`);
+                decisions.push({
+                    itemId: 'pipeline_failure_fallback', action: 'preserve',
+                    reason: 'Optimization stage failed; original request content was preserved.',
+                    confidence: 1, evidence: ['FailClosedPipelineBoundary']
+                });
+            }
         }
 
         const budgeted = this.applyGlobalBudget(optimizedMessages, request, modelProfile, evidenceRetrieval, decisions);
@@ -400,7 +428,10 @@ export class PipelineOrchestrator {
             traceId: `${requestId}:compile`,
             snapshotGeneration: request.workspaceSnapshot?.generation,
             cacheState: cachePlanResult?.isCacheEligible ? 'eligible' : 'ineligible',
-            fallbackReasons: contentRestored ? Object.freeze(['preservation_gate_restored_original_content']) : Object.freeze([]),
+            fallbackReasons: Object.freeze([
+                ...pipelineFallbackReasons,
+                ...(contentRestored ? ['preservation_gate_restored_original_content'] : [])
+            ]),
             selectionTrace: Object.freeze(budgetPlan.renderedAssignments.map(assignment => Object.freeze({
                 selectionHash: createHash('sha256').update(assignment.entityId).digest('hex'),
                 resolution: assignment.level,

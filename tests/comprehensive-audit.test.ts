@@ -97,13 +97,24 @@ export async function runComprehensiveAuditTests(): Promise<void> {
         }
     };
 
+    const originalParserInitialize = AstPrunerEngine.prototype.initialize;
+    let activationParserInitializations = 0;
+    AstPrunerEngine.prototype.initialize = async function (...args: Parameters<AstPrunerEngine['initialize']>) {
+        activationParserInitializations++;
+        return originalParserInitialize.apply(this, args);
+    };
+    const activationStarted = performance.now();
     await activate(mockContext);
+    const activationDurationMs = performance.now() - activationStarted;
+    AstPrunerEngine.prototype.initialize = originalParserInitialize;
 
     assert.ok(commandsRegistered.size >= 8, `Expected at least 8 registered commands, found ${commandsRegistered.size}`);
     assert.strictEqual(activeChatParticipantId, 'token-optimizer-participant', 'Chat participant must be registered with correct ID');
     assert.ok(typeof activeChatParticipantHandler === 'function', 'Chat participant handler must be registered');
+    assert.strictEqual(activationParserInitializations, 0, 'activation must not initialize parser binaries before first trusted work');
+    assert.ok(activationDurationMs < 100, `registration-only activation exceeded 100ms (${activationDurationMs.toFixed(2)}ms)`);
 
-    console.log(`✓ Activation passed with ZERO command collisions (${commandsRegistered.size} commands registered cleanly).`);
+    console.log(`✓ Activation passed in ${activationDurationMs.toFixed(2)}ms with zero parser loads and ZERO command collisions (${commandsRegistered.size} commands registered cleanly).`);
 
     // ------------------------------------------------------------------------------------------------
     // TEST 3: End-to-End Chat Participant & All 10 Slash Commands Execution

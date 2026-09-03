@@ -222,6 +222,7 @@ export const GENERIC_DEFAULT_PROFILE: ModelProfile = {
 
 export class ModelProfileRegistry {
     private static customProfiles: Map<string, ModelProfile> = new Map();
+    private static readonly MAX_CUSTOM_PROFILES = 64;
 
     private static defaultProfiles: Map<string, ModelProfile> = new Map([
         ['claude-3-7-sonnet', CLAUDE_SONNET_PROFILE],
@@ -237,7 +238,14 @@ export class ModelProfileRegistry {
     ]);
 
     public static registerProfile(profile: ModelProfile): void {
-        this.customProfiles.set(profile.modelId.toLowerCase(), profile);
+        const key = profile.modelId.toLowerCase();
+        this.customProfiles.delete(key);
+        this.customProfiles.set(key, profile);
+        while (this.customProfiles.size > this.MAX_CUSTOM_PROFILES) {
+            const oldest = this.customProfiles.keys().next().value;
+            if (oldest === undefined) break;
+            this.customProfiles.delete(oldest);
+        }
     }
 
     public static getProfile(modelIdOrName?: string): ModelProfile {

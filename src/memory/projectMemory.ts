@@ -32,12 +32,24 @@ export interface ProjectMemoryItem {
 
 export class ProjectMemory {
     private items: Map<string, ProjectMemoryItem> = new Map();
+    private readonly maxItems = 1_000;
 
     public addItem(item: Omit<ProjectMemoryItem, 'createdAt'>): void {
-        this.items.set(item.id, {
+        const normalizedId = item.id.slice(0, 512);
+        this.items.delete(normalizedId);
+        this.items.set(normalizedId, {
             ...item,
+            id: normalizedId,
+            title: item.title.slice(0, 512),
+            description: item.description.slice(0, 16 * 1024),
+            dependsOn: item.dependsOn?.slice(0, 256).map(id => id.slice(0, 512)),
             createdAt: Date.now()
         });
+        while (this.items.size > this.maxItems) {
+            const oldest = this.items.keys().next().value;
+            if (oldest === undefined) break;
+            this.items.delete(oldest);
+        }
     }
 
     public supersedeItem(oldItemId: string, newItemId: string): void {

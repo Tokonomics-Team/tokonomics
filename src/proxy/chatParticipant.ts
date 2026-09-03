@@ -39,6 +39,8 @@ import { canonicalTextMessage, VsCodeProtocolAdapter } from '../protocol/canonic
 import { prepareCanonicalEgress } from '../protocol/canonicalEgress';
 import { VersionedWorkspaceIndex } from '../workspace/workspaceIndex';
 import { EvidenceSignal } from '../retrieval/evidenceTypes';
+import { CpuWorkerBoundary } from '../performance/cpuWorkerBoundary';
+import { BoundedPriorityScheduler } from '../performance/boundedScheduler';
 
 export function registerChatParticipant(
     context: vscode.ExtensionContext,
@@ -48,7 +50,9 @@ export function registerChatParticipant(
     onOptimizationComplete?: () => void,
     pipelineOrchestrator?: PipelineOrchestrator,
     requestCompiler?: CanonicalRequestCompiler,
-    providedWorkspaceIndex?: VersionedWorkspaceIndex
+    providedWorkspaceIndex?: VersionedWorkspaceIndex,
+    cpuWorkerBoundary?: CpuWorkerBoundary,
+    inferenceScheduler?: BoundedPriorityScheduler
 ) {
     if (!vscode.chat || typeof vscode.chat.createChatParticipant !== 'function') {
         return;
@@ -138,7 +142,7 @@ export function registerChatParticipant(
             const activeFiles = activeEditor ? [activeEditor.document.fileName] : (lastActiveDocUri ? [lastActiveDocUri.fsPath] : []);
 
             response.markdown(`*Scanning workspace and calculating PageRank graph (Incremental Cache)...*\n\n`);
-            const mapResult = workspaceIndex.generateRepoMap(activeFiles, 1024, requestSnapshot);
+            const mapResult = await workspaceIndex.generateRepoMapAsync(activeFiles, 1024, requestSnapshot, token);
 
             metricsTracker.recordOptimization(
                 mapResult.tokenCount * 4,
@@ -545,7 +549,9 @@ export function registerChatParticipant(
             let totalImageTokensSaved = 0;
             for (const h of chatContext.history) {
                 if (h instanceof vscode.ChatRequestTurn) {
-                    const { text: rsText, stats: rsStats } = imageRightsizer.rightsizeInlineImages(h.prompt);
+                    const { text: rsText, stats: rsStats } = cpuWorkerBoundary
+                        ? await imageRightsizer.rightsizeInlineImagesAsync(h.prompt, cpuWorkerBoundary, token)
+                        : imageRightsizer.rightsizeInlineImages(h.prompt);
                     totalImageTokensSaved += rsStats.estimatedTokensSaved;
                     const dedup = turnCache.deduplicateTurnCode(rsText, activeFileName || 'workspace');
                     rawMessages.push({ role: 'user', content: dedup.text });
@@ -565,7 +571,9 @@ export function registerChatParticipant(
                 }
             }
             // Rightsize images in the current prompt too
-            const { text: rsFullPrompt, stats: rsPromptStats } = imageRightsizer.rightsize(fullPrompt, mayReadWorkspace ? workspaceRoot : undefined);
+            const { text: rsFullPrompt, stats: rsPromptStats } = cpuWorkerBoundary
+                ? await imageRightsizer.rightsizeAsync(fullPrompt, cpuWorkerBoundary, mayReadWorkspace ? workspaceRoot : undefined, token)
+                : imageRightsizer.rightsize(fullPrompt, mayReadWorkspace ? workspaceRoot : undefined);
             totalImageTokensSaved += rsPromptStats.estimatedTokensSaved;
             rawMessages.push({ role: 'user', content: rsFullPrompt });
 
@@ -697,38 +705,35 @@ export function registerChatParticipant(
                 }
             }
 
-            const llmResponse = await targetModel.sendRequest(upstreamMessages, prepared.options as any, token);
-            let completeResponseText = '';
-            if ((llmResponse as any).stream) {
-                for await (const part of (llmResponse as any).stream as AsyncIterable<unknown>) {
-                    if (token.isCancellationRequested) {
-                        compiler.fail(compiled, 'CANCELLED');
-                        activeCompilation = undefined;
-                        return;
+            const performInference = async (checkpoint: () => void) => {
+                checkpoint();
+                const llmResponse = await targetModel.sendRequest(upstreamMessages, prepared.options as any, token);
+                let completeResponseText = '';
+                if ((llmResponse as any).stream) {
+                    for await (const part of (llmResponse as any).stream as AsyncIterable<unknown>) {
+                        checkpoint();
+                        if (part instanceof vscode.LanguageModelTextPart) {
+                            completeResponseText += part.value;
+                            response.markdown(part.value);
+                        } else {
+                            throw new Error('The chat participant received a non-text model response part that its UI cannot represent safely.');
+                        }
                     }
-                    if (part instanceof vscode.LanguageModelTextPart) {
-                        completeResponseText += part.value;
-                        response.markdown(part.value);
-                    } else {
-                        throw new Error('The chat participant received a non-text model response part that its UI cannot represent safely.');
+                } else {
+                    for await (const chunk of llmResponse.text) {
+                        checkpoint();
+                        completeResponseText += chunk;
+                        response.markdown(chunk);
                     }
                 }
-            } else {
-                for await (const chunk of llmResponse.text) {
-                    if (token.isCancellationRequested) {
-                        compiler.fail(compiled, 'CANCELLED');
-                        activeCompilation = undefined;
-                        return;
-                    }
-                    completeResponseText += chunk;
-                    response.markdown(chunk);
-                }
-            }
-            if (token.isCancellationRequested) {
-                compiler.fail(compiled, 'CANCELLED');
-                activeCompilation = undefined;
-                return;
-            }
+                checkpoint();
+                return { llmResponse, completeResponseText };
+            };
+            const checkpoint = () => { if (token.isCancellationRequested) throw new Error('CANCELLED'); };
+            const inference = inferenceScheduler
+                ? await inferenceScheduler.schedule({ key: `chat:${compiled.requestId}`, priority: 'foreground', cancellation: token }, context => performInference(context.checkpoint))
+                : await performInference(checkpoint);
+            const { llmResponse, completeResponseText } = inference;
 
             compiler.commit(compiled);
             activeCompilation = undefined;

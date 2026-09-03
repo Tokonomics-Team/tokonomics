@@ -23,6 +23,8 @@ import { FeatureFlagRegistry } from './engine/featureFlags';
 import { CanonicalRequestCompiler } from './protocol/canonicalCompiler';
 import { VersionedWorkspaceIndex } from './workspace/workspaceIndex';
 import { RequestLedger } from './events/requestLedger';
+import { BoundedPriorityScheduler } from './performance/boundedScheduler';
+import { CpuWorkerBoundary } from './performance/cpuWorkerBoundary';
 
 let statusBarManager: StatusBarManager | undefined;
 
@@ -34,9 +36,11 @@ export async function activate(context: vscode.ExtensionContext) {
     logger.info('Activation', 'Tokonomics AI Token Optimizer is activating...');
 
     // Global uncaught error listener to capture unhandled exceptions safely
-    process.on('uncaughtException', (err: any) => {
+    const uncaughtExceptionHandler = (err: any) => {
         logger.error('UnhandledException', err);
-    });
+    };
+    process.on('uncaughtException', uncaughtExceptionHandler);
+    context.subscriptions.push({ dispose: () => process.off('uncaughtException', uncaughtExceptionHandler) });
 
     const workspaceIsTrusted = () => vscode.workspace.isTrusted !== false;
     const workspaceRoots = () => (vscode.workspace.workspaceFolders || []).map(folder => folder.uri.fsPath);
@@ -48,11 +52,22 @@ export async function activate(context: vscode.ExtensionContext) {
     const initialPipelineMode = optConf.get<'compiler' | 'hybrid' | 'legacy'>('pipelineMode', 'compiler');
     FeatureFlagRegistry.setPipelineMode(initialPipelineMode);
 
-    // 1. Initialize Engines, Caches & In-Memory RAM Manager
+    // 1. Construct lightweight services. Parser/index I/O stays lazy and trust-gated.
+    const workScheduler = new BoundedPriorityScheduler(2, 128, 8);
+    const inferenceScheduler = new BoundedPriorityScheduler(4, 32, 8);
+    const cpuWorkerBoundary = new CpuWorkerBoundary();
+    context.subscriptions.push({ dispose: () => workScheduler.dispose() });
+    context.subscriptions.push({ dispose: () => inferenceScheduler.dispose() });
+    context.subscriptions.push({ dispose: () => cpuWorkerBoundary.dispose() });
     const astEngine = new AstPrunerEngine();
-    astEngine.initialize(context.extensionPath).catch(err => {
-        console.warn('[Tokonomics] Background AST parser init warning:', err);
-    });
+    let parserPreparation: Promise<void> | undefined;
+    const ensureParserReady = (): Promise<void> => {
+        if (!workspaceIsTrusted()) return Promise.resolve();
+        if (!parserPreparation) parserPreparation = astEngine.initialize(context.extensionPath).catch(err => {
+            console.warn('[Tokonomics] AST parser unavailable; deterministic parser fallback remains active:', err);
+        });
+        return parserPreparation;
+    };
 
     const cacheAligner = new CacheAlignerEngine();
     RequestLedger.getInstance().configurePersistence(context.globalState);
@@ -62,12 +77,15 @@ export async function activate(context: vscode.ExtensionContext) {
     const workspaceIndex = new VersionedWorkspaceIndex(workspaceRoots(), astEngine, {
         budgetMB: optConf.get<number>('ramBudgetMB', 64),
         maxFileBytes: optConf.get<number>('maxIndexFileSizeKB', 300) * 1024,
-        trusted: workspaceIsTrusted()
+        trusted: workspaceIsTrusted(),
+        scheduler: workScheduler,
+        workerBoundary: cpuWorkerBoundary,
+        prepareParser: ensureParserReady
     });
     context.subscriptions.push({ dispose: () => workspaceIndex.dispose() });
 
     const pipelineOrchestrator = new PipelineOrchestrator(astEngine, undefined, cacheAligner, metricsTracker, workspaceIndex);
-    const requestCompiler = new CanonicalRequestCompiler(pipelineOrchestrator);
+    const requestCompiler = new CanonicalRequestCompiler(pipelineOrchestrator, workScheduler, ensureParserReady);
     const cacheMaxSize = optConf.get<number>('responseCacheMaxSize', 100);
     const responseCache = new ResponseCache(cacheMaxSize);
     const reviewPrompter = new ReviewPrompter(context.globalState);
@@ -143,10 +161,14 @@ export async function activate(context: vscode.ExtensionContext) {
     );
 
     // Background snapshot construction; per-file sequences prevent stale publication.
+    let warmTimer: ReturnType<typeof setTimeout> | undefined;
+    context.subscriptions.push({ dispose: () => { if (warmTimer) clearTimeout(warmTimer); } });
     const warmTrustedWorkspace = () => {
         if (workspaceRoots().length === 0 || !automaticWorkspaceIndexing() || !optConf.get<boolean>('enableBackgroundRamWarming', true)) return;
-        setTimeout(() => {
-            workspaceIndex.initialize().then(async snapshot => {
+        if (warmTimer) clearTimeout(warmTimer);
+        warmTimer = setTimeout(() => {
+            warmTimer = undefined;
+            ensureParserReady().then(() => workspaceIndex.initialize('warming')).then(async snapshot => {
                 console.log(`[Tokonomics] Workspace snapshot ${snapshot.generation} ready: ${snapshot.files.size} files, ${snapshot.symbols.length} symbols`);
                 const includeUnsaved = vscode.workspace.getConfiguration('tokenOptimizer').get<boolean>('includeUnsavedBuffers', false);
                 if (includeUnsaved) {
@@ -188,7 +210,8 @@ export async function activate(context: vscode.ExtensionContext) {
         const provider = new TokenOptimizerLanguageModelProvider(
             requestCompiler,
             onComplete,
-            () => workspaceIndex.captureSnapshot()
+            () => workspaceIndex.captureSnapshot(),
+            inferenceScheduler
         );
 
         if (vscode.lm && typeof (vscode.lm as any).registerLanguageModelChatProvider === 'function') {
@@ -213,7 +236,9 @@ export async function activate(context: vscode.ExtensionContext) {
             onComplete,
             pipelineOrchestrator,
             requestCompiler,
-            workspaceIndex
+            workspaceIndex,
+            cpuWorkerBoundary,
+            inferenceScheduler
         );
     } catch (err) {
         console.warn('[Tokonomics] Chat participant registration note:', err);

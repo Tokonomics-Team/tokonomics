@@ -17,6 +17,7 @@ export class PrunedDiffContentProvider implements vscode.TextDocumentContentProv
     public readonly onDidChange = this.onDidChangeEmitter.event;
 
     private contentMap = new Map<string, string>();
+    private readonly maxDocuments = 16;
     private cqEvaluator = new ContextQualityEvaluator();
     private sdg = new SystemDependenceGraph();
 
@@ -27,7 +28,13 @@ export class PrunedDiffContentProvider implements vscode.TextDocumentContentProv
     }
 
     public setPrunedContent(uri: vscode.Uri, content: string): void {
+        if (Buffer.byteLength(content) > 4 * 1024 * 1024) content = '// Compiled diff unavailable: document exceeds the 4 MiB virtual-document limit.';
         this.contentMap.set(uri.toString(), content);
+        while (this.contentMap.size > this.maxDocuments) {
+            const oldest = this.contentMap.keys().next().value;
+            if (oldest === undefined) break;
+            this.contentMap.delete(oldest);
+        }
         this.onDidChangeEmitter.fire(uri);
     }
 

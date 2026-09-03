@@ -21,9 +21,17 @@ export interface ToolSelectionResult {
 
 export class ToolRegistry {
     private tools: Map<string, ToolDefinition> = new Map();
+    private readonly maxTools = 256;
 
     public registerTool(tool: ToolDefinition): void {
+        try { if (Buffer.byteLength(JSON.stringify(tool)) > 256 * 1024) return; } catch { return; }
+        this.tools.delete(tool.name);
         this.tools.set(tool.name, tool);
+        while (this.tools.size > this.maxTools) {
+            const oldest = this.tools.keys().next().value;
+            if (oldest === undefined) break;
+            this.tools.delete(oldest);
+        }
     }
 
     public getAllTools(): ToolDefinition[] {
