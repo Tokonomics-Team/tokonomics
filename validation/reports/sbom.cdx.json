@@ -1,10 +1,10 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.5",
-  "serialNumber": "urn:uuid:962ef862-16c9-4856-8674-9000cb6f8826",
+  "serialNumber": "urn:uuid:58b0b243-08e3-4561-8908-54a828948b1b",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-09-03T12:08:42.877Z",
+    "timestamp": "2026-09-03T12:21:33.367Z",
     "tools": [
       {
         "vendor": "Tokonomics",
@@ -21,7 +21,7 @@
     "properties": [
       {
         "name": "tokonomics:artifact:sha256",
-        "value": "69d1f83b07bd51b34a2a5157bd8dd303d02d56ea4a6dfb15edf8f6d0da33d93b"
+        "value": "e5b808f541e0297c44b3edc0a33a4fa1549a37d5eafe9cff475a339122a1bfee"
       },
       {
         "name": "tokonomics:artifact:fileCount",

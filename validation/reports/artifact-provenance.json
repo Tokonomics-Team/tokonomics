@@ -4,7 +4,7 @@
     {
       "name": "tokonomics-6.0.0.vsix",
       "digest": {
-        "sha256": "69d1f83b07bd51b34a2a5157bd8dd303d02d56ea4a6dfb15edf8f6d0da33d93b"
+        "sha256": "e5b808f541e0297c44b3edc0a33a4fa1549a37d5eafe9cff475a339122a1bfee"
       }
     }
   ],
@@ -52,14 +52,14 @@
         "id": "https://tokonomics.dev/local-builder/v1"
       },
       "metadata": {
-        "invocationId": "67404286-ef00-4e05-97cd-f4a8775c015a",
-        "startedOn": "2026-09-03T12:08:42.877Z",
-        "finishedOn": "2026-09-03T12:08:42.879Z"
+        "invocationId": "fe6846bc-f3c6-4c02-985c-43d473e3e181",
+        "startedOn": "2026-09-03T12:21:33.367Z",
+        "finishedOn": "2026-09-03T12:21:33.368Z"
       },
       "byproducts": [
         {
           "name": "repository-commit",
-          "content": "6a7d3ea572ba14261e63ff3ceddc34eaec7f674e"
+          "content": "a6b35b11a94a7d94dec44c2402fe2c8c783b9bd9"
         },
         {
           "name": "node",

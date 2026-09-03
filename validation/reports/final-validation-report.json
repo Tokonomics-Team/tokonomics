@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "repositoryCommitSha": "6a7d3ea572ba14261e63ff3ceddc34eaec7f674e",
+    "repositoryCommitSha": "a6b35b11a94a7d94dec44c2402fe2c8c783b9bd9",
     "tokonomicsVersion": "6.0.0",
     "benchmarkDatasetVersion": "2026-v2.1",
     "modelProvider": "none (controlled synthetic fixture)",
@@ -22,9 +22,9 @@
     "pricingProfileVersion": "synthetic-estimate-only",
     "benchmarkClassification": "Controlled Synthetic Benchmark",
     "datasetMetadataSha256": "0347d021aa250511b865a987c4fdf4dee8586335e5f48fdba4a79efdc6fed1d2",
-    "timestamp": "2026-09-03T12:11:14.229Z"
+    "timestamp": "2026-09-03T12:21:50.549Z"
   },
-  "executionDurationSec": "0.82",
+  "executionDurationSec": "0.78",
   "sectionA_SyntheticHarnessAssertions": {
     "pipelineIntegrity": "PASS (100% Contract Compliant)",
     "deterministicGovernorCorrectness": "PASS (Deterministic Repeatability & Invariants Verified)",
