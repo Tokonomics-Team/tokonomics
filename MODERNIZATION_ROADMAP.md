@@ -573,8 +573,7 @@ manifest isolation, and rollback behavior. The normative gate, rollout, evidence
 rollback rules are documented in
 `PHASE_9_ARTIFACT_CERTIFICATION_AND_RELEASE_CONTRACT.md`.
 
-Phase 10 remains blocked until the repository owner reviews Phase 9 evidence and
-explicitly approves experimental work.
+Phase 10 was explicitly approved by the repository owner and is implemented below.
 
 ## Phase 10 - Evaluated state-of-the-art experiments
 
@@ -600,6 +599,26 @@ Promote advanced techniques only when they improve real task success or net cost
 - Independent benchmarks show statistically meaningful uplift.
 - Failure has a deterministic, conservative fallback.
 - The feature can be disabled independently.
+
+### Implementation status (2026-09-03)
+
+Implemented locally as a governed experiment system. All eight candidates now share a
+typed catalog, explicit consent, trusted-workspace checks where applicable, declared
+latency/memory ceilings, independent kill switches, deterministic fallbacks, and a
+bounded hash-only diagnostic ring. Bounded deterministic shadow adapters exist for
+ranking, snapshot deltas, cache layouts, progressive compilation, vector retrieval,
+memory selection, vision readability, and adaptive budgets.
+
+The confidence-progressive candidate is connected to the real pipeline as a shadow-only
+hook; it records an inspectable tier decision but cannot change the model-bound payload.
+A paired evaluator requires external independent, frozen-dataset, exact-artifact
+evidence and checks task-success confidence, exact McNemar significance, net cost per
+success, and p95 latency. Synthetic or incomplete evidence always yields `hold`.
+
+The normative implementation, promotion rules, adversarial matrix, and current
+non-promotion decision are documented in `PHASE_10_EVALUATED_EXPERIMENTS_CONTRACT.md`.
+No candidate is promoted because external independent artifact-bound task evidence has
+not been supplied.
 
 ## Program definition of done
 

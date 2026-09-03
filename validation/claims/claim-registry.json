@@ -82,6 +82,14 @@
       "publicLocations": ["README.md", "validation/reports/README.md"],
       "evidence": ["validation/compatibility-matrix.json", "validation/reports/extension-host-matrix.json", "validation/reports/vsix-inspection.json"],
       "limitations": "Evidence is artifact-hash-bound and Windows-specific. It does not certify Cursor, VSCodium, Theia, browser, remote, container, provider-account, billing, or upstream-model behavior."
+    },
+    {
+      "id": "phase10-experiment-containment",
+      "claim": "Phase 10 advanced candidates are disabled by default, explicitly consent-gated, shadow-only, and independently disableable.",
+      "status": "verified",
+      "publicLocations": ["README.md", "PHASE_10_EVALUATED_EXPERIMENTS_CONTRACT.md"],
+      "evidence": ["src/experiments/experimentRuntime.ts", "tests/phase10Experiments.test.ts"],
+      "limitations": "Containment verification is not evidence of candidate quality. No candidate is promoted without external independent paired task evidence bound to an exact artifact and frozen dataset."
     }
   ]
 }

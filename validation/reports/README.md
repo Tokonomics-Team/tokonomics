@@ -16,6 +16,12 @@ Phase 9 artifact evidence also includes bounded VSIX inspection, per-entry hashe
 CycloneDX SBOM, unsigned artifact provenance, and an installed-host compatibility matrix.
 Reports from different artifact hashes or runs must not be combined to imply certification.
 
+The Phase 10 experiment report is a promotion-decision ledger, not a release certificate.
+It must hold candidates lacking external independent paired outcomes, a frozen dataset,
+exact-artifact binding, production reachability, fallback evidence, independent disablement,
+consent checks, or resource evidence. Internal and synthetic results cannot promote a
+candidate.
+
 The controlled synthetic benchmark uses predetermined corpus fixtures. It may validate harness
 mechanics and compiler transformations, but it does not measure an upstream model's ability to
 generate correct patches.

@@ -26,6 +26,7 @@ import { RequestLedger } from './events/requestLedger';
 import { BoundedPriorityScheduler } from './performance/boundedScheduler';
 import { CpuWorkerBoundary } from './performance/cpuWorkerBoundary';
 import { KillSwitchCapability, ReleaseControl, ReleaseControlSnapshot } from './release/releaseControl';
+import { ExperimentRuntime } from './experiments/experimentRuntime';
 
 let statusBarManager: StatusBarManager | undefined;
 
@@ -58,10 +59,20 @@ export async function activate(context: vscode.ExtensionContext) {
     let releaseControl = evaluateReleaseControl();
     const capabilityEnabled = (capability: KillSwitchCapability) => !releaseControl.disabledCapabilities.has(capability);
     const loadRuntimeFlags = () => {
-        FeatureFlagRegistry.loadFromConfiguration(vscode.workspace.getConfiguration('tokenOptimizer'));
+        const conf = vscode.workspace.getConfiguration('tokenOptimizer');
+        FeatureFlagRegistry.loadFromConfiguration(conf);
         releaseControl = evaluateReleaseControl();
         FeatureFlagRegistry.setReleasePassThrough(releaseControl.forcePassThrough);
         if (!capabilityEnabled('localInference')) FeatureFlagRegistry.setFlag('enableLocalSlm', false);
+        ExperimentRuntime.configure({
+            consent: conf.get<boolean>('experimentalConsent', false),
+            enabled: conf.get<string[]>('experimentalFeatures', []),
+            disabled: conf.get<string[]>('disabledExperiments', []),
+            trustedWorkspace: workspaceIsTrusted(),
+            releaseEnabled: !releaseControl.forcePassThrough,
+            maxLatencyMs: conf.get<number>('experimentalMaxLatencyMs', 25),
+            maxMemoryMB: conf.get<number>('experimentalMaxMemoryMB', 32)
+        });
     };
     const automaticWorkspaceIndexing = () => capabilityEnabled('workspaceIndex')
         && vscode.workspace.getConfiguration('tokenOptimizer')
@@ -205,6 +216,7 @@ export async function activate(context: vscode.ExtensionContext) {
     warmTrustedWorkspace();
     if (typeof vscode.workspace.onDidGrantWorkspaceTrust === 'function') {
         context.subscriptions.push(vscode.workspace.onDidGrantWorkspaceTrust(() => {
+            loadRuntimeFlags();
             workspaceIndex.setTrusted(true);
             void workspaceIndex.replaceRoots(workspaceRoots(), false).then(warmTrustedWorkspace);
         }));
@@ -432,7 +444,8 @@ export async function activate(context: vscode.ExtensionContext) {
             chatParticipantRegistered,
             releaseChannel: releaseControl.channel,
             releaseControlReason: releaseControl.reason,
-            forcePassThrough: releaseControl.forcePassThrough
+            forcePassThrough: releaseControl.forcePassThrough,
+            experiments: ExperimentRuntime.diagnostics().gates
         })
     });
 }

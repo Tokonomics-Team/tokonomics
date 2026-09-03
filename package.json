@@ -480,6 +480,63 @@
           },
           "default": [],
           "description": "Granular local kill switches used for staged rollout and incident containment."
+        },
+        "tokenOptimizer.experimentalConsent": {
+          "type": "boolean",
+          "default": false,
+          "description": "Explicitly consent to selected Phase 10 experiments running locally in shadow mode. Shadow results do not change model-bound output."
+        },
+        "tokenOptimizer.experimentalFeatures": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "evidence-aware-learned-ranking",
+              "snapshot-safe-delta-context",
+              "provider-specific-cache-layout",
+              "confidence-progressive-compilation",
+              "bounded-local-semantic-retrieval",
+              "inspectable-project-memory",
+              "readability-guarded-vision",
+              "adaptive-utility-budgeting"
+            ]
+          },
+          "default": [],
+          "description": "Opt-in Phase 10 shadow experiments. Selection also requires experimentalConsent."
+        },
+        "tokenOptimizer.disabledExperiments": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "evidence-aware-learned-ranking",
+              "snapshot-safe-delta-context",
+              "provider-specific-cache-layout",
+              "confidence-progressive-compilation",
+              "bounded-local-semantic-retrieval",
+              "inspectable-project-memory",
+              "readability-guarded-vision",
+              "adaptive-utility-budgeting"
+            ]
+          },
+          "default": [],
+          "description": "Independent local kill switches for Phase 10 experiments; disabled entries override consent and selection."
+        },
+        "tokenOptimizer.experimentalMaxLatencyMs": {
+          "type": "number",
+          "default": 25,
+          "minimum": 1,
+          "maximum": 250,
+          "description": "Per-candidate shadow-computation latency ceiling. Over-budget results are discarded."
+        },
+        "tokenOptimizer.experimentalMaxMemoryMB": {
+          "type": "number",
+          "default": 32,
+          "minimum": 1,
+          "maximum": 256,
+          "description": "Declared per-candidate memory ceiling; candidates exceeding it remain disabled."
         }
       }
     }
@@ -495,6 +552,7 @@
     "certify": "node scripts/certify.js",
     "certify:deep": "node scripts/certify-deep.js",
     "certify:release": "node scripts/certify-release.js",
+    "evaluate:phase10": "node scripts/evaluate-phase10.js",
     "verify:phase0": "node scripts/verify-phase0.js",
     "verify:vsix": "node scripts/verify-vsix.js",
     "verify:host:local": "node scripts/run-extension-host-matrix.js --local",

@@ -36,6 +36,8 @@ import { GlobalTokenBudgeter, PayloadBudgetPlan, RenderedBudgetAssignment, Token
 import { SolverConstraintError } from '../solver/knapsackSolver';
 import { createHash } from 'crypto';
 import { ModelProfile } from '../tokenizer/modelProfile';
+import { ExperimentRuntime } from '../experiments/experimentRuntime';
+import { ExperimentalCandidateAdapters } from '../experiments/candidateAdapters';
 
 export interface ContextCompileRequest {
     messages: MessagePayload[];
@@ -137,6 +139,17 @@ export class PipelineOrchestrator {
             activeFilePath: request.activeFilePath,
             cursorLine: request.cursorLine
         });
+        const progressiveExperimentGate = ExperimentRuntime.gate('confidence-progressive-compilation');
+        const shadowCompilationTier = progressiveExperimentGate.enabled
+            ? ExperimentRuntime.runShadow(
+                'confidence-progressive-compilation', requestId, 'complete',
+                () => ExperimentalCandidateAdapters.compilationTier(
+                    governorDecision.confidence,
+                    request.workspaceSnapshot ? 1 : 0,
+                    governorDecision.riskLevel === 'critical' ? 1 : governorDecision.riskLevel === 'high' ? 0.75 : 0.2
+                ),
+                value => value === 'complete' || value === 'guarded' || value === 'progressive'
+            ) : 'complete';
 
         // 1. Calculate Baseline Tokens
         let originalTokens: number;
@@ -159,6 +172,13 @@ export class PipelineOrchestrator {
                 evidence: governorDecision.riskReasons.length > 0 ? governorDecision.riskReasons : ['IntentExtractor', 'EvidencePolicyMatrix']
             }
         ];
+        if (progressiveExperimentGate.enabled) {
+            decisions.push({
+                itemId: 'experiment_confidence_progressive_compilation', action: 'preserve',
+                reason: `Shadow-only candidate selected '${shadowCompilationTier}'; production output remains controlled by the existing pipeline.`,
+                confidence: 1, evidence: ['Phase10ExperimentRuntime', 'shadow-only']
+            });
+        }
 
         // 1b. Immutable workspace snapshot invariant
         if (request.workspaceSnapshot) {

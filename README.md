@@ -6,6 +6,11 @@
 [![VS Code](https://img.shields.io/badge/VS%20Code-%5E1.106.0-purple.svg)](https://code.visualstudio.com)
 [![Benchmarks](https://img.shields.io/badge/Benchmarks-Controlled%20Synthetic-yellow.svg)]()
 [![Validation](https://img.shields.io/badge/Release%20Certification-Pending-orange.svg)]()
+
+> **Phase 10 experiments:** Advanced ranking, delta-context, cache-layout, progressive
+> compilation, semantic-retrieval, project-memory, vision, and adaptive-budget candidates
+> are disabled by default and require explicit local consent. They remain shadow-only
+> and unpromoted; synthetic tests are not evidence of production uplift.
 [![Context Governor](https://img.shields.io/badge/Deterministic%20Governor-Active%20(0ms)-blueviolet.svg)]()
 [![Processing](https://img.shields.io/badge/Processing-Local%20Compiler-success.svg)]()
 [![Issues](https://img.shields.io/badge/Issues-Report%20Bug-red.svg)](https://github.com/Tokonomics-Team/tokonomics/issues)
