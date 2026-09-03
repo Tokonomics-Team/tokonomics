@@ -1,0 +1,303 @@
+{
+  "schemaVersion": 1,
+  "classification": "experimental-governance-evidence",
+  "generatedAt": "2026-09-03T07:09:34.496Z",
+  "sourceCommit": "8d7bf1dbc7555633d2176b2f356eb327d9e6401e",
+  "artifact": {
+    "path": "tokonomics-5.1.1.vsix",
+    "sha256": "5354543e75b0e1f151e3ee3521e130d0a6201fd86298561943a2ff6891105491"
+  },
+  "policy": {
+    "defaultEnabled": false,
+    "explicitConsentRequired": true,
+    "localOnly": true,
+    "shadowOnly": true,
+    "minimumIndependentSampleSize": 30,
+    "maximumPromotionPValue": 0.05,
+    "minimumTaskSuccessUplift": 0.02,
+    "successNonInferiorityMargin": 0.02,
+    "minimumRelativeCostPerSuccessImprovement": 0.05,
+    "maximumLatencyRegressionRatio": 1.1
+  },
+  "candidates": [
+    {
+      "id": "evidence-aware-learned-ranking",
+      "title": "Evidence-aware local learned ranking",
+      "privacyClass": "workspace-derived",
+      "requiresTrustedWorkspace": true,
+      "estimatedMaxLatencyMs": 12,
+      "estimatedMaxMemoryMB": 16,
+      "fallback": "deterministic evidence fusion",
+      "productionHook": "EvidenceAwareRetriever.rank",
+      "runtimeMode": "shadow-only",
+      "productionReachable": false,
+      "promotion": {
+        "decision": "hold",
+        "promotionPath": null,
+        "reasons": [
+          "independent_external_benchmark_required",
+          "independent_oracle_required",
+          "artifact_binding_required",
+          "frozen_dataset_required",
+          "minimum_sample_size_not_met",
+          "production_reachability_not_proven"
+        ],
+        "sampleSize": 0,
+        "baselineSuccessRate": null,
+        "candidateSuccessRate": null,
+        "successDelta": null,
+        "successDelta95CI": null,
+        "mcnemarExactPValue": null,
+        "netCostPerSuccessDelta": null,
+        "netCostPerSuccessDelta95CI": null,
+        "relativeCostPerSuccessImprovement": null,
+        "candidateLatencyP95Ms": null
+      }
+    },
+    {
+      "id": "snapshot-safe-delta-context",
+      "title": "Cross-turn snapshot-safe delta context",
+      "privacyClass": "workspace-derived",
+      "requiresTrustedWorkspace": true,
+      "estimatedMaxLatencyMs": 8,
+      "estimatedMaxMemoryMB": 8,
+      "fallback": "complete versioned snapshot",
+      "productionHook": "PipelineOrchestrator.workspaceSnapshot",
+      "runtimeMode": "shadow-only",
+      "productionReachable": false,
+      "promotion": {
+        "decision": "hold",
+        "promotionPath": null,
+        "reasons": [
+          "independent_external_benchmark_required",
+          "independent_oracle_required",
+          "artifact_binding_required",
+          "frozen_dataset_required",
+          "minimum_sample_size_not_met",
+          "production_reachability_not_proven"
+        ],
+        "sampleSize": 0,
+        "baselineSuccessRate": null,
+        "candidateSuccessRate": null,
+        "successDelta": null,
+        "successDelta95CI": null,
+        "mcnemarExactPValue": null,
+        "netCostPerSuccessDelta": null,
+        "netCostPerSuccessDelta95CI": null,
+        "relativeCostPerSuccessImprovement": null,
+        "candidateLatencyP95Ms": null
+      }
+    },
+    {
+      "id": "provider-specific-cache-layout",
+      "title": "Provider-specific cache layout",
+      "privacyClass": "none",
+      "requiresTrustedWorkspace": false,
+      "estimatedMaxLatencyMs": 3,
+      "estimatedMaxMemoryMB": 2,
+      "fallback": "canonical message order",
+      "productionHook": "CachePlanner.planContext",
+      "runtimeMode": "shadow-only",
+      "productionReachable": false,
+      "promotion": {
+        "decision": "hold",
+        "promotionPath": null,
+        "reasons": [
+          "independent_external_benchmark_required",
+          "independent_oracle_required",
+          "artifact_binding_required",
+          "frozen_dataset_required",
+          "minimum_sample_size_not_met",
+          "production_reachability_not_proven"
+        ],
+        "sampleSize": 0,
+        "baselineSuccessRate": null,
+        "candidateSuccessRate": null,
+        "successDelta": null,
+        "successDelta95CI": null,
+        "mcnemarExactPValue": null,
+        "netCostPerSuccessDelta": null,
+        "netCostPerSuccessDelta95CI": null,
+        "relativeCostPerSuccessImprovement": null,
+        "candidateLatencyP95Ms": null
+      }
+    },
+    {
+      "id": "confidence-progressive-compilation",
+      "title": "Confidence-driven progressive compilation",
+      "privacyClass": "none",
+      "requiresTrustedWorkspace": false,
+      "estimatedMaxLatencyMs": 4,
+      "estimatedMaxMemoryMB": 2,
+      "fallback": "conservative complete compilation",
+      "productionHook": "PipelineOrchestrator.compile",
+      "runtimeMode": "shadow-only",
+      "productionReachable": true,
+      "promotion": {
+        "decision": "hold",
+        "promotionPath": null,
+        "reasons": [
+          "independent_external_benchmark_required",
+          "independent_oracle_required",
+          "artifact_binding_required",
+          "frozen_dataset_required",
+          "minimum_sample_size_not_met"
+        ],
+        "sampleSize": 0,
+        "baselineSuccessRate": null,
+        "candidateSuccessRate": null,
+        "successDelta": null,
+        "successDelta95CI": null,
+        "mcnemarExactPValue": null,
+        "netCostPerSuccessDelta": null,
+        "netCostPerSuccessDelta95CI": null,
+        "relativeCostPerSuccessImprovement": null,
+        "candidateLatencyP95Ms": null
+      }
+    },
+    {
+      "id": "bounded-local-semantic-retrieval",
+      "title": "Optional bounded local semantic retrieval",
+      "privacyClass": "workspace-derived",
+      "requiresTrustedWorkspace": true,
+      "estimatedMaxLatencyMs": 20,
+      "estimatedMaxMemoryMB": 32,
+      "fallback": "lexical and graph retrieval",
+      "productionHook": "EvidenceAwareRetriever.retrieve",
+      "runtimeMode": "shadow-only",
+      "productionReachable": false,
+      "promotion": {
+        "decision": "hold",
+        "promotionPath": null,
+        "reasons": [
+          "independent_external_benchmark_required",
+          "independent_oracle_required",
+          "artifact_binding_required",
+          "frozen_dataset_required",
+          "minimum_sample_size_not_met",
+          "production_reachability_not_proven"
+        ],
+        "sampleSize": 0,
+        "baselineSuccessRate": null,
+        "candidateSuccessRate": null,
+        "successDelta": null,
+        "successDelta95CI": null,
+        "mcnemarExactPValue": null,
+        "netCostPerSuccessDelta": null,
+        "netCostPerSuccessDelta95CI": null,
+        "relativeCostPerSuccessImprovement": null,
+        "candidateLatencyP95Ms": null
+      }
+    },
+    {
+      "id": "inspectable-project-memory",
+      "title": "Inspectable opt-in project memory",
+      "privacyClass": "local-persistence",
+      "requiresTrustedWorkspace": true,
+      "estimatedMaxLatencyMs": 5,
+      "estimatedMaxMemoryMB": 8,
+      "fallback": "no project-memory attachment",
+      "productionHook": "ProjectMemory.formatCompactSummary",
+      "runtimeMode": "shadow-only",
+      "productionReachable": false,
+      "promotion": {
+        "decision": "hold",
+        "promotionPath": null,
+        "reasons": [
+          "independent_external_benchmark_required",
+          "independent_oracle_required",
+          "artifact_binding_required",
+          "frozen_dataset_required",
+          "minimum_sample_size_not_met",
+          "production_reachability_not_proven"
+        ],
+        "sampleSize": 0,
+        "baselineSuccessRate": null,
+        "candidateSuccessRate": null,
+        "successDelta": null,
+        "successDelta95CI": null,
+        "mcnemarExactPValue": null,
+        "netCostPerSuccessDelta": null,
+        "netCostPerSuccessDelta95CI": null,
+        "relativeCostPerSuccessImprovement": null,
+        "candidateLatencyP95Ms": null
+      }
+    },
+    {
+      "id": "readability-guarded-vision",
+      "title": "Readability-guarded task-aware vision",
+      "privacyClass": "image-derived",
+      "requiresTrustedWorkspace": true,
+      "estimatedMaxLatencyMs": 20,
+      "estimatedMaxMemoryMB": 32,
+      "fallback": "original image payload",
+      "productionHook": "TaskAwareVisionOptimizer.planImageOptimization",
+      "runtimeMode": "shadow-only",
+      "productionReachable": false,
+      "promotion": {
+        "decision": "hold",
+        "promotionPath": null,
+        "reasons": [
+          "independent_external_benchmark_required",
+          "independent_oracle_required",
+          "artifact_binding_required",
+          "frozen_dataset_required",
+          "minimum_sample_size_not_met",
+          "production_reachability_not_proven"
+        ],
+        "sampleSize": 0,
+        "baselineSuccessRate": null,
+        "candidateSuccessRate": null,
+        "successDelta": null,
+        "successDelta95CI": null,
+        "mcnemarExactPValue": null,
+        "netCostPerSuccessDelta": null,
+        "netCostPerSuccessDelta95CI": null,
+        "relativeCostPerSuccessImprovement": null,
+        "candidateLatencyP95Ms": null
+      }
+    },
+    {
+      "id": "adaptive-utility-budgeting",
+      "title": "Adaptive utility and total-cost budgeting",
+      "privacyClass": "none",
+      "requiresTrustedWorkspace": false,
+      "estimatedMaxLatencyMs": 5,
+      "estimatedMaxMemoryMB": 4,
+      "fallback": "fixed global token budget",
+      "productionHook": "GlobalTokenBudgeter.finalize",
+      "runtimeMode": "shadow-only",
+      "productionReachable": false,
+      "promotion": {
+        "decision": "hold",
+        "promotionPath": null,
+        "reasons": [
+          "independent_external_benchmark_required",
+          "independent_oracle_required",
+          "artifact_binding_required",
+          "frozen_dataset_required",
+          "minimum_sample_size_not_met",
+          "production_reachability_not_proven"
+        ],
+        "sampleSize": 0,
+        "baselineSuccessRate": null,
+        "candidateSuccessRate": null,
+        "successDelta": null,
+        "successDelta95CI": null,
+        "mcnemarExactPValue": null,
+        "netCostPerSuccessDelta": null,
+        "netCostPerSuccessDelta95CI": null,
+        "relativeCostPerSuccessImprovement": null,
+        "candidateLatencyP95Ms": null
+      }
+    }
+  ],
+  "promotedCandidates": [],
+  "decision": "NO_CANDIDATE_PROMOTED_IN_PHASE_10",
+  "releaseCertified": false,
+  "limitations": [
+    "No external independent paired task benchmark was supplied.",
+    "Internal controlled and synthetic tests validate machinery, not production task-success uplift.",
+    "Shadow candidates cannot alter model-bound payloads."
+  ]
+}

@@ -4,7 +4,7 @@
     {
       "name": "tokonomics-5.1.1.vsix",
       "digest": {
-        "sha256": "78dcf5e8220e2aecaf21f9802e803a84794072f53c530f27e119eaeb85e45b39"
+        "sha256": "5354543e75b0e1f151e3ee3521e130d0a6201fd86298561943a2ff6891105491"
       }
     }
   ],
@@ -24,7 +24,7 @@
         {
           "uri": "package.json",
           "digest": {
-            "sha256": "823dce8ba397444c21ba79538683cb749da2b21a5b3b68d3240761d64d2a1686"
+            "sha256": "741034f86cbc8bfc08f8678b40f21d93fa43ee0d61ddf3ee475f063eb025879d"
           }
         },
         {
@@ -52,14 +52,14 @@
         "id": "https://tokonomics.dev/local-builder/v1"
       },
       "metadata": {
-        "invocationId": "cfc5afb1-dada-4c83-a824-13db3cf9c31a",
-        "startedOn": "2026-09-03T02:50:15.270Z",
-        "finishedOn": "2026-09-03T02:50:15.271Z"
+        "invocationId": "c40661e9-e816-4e94-9523-86460d3e2b38",
+        "startedOn": "2026-09-03T07:09:11.247Z",
+        "finishedOn": "2026-09-03T07:09:11.248Z"
       },
       "byproducts": [
         {
           "name": "repository-commit",
-          "content": "a332a2a96b2b7a875d64a1075360f21864b504d0"
+          "content": "8d7bf1dbc7555633d2176b2f356eb327d9e6401e"
         },
         {
           "name": "node",

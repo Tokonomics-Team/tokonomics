@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
   "classification": "artifact-inspection-evidence",
-  "generatedAt": "2026-09-03T02:50:15.201Z",
+  "generatedAt": "2026-09-03T07:09:11.164Z",
   "artifact": {
     "path": "tokonomics-5.1.1.vsix",
-    "sha256": "78dcf5e8220e2aecaf21f9802e803a84794072f53c530f27e119eaeb85e45b39",
-    "sizeBytes": 1228611,
-    "totalUncompressedBytes": 3684854
+    "sha256": "5354543e75b0e1f151e3ee3521e130d0a6201fd86298561943a2ff6891105491",
+    "sizeBytes": 1235115,
+    "totalUncompressedBytes": 3703691
   },
   "package": {
     "name": "tokonomics",
@@ -49,9 +49,9 @@
     },
     {
       "name": "extension/readme.md",
-      "sizeBytes": 18356,
-      "compressedSizeBytes": 7067,
-      "sha256": "d7374143d28134b0adea38da5251aa406004035a8a84527a57b46740d342507b"
+      "sizeBytes": 18693,
+      "compressedSizeBytes": 7227,
+      "sha256": "0c0c5a4019d3a29bcc132bab5baaec3ade64a1e22098b9c72fa3d32daf96214a"
     },
     {
       "name": "extension/PROTOCOL_CONTRACT.md",
@@ -78,10 +78,16 @@
       "sha256": "008453fdab65a0b1577cdf6b549a77d55c0242d850195e547eae716620e63f27"
     },
     {
+      "name": "extension/PHASE_10_EVALUATED_EXPERIMENTS_CONTRACT.md",
+      "sizeBytes": 8094,
+      "compressedSizeBytes": 3317,
+      "sha256": "47469f71bcef849ccdd01ec061f17755ef11001880b68e74388bbf6ebbfebea5"
+    },
+    {
       "name": "extension/package.json",
-      "sizeBytes": 19679,
-      "compressedSizeBytes": 5234,
-      "sha256": "823dce8ba397444c21ba79538683cb749da2b21a5b3b68d3240761d64d2a1686"
+      "sizeBytes": 22042,
+      "compressedSizeBytes": 5647,
+      "sha256": "741034f86cbc8bfc08f8678b40f21d93fa43ee0d61ddf3ee475f063eb025879d"
     },
     {
       "name": "extension/LICENSE.txt",
@@ -144,12 +150,6 @@
       "sha256": "5fb488d0cabb4775a594bab85682de5ad6ce83c0d6ac997a9f82dd084d571240"
     },
     {
-      "name": "extension/dist/extension.js",
-      "sizeBytes": 354423,
-      "compressedSizeBytes": 102228,
-      "sha256": "7bef20b0d6062af4862250f5758349cb60accc48f00c8171144fda872278474b"
-    },
-    {
       "name": "extension/assets/icon.png",
       "sizeBytes": 62744,
       "compressedSizeBytes": 62764,
@@ -166,6 +166,12 @@
       "sizeBytes": 669700,
       "compressedSizeBytes": 662182,
       "sha256": "b2a82106701303ca8190998186620767535843ed3cc27da602b5dde73d694db2"
+    },
+    {
+      "name": "extension/dist/extension.js",
+      "sizeBytes": 362466,
+      "compressedSizeBytes": 104646,
+      "sha256": "25143bb2a98331a935c2b34a3c27ca4583fdb82af7a215e555a3dbf39cbf48d7"
     }
   ]
 }

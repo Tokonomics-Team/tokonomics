@@ -1,9 +1,9 @@
 # 🧪 Tokonomics Controlled Synthetic Validation Report
 
 > **Tokonomics Version**: `5.1.1`
-> **Commit SHA**: `a332a2a96b2b7a875d64a1075360f21864b504d0`
+> **Commit SHA**: `8d7bf1dbc7555633d2176b2f356eb327d9e6401e`
 > **Evaluation Date**: `2026-09-03`
-> **Execution Duration**: `0.82s`
+> **Execution Duration**: `0.97s`
 > **Production Decision**: **NOT EVALUATED — CONTROLLED SYNTHETIC HARNESS ONLY**
 
 ---
