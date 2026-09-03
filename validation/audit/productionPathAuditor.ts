@@ -106,10 +106,10 @@ export class ProductionPathAuditor {
         const mdPath = path.join(reportsDir, 'production-path-audit.md');
         const mdContent = `# 🚀 Tokonomics Production-Path Execution Audit
 
-> **Audit Date**: \`${auditResult.auditDate}\`  
-> **Production Orchestrator**: \`PipelineOrchestrator\` (Real Stage Execution)  
-> **Context Governor**: \`DeterministicContextGovernor\` (Intent: \`${governorDecision.taskType}\`, Risk: \`${governorDecision.riskLevel}\`)  
-> **Stage Sequence Integrity**: **${auditResult.stageOrderingValid ? 'PASS (16/16 Stages In Strict Topological Order)' : 'FAIL'}**  
+> **Audit Date**: \`${auditResult.auditDate}\`
+> **Production Orchestrator**: \`PipelineOrchestrator\` (Real Stage Execution)
+> **Context Governor**: \`DeterministicContextGovernor\` (Intent: \`${governorDecision.taskType}\`, Risk: \`${governorDecision.riskLevel}\`)
+> **Stage Sequence Integrity**: **${auditResult.stageOrderingValid ? 'PASS (16/16 Stages In Strict Topological Order)' : 'FAIL'}**
 > **Final Status**: **${auditResult.auditPassed ? 'APPROVED (REAL PRODUCTION PATH EXECUTION VERIFIED)' : 'FAILED'}**
 
 ---

@@ -242,15 +242,15 @@ export class FinalIndependentAuditGenerator {
         // 4. Emit Comprehensive 31-Section Markdown Report
         const mdContent = `# 🏆 Tokonomics 5.1.x Master Forensic Independent Audit & Certification Report
 
-> **Tokonomics Version**: \`${metadata.tokonomicsVersion}\`  
-> **Repository Commit SHA**: \`${metadata.repositoryCommitSha}\`  
-> **Benchmark Classification**: \`Controlled Synthetic Benchmark\` ($N=${holdoutAudit.totalTasks}$)  
-> **Holdout Dataset SHA-256**: \`${holdoutAudit.holdoutDatasetSha256}\`  
-> **Independent-Oracle Coverage**: **${oracleAudit.independentOracleCoverage}** (**${oracleAudit.independentOracleRatioPct}%**)  
-> **Certification-Critical Self-Validating Tests**: **${oracleAudit.certificationCriticalSelfValidatingCount}** (Zero Tolerance Standard: **PASS**)  
-> **Context Success Preservation Ratio**: **${threeRunStudy.contextSuccessPreservationRatio}** (${threeRunStudy.tokonomicsTaskSuccess}% / ${threeRunStudy.fullContextTaskSuccess}%)  
-> **Absolute Task Success Improvement**: **+${threeRunStudy.absoluteImprovementPercentagePoints}% points** (Relative: **+${threeRunStudy.relativeImprovementPercentage}%**)  
-> **Red-Team Challenges Defended**: **${redTeamAudit.challengesPassed} / ${redTeamAudit.totalChallenges} (100%)**  
+> **Tokonomics Version**: \`${metadata.tokonomicsVersion}\`
+> **Repository Commit SHA**: \`${metadata.repositoryCommitSha}\`
+> **Benchmark Classification**: \`Controlled Synthetic Benchmark\` ($N=${holdoutAudit.totalTasks}$)
+> **Holdout Dataset SHA-256**: \`${holdoutAudit.holdoutDatasetSha256}\`
+> **Independent-Oracle Coverage**: **${oracleAudit.independentOracleCoverage}** (**${oracleAudit.independentOracleRatioPct}%**)
+> **Certification-Critical Self-Validating Tests**: **${oracleAudit.certificationCriticalSelfValidatingCount}** (Zero Tolerance Standard: **PASS**)
+> **Context Success Preservation Ratio**: **${threeRunStudy.contextSuccessPreservationRatio}** (${threeRunStudy.tokonomicsTaskSuccess}% / ${threeRunStudy.fullContextTaskSuccess}%)
+> **Absolute Task Success Improvement**: **+${threeRunStudy.absoluteImprovementPercentagePoints}% points** (Relative: **+${threeRunStudy.relativeImprovementPercentage}%**)
+> **Red-Team Challenges Defended**: **${redTeamAudit.challengesPassed} / ${redTeamAudit.totalChallenges} (100%)**
 > **Final Certification Decision**: **NOT RELEASE CERTIFIED — CONTROLLED SYNTHETIC AUDIT**
 
 ---

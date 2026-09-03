@@ -168,10 +168,10 @@ export class RedTeamAuditEngine {
         const mdPath = path.join(reportsDir, 'red-team-audit.md');
         const mdContent = `# 🛡️ Tokonomics Red-Team Adversarial Audit Report
 
-> **Audit Date**: \`${report.auditDate}\`  
-> **Total Adversarial Challenges**: \`${report.totalChallenges}\`  
-> **Challenges Successfully Defended**: \`${report.challengesPassed} / ${report.totalChallenges}\` (**100%**)  
-> **Critical Vulnerabilities Found**: **${report.criticalVulnerabilitiesFound}**  
+> **Audit Date**: \`${report.auditDate}\`
+> **Total Adversarial Challenges**: \`${report.totalChallenges}\`
+> **Challenges Successfully Defended**: \`${report.challengesPassed} / ${report.totalChallenges}\` (**100%**)
+> **Critical Vulnerabilities Found**: **${report.criticalVulnerabilitiesFound}**
 > **Final Status**: **${report.auditStatus}**
 
 ---

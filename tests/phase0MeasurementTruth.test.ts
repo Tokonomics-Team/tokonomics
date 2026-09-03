@@ -26,6 +26,17 @@ export function runPhase0MeasurementTruthTests(): void {
         'Dataset metadata must have a reproducible SHA-256');
     assert.strictEqual(metadata.dataset.metadata.classification, 'Controlled Synthetic Benchmark');
 
+    const classifiedStatus = evidence.classifyRepositoryStatus([
+        ' M validation/reports/first-generated-report.json',
+        '?? validation/results/new-evidence.json',
+        ' M src/extension.ts'
+    ].join('\n'));
+    assert.deepStrictEqual(classifiedStatus.generatedEvidenceStatus, [
+        ' M validation/reports/first-generated-report.json',
+        '?? validation/results/new-evidence.json'
+    ], 'Generated evidence must be classified correctly even when it is the first porcelain entry');
+    assert.deepStrictEqual(classifiedStatus.sourceStatus, [' M src/extension.ts']);
+
     const windowsNpm = evidence.resolveCommand('npm', ['test'], {
         platform: 'win32',
         npmExecPath: 'C:\\node\\npm-cli.js',

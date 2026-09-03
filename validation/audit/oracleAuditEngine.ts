@@ -243,10 +243,10 @@ export class OracleAuditEngine {
 
         const md = `# 🛡️ Tokonomics Independent-Oracle Audit Report & Classification Matrix
 
-> **Audit Date**: \`${report.auditDate}\`  
-> **Total Subsystems Audited**: \`${report.totalSuitesAudited}\`  
-> **Independent Oracle Coverage**: **${report.independentOracleCoverage}** (**${report.independentOracleRatioPct}%**)  
-> **Certification-Critical Self-Validating Tests**: **${report.certificationCriticalSelfValidatingCount}** (Zero Tolerance Standard: **PASS**)  
+> **Audit Date**: \`${report.auditDate}\`
+> **Total Subsystems Audited**: \`${report.totalSuitesAudited}\`
+> **Independent Oracle Coverage**: **${report.independentOracleCoverage}** (**${report.independentOracleRatioPct}%**)
+> **Certification-Critical Self-Validating Tests**: **${report.certificationCriticalSelfValidatingCount}** (Zero Tolerance Standard: **PASS**)
 > **Final Status**: **${report.auditPassed ? 'APPROVED (ZERO SELF-VALIDATING TESTS IN CERTIFICATION PATH)' : 'FAILED'}**
 
 ---

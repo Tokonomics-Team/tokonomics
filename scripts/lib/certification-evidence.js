@@ -30,10 +30,24 @@ function git(rootDir, args, fallback = 'unknown') {
             cwd: rootDir,
             encoding: 'utf8',
             stdio: ['ignore', 'pipe', 'ignore']
-        }).trim();
+        }).trimEnd();
     } catch {
         return fallback;
     }
+}
+
+function classifyRepositoryStatus(rawStatus) {
+    const statusEntries = rawStatus === '' ? [] : rawStatus.split(/\r?\n/).filter(Boolean);
+    const isGeneratedEvidence = entry => {
+        const file = entry.slice(3).replace(/\\/g, '/');
+        return (/^validation\/reports\/.*\.(?:json|md)$/i.test(file) && !file.endsWith('/README.md'))
+            || /^validation\/results\/.*\.json$/i.test(file);
+    };
+
+    return {
+        sourceStatus: statusEntries.filter(entry => !isGeneratedEvidence(entry)),
+        generatedEvidenceStatus: statusEntries.filter(isGeneratedEvidence)
+    };
 }
 
 function captureRepositoryMetadata(rootDir, artifactPath) {
@@ -46,14 +60,7 @@ function captureRepositoryMetadata(rootDir, artifactPath) {
         ? packageLock.packages['']
         : {};
     const rawStatus = git(rootDir, ['status', '--porcelain'], 'unavailable');
-    const statusEntries = rawStatus === '' ? [] : rawStatus.split(/\r?\n/).filter(Boolean);
-    const isGeneratedEvidence = entry => {
-        const file = entry.slice(3).replace(/\\/g, '/');
-        return (/^validation\/reports\/.*\.(?:json|md)$/i.test(file) && !file.endsWith('/README.md'))
-            || /^validation\/results\/.*\.json$/i.test(file);
-    };
-    const sourceStatus = statusEntries.filter(entry => !isGeneratedEvidence(entry));
-    const generatedEvidenceStatus = statusEntries.filter(isGeneratedEvidence);
+    const { sourceStatus, generatedEvidenceStatus } = classifyRepositoryStatus(rawStatus);
     const artifactExists = Boolean(artifactPath && fs.existsSync(artifactPath));
 
     return {
@@ -288,6 +295,7 @@ function validateClaimRegistry(rootDir, registryPath) {
 }
 
 module.exports = {
+    classifyRepositoryStatus,
     captureRepositoryMetadata,
     createCertificationReport,
     deriveValidationDecision,
