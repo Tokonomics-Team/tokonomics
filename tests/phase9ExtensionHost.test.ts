@@ -27,6 +27,9 @@ export async function run(): Promise<void> {
     assert.strictEqual(diagnostics?.chatParticipantRegistered, true);
     assert.strictEqual(diagnostics?.releaseChannel, 'stable');
     assert.strictEqual(diagnostics?.forcePassThrough, false);
+    assert.strictEqual(diagnostics?.experiments?.length, 8);
+    assert.ok(diagnostics.experiments.every((experiment: any) => experiment.enabled === false && experiment.reason === 'not_selected'),
+        'Every Phase 10 experiment must be inactive in the installed artifact by default.');
 
     const registered = new Set(await vscode.commands.getCommands(true));
     for (const command of EXPECTED_COMMANDS) assert.ok(registered.has(command), `Missing registered command: ${command}`);
@@ -38,6 +41,11 @@ export async function run(): Promise<void> {
     assert.strictEqual(config.inspect('stagedRolloutPercent')?.defaultValue, 100);
     assert.strictEqual(config.inspect('emergencyDisableOptimization')?.defaultValue, false);
     assert.deepStrictEqual(config.inspect('disabledCapabilities')?.defaultValue, []);
+    assert.strictEqual(config.inspect('experimentalConsent')?.defaultValue, false);
+    assert.deepStrictEqual(config.inspect('experimentalFeatures')?.defaultValue, []);
+    assert.deepStrictEqual(config.inspect('disabledExperiments')?.defaultValue, []);
+    assert.strictEqual(config.inspect('experimentalMaxLatencyMs')?.defaultValue, 25);
+    assert.strictEqual(config.inspect('experimentalMaxMemoryMB')?.defaultValue, 32);
 
     for (const parser of ['tree-sitter.wasm', 'tree-sitter-typescript.wasm', 'tree-sitter-javascript.wasm', 'tree-sitter-python.wasm']) {
         const bytes = fs.readFileSync(path.join(extension.extensionPath, 'parsers', parser));
