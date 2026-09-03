@@ -36,6 +36,7 @@ import { runLocalSlmBrainTests } from '../tests/localSlmBrain.test';
 import { runAblationTests } from '../tests/ablation.test';
 import { runTaskSuccessCalibrationTests } from '../tests/taskSuccessCalibration.test';
 import { runDashboardAggregatorTests } from '../tests/dashboardAggregator.test';
+import { runDashboardLiveUpdateTests } from '../tests/dashboardLiveUpdate.test';
 import { runEventReconciliationTests } from '../tests/eventReconciliation.test';
 import { runDashboardResilienceTests } from '../tests/dashboardResilience.test';
 import { runCompilerIntegrationTests } from '../tests/compilerIntegration.test';
@@ -85,6 +86,7 @@ async function runAll() {
         runAblationTests();
         await runTaskSuccessCalibrationTests();
         runDashboardAggregatorTests();
+        await runDashboardLiveUpdateTests();
         await runEventReconciliationTests();
         await runDashboardResilienceTests();
         await runCompilerIntegrationTests();

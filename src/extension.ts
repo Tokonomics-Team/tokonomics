@@ -229,9 +229,9 @@ export async function activate(context: vscode.ExtensionContext) {
 
     const onComplete = () => {
         statusBarManager?.update();
-        if (DashboardWebviewPanel.currentPanel) {
-            DashboardWebviewPanel.currentPanel.updateContent();
-        }
+        // The dashboard receives prompt events through DashboardController.
+        // Replacing the entire HTML document here would reset scroll, modal,
+        // focus, and the user's selected time window after every prompt.
         BudgetGuardrail.checkBudget(metricsTracker);
         reviewPrompter.recordAction();
     };

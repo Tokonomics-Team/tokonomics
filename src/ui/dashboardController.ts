@@ -86,8 +86,14 @@ export class DashboardController {
         if (!msg || typeof msg !== 'object') return;
 
         switch (msg.action) {
+            case 'DASHBOARD_READY':
+                // Webview messages sent before its script is ready may be dropped by
+                // the host, so repeat the authoritative state after the client handshake.
+                this.sendInitialState(webview);
+                break;
+
             case 'CHANGE_TIME_WINDOW':
-                if (msg.window) {
+                if (isMetricTimeWindow(msg.window)) {
                     this.currentWindow = msg.window as MetricTimeWindow;
                     this.postToWebview(webview, {
                         type: 'SUMMARY_UPDATE',
@@ -123,6 +129,10 @@ export class DashboardController {
         };
     }
 
+    public getCurrentWindow(): MetricTimeWindow {
+        return this.currentWindow;
+    }
+
     private sendInitialState(webview: vscode.Webview): void {
         this.postToWebview(webview, {
             type: 'INIT_STATE',
@@ -139,7 +149,9 @@ export class DashboardController {
     private postToWebview(webview: vscode.Webview, message: WebviewMessage): void {
         try {
             if (webview && typeof webview.postMessage === 'function') {
-                webview.postMessage(message);
+                void Promise.resolve(webview.postMessage(message)).catch(err => {
+                    console.warn('[DashboardController] Error posting message to webview:', err);
+                });
             }
         } catch (err) {
             console.warn('[DashboardController] Error posting message to webview:', err);
@@ -152,4 +164,8 @@ export class DashboardController {
         }
         this.activeWebviews.clear();
     }
+}
+
+function isMetricTimeWindow(value: unknown): value is MetricTimeWindow {
+    return value === 'session' || value === 'today' || value === '7_days' || value === 'lifetime';
 }

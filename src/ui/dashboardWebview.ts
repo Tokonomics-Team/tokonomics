@@ -63,10 +63,10 @@ export class DashboardWebviewPanel {
         this.panel = panel;
         this.lastActiveDocUri = initialDocUri;
 
+        // Render first so the controller's initial state cannot target an empty document.
+        this.updateContent();
         const unregister = DashboardController.getInstance().registerWebview(this.panel.webview);
         this.disposables.push({ dispose: unregister });
-
-        this.updateContent();
         this.panel.onDidDispose(() => this.dispose(), null, this.disposables);
 
         vscode.window.onDidChangeActiveTextEditor((editor) => {
@@ -189,7 +189,9 @@ export class DashboardWebviewPanel {
     public updateContent() {
         const activeFileDiagnosis = this.diagnoseActiveFile();
 
-        const summary = LiveMetricsAggregator.getInstance().getAggregateSummary('session');
+        const summary = LiveMetricsAggregator.getInstance().getAggregateSummary(
+            DashboardController.getInstance().getCurrentWindow()
+        );
         const recentEvents = LiveMetricsAggregator.getInstance().getRecentEvents(50);
 
         this.panel.webview.html = this.getHtml(summary, recentEvents, activeFileDiagnosis, this.cachedWorkspaceScan);
@@ -364,34 +366,37 @@ export class DashboardWebviewPanel {
     <title>Tokonomics 6.0 Dashboard</title>
     <style>
         :root {
-            --bg-primary: #0a0e14;
-            --bg-card: rgba(22, 27, 34, 0.85);
-            --border: #30363d;
-            --border-highlight: #388bfd;
-            --cyan: #00f0ff;
-            --green: #2ea043;
-            --purple: #a371f7;
-            --orange: #f0883e;
-            --red: #f85149;
-            --text-primary: #f0f6fc;
-            --text-muted: #8b949e;
+            color-scheme: light dark;
+            --bg-primary: var(--vscode-editor-background, #0d1117);
+            --bg-card: var(--vscode-sideBar-background, #161b22);
+            --bg-elevated: var(--vscode-editorWidget-background, #1c2128);
+            --border: var(--vscode-panel-border, #3d444d);
+            --border-highlight: var(--vscode-focusBorder, #58a6ff);
+            --cyan: var(--vscode-textLink-foreground, #58a6ff);
+            --green: var(--vscode-testing-iconPassed, #3fb950);
+            --purple: var(--vscode-symbolIcon-classForeground, #bc8cff);
+            --orange: var(--vscode-editorWarning-foreground, #d29922);
+            --red: var(--vscode-errorForeground, #f85149);
+            --text-primary: var(--vscode-foreground, #f0f6fc);
+            --text-muted: var(--vscode-descriptionForeground, #9da7b3);
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
-        body { background: var(--bg-primary); color: var(--text-primary); padding: 20px; font-size: 13px; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: var(--bg-primary); color: var(--text-primary); padding: 20px; font: 13px var(--vscode-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif); }
         
         /* Header */
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
-        .title-area { display: flex; align-items: center; gap: 14px; }
+        .header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
+        .title-area { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
         .title { font-size: 18px; font-weight: 700; color: var(--cyan); letter-spacing: -0.5px; }
-        .window-selector { display: flex; background: rgba(0,0,0,0.5); border: 1px solid var(--border); border-radius: 6px; padding: 2px; }
+        .window-selector { display: flex; flex-wrap: wrap; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 6px; padding: 2px; }
         .window-btn { background: transparent; border: none; color: var(--text-muted); padding: 4px 10px; font-size: 11px; font-weight: 600; cursor: pointer; border-radius: 4px; transition: all 0.15s; }
-        .window-btn.active { background: #1f6feb; color: #fff; }
+        .window-btn.active { background: var(--vscode-button-background, #1f6feb); color: var(--vscode-button-foreground, #fff); }
 
-        .actions { display: flex; gap: 8px; }
-        button.btn-action { background: #21262d; border: 1px solid var(--border); color: var(--text-primary); padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
-        button.btn-action:hover { background: #30363d; }
-        button.btn-primary { background: #238636; border-color: rgba(240,246,252,0.1); color: #fff; }
-        button.btn-primary:hover { background: #2ea043; }
+        .actions { display: flex; flex-wrap: wrap; gap: 8px; }
+        button.btn-action { background: var(--vscode-button-secondaryBackground, #21262d); border: 1px solid var(--border); color: var(--vscode-button-secondaryForeground, var(--text-primary)); padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; transition: background-color 0.15s, border-color 0.15s; }
+        button.btn-action:hover { background: var(--vscode-button-secondaryHoverBackground, #30363d); }
+        button.btn-primary { background: var(--vscode-button-background, #238636); color: var(--vscode-button-foreground, #fff); }
+        button.btn-primary:hover { background: var(--vscode-button-hoverBackground, #2ea043); }
+        button:focus-visible, .ledger-row:focus-visible, .modal-close:focus-visible { outline: 2px solid var(--border-highlight); outline-offset: 2px; }
 
         /* Quick Guide Tip Banner */
         .guide-banner { background: rgba(31, 111, 235, 0.12); border: 1px solid rgba(56, 139, 253, 0.35); border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; font-size: 12px; }
@@ -399,23 +404,24 @@ export class DashboardWebviewPanel {
 
         /* Executive Cards */
         .grid-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 18px; }
-        .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
+        .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 14px; min-width: 0; }
         .card-label { font-size: 11px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; margin-bottom: 4px; }
         .card-val { font-size: 24px; font-weight: 700; }
         .card-sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
 
         /* Active Prompt Pulse Card */
-        .pulse-card { background: rgba(13, 17, 23, 0.9); border: 1px solid var(--border-highlight); border-radius: 8px; padding: 14px; margin-bottom: 18px; box-shadow: 0 0 15px rgba(56, 139, 253, 0.15); }
+        .pulse-card { background: var(--bg-elevated); border: 1px solid var(--border-highlight); border-radius: 8px; padding: 14px; margin-bottom: 18px; box-shadow: 0 0 15px color-mix(in srgb, var(--border-highlight) 18%, transparent); }
         .pulse-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
         .badge-status { padding: 3px 8px; border-radius: 12px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
         .badge-reconciled { background: rgba(46, 160, 67, 0.2); color: var(--green); border: 1px solid var(--green); }
         .badge-estimated { background: rgba(240, 136, 62, 0.2); color: var(--orange); border: 1px solid var(--orange); }
         .badge-optimizing { background: rgba(0, 240, 255, 0.2); color: var(--cyan); border: 1px solid var(--cyan); }
+        .badge-unavailable { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
 
         .pulse-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; font-size: 12px; }
-        .pulse-item { background: rgba(255,255,255,0.03); padding: 8px 10px; border-radius: 6px; }
+        .pulse-item { background: color-mix(in srgb, var(--text-primary) 4%, transparent); padding: 8px 10px; border-radius: 6px; }
         .pulse-label { color: var(--text-muted); font-size: 10px; margin-bottom: 2px; }
-        .pulse-val { font-weight: 700; color: #fff; }
+        .pulse-val { font-weight: 700; color: var(--text-primary); }
 
         /* Dual Section Grid */
         .dual-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 18px; }
@@ -425,35 +431,45 @@ export class DashboardWebviewPanel {
         /* SVG Live Charts */
         .chart-container { width: 100%; height: 120px; position: relative; margin-top: 6px; }
         svg.live-chart { width: 100%; height: 100%; overflow: visible; }
+        svg.live-chart path { stroke-linecap: round; stroke-linejoin: round; }
 
         /* Waterfalls */
-        .waterfall-bar { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 11px; }
-        .waterfall-fill-container { flex: 1; margin: 0 10px; background: rgba(255,255,255,0.05); height: 6px; border-radius: 3px; overflow: hidden; }
+        .waterfall-bar { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 11px; }
+        .waterfall-fill-container { flex: 1; margin: 0 10px; background: color-mix(in srgb, var(--text-primary) 7%, transparent); height: 6px; border-radius: 3px; overflow: hidden; }
         .waterfall-fill { height: 100%; border-radius: 3px; }
 
         /* Ledger Table */
-        .ledger-table { width: 100%; border-collapse: collapse; font-size: 11px; text-align: left; }
+        .ledger-scroll { overflow-x: auto; }
+        .ledger-table { width: 100%; min-width: 700px; border-collapse: collapse; font-size: 11px; text-align: left; }
         .ledger-table th { padding: 8px; color: var(--text-muted); border-bottom: 1px solid var(--border); font-weight: 600; }
-        .ledger-table td { padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); cursor: pointer; }
-        .ledger-table tr:hover { background: rgba(56, 139, 253, 0.08); }
+        .ledger-table td { padding: 8px; border-bottom: 1px solid var(--border); cursor: pointer; }
+        .ledger-table tr:hover { background: color-mix(in srgb, var(--border-highlight) 10%, transparent); }
 
         /* Modal Inspector */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center; }
-        .modal-content { background: #161b22; border: 1px solid var(--border-highlight); border-radius: 8px; width: 75%; max-height: 85vh; padding: 22px; overflow-y: auto; color: #fff; }
-        .modal-close { float: right; cursor: pointer; color: var(--text-muted); font-size: 20px; font-weight: 700; }
-        .inspector-section { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 12px; margin-bottom: 12px; font-family: monospace; font-size: 11px; }
+        .modal-content { background: var(--bg-elevated); border: 1px solid var(--border-highlight); border-radius: 8px; width: min(760px, 92vw); max-height: 85vh; padding: 22px; overflow-y: auto; color: var(--text-primary); }
+        .modal-close { float: right; cursor: pointer; color: var(--text-muted); background: transparent; border: 0; font-size: 20px; font-weight: 700; }
+        .inspector-section { background: color-mix(in srgb, var(--text-primary) 4%, transparent); border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-bottom: 12px; font-family: monospace; font-size: 11px; }
         .inspector-title { color: var(--cyan); font-weight: 700; margin-bottom: 6px; font-size: 12px; }
+        @media (max-width: 860px) {
+            body { padding: 12px; }
+            .dual-grid { grid-template-columns: 1fr; }
+            .header, .title-area { align-items: flex-start; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
+        }
     </style>
 </head>
 <body>
     <div class="header">
         <div class="title-area">
             <div class="title">TOKONOMICS 6.0: ACTIVITY DASHBOARD</div>
-            <div class="window-selector">
-                <button class="window-btn active" data-window="session">Session</button>
-                <button class="window-btn" data-window="today">Today</button>
-                <button class="window-btn" data-window="7_days">7 Days</button>
-                <button class="window-btn" data-window="lifetime">Lifetime</button>
+            <div class="window-selector" role="group" aria-label="Metrics time window">
+                <button class="window-btn${summary.timeWindow === 'session' ? ' active' : ''}" data-window="session" aria-pressed="${summary.timeWindow === 'session'}">Session</button>
+                <button class="window-btn${summary.timeWindow === 'today' ? ' active' : ''}" data-window="today" aria-pressed="${summary.timeWindow === 'today'}">Today</button>
+                <button class="window-btn${summary.timeWindow === '7_days' ? ' active' : ''}" data-window="7_days" aria-pressed="${summary.timeWindow === '7_days'}">7 Days</button>
+                <button class="window-btn${summary.timeWindow === 'lifetime' ? ' active' : ''}" data-window="lifetime" aria-pressed="${summary.timeWindow === 'lifetime'}">Lifetime</button>
             </div>
         </div>
         <div class="actions">
@@ -476,7 +492,7 @@ export class DashboardWebviewPanel {
     </div>
 
     <!-- Executive Summary Cards -->
-    <div class="grid-cards">
+    <div class="grid-cards" aria-live="polite" aria-atomic="true">
         <div class="card">
             <div class="card-label">⚡ Tokens Saved</div>
             <div class="card-val" id="sumSavedTokens" style="color: var(--cyan);">${this.escapeHtml(summary.savedTokens.toLocaleString())}</div>
@@ -500,10 +516,10 @@ export class DashboardWebviewPanel {
     </div>
 
     <!-- Active Prompt Pulse Card -->
-    <div class="pulse-card">
+    <div class="pulse-card" aria-live="polite" aria-atomic="true">
         <div class="pulse-header">
-            <div style="font-weight: 700; color: #fff;">🟢 Most Recent Optimization Turn</div>
-            <span class="badge-status ${latestEvent?.isCostReconciled ? 'badge-reconciled' : 'badge-estimated'}" id="pulseStatus">
+            <div style="font-weight: 700; color: var(--text-primary);">🟢 Most Recent Optimization Turn</div>
+            <span class="badge-status ${latestEvent?.costStatus === 'reconciled' ? 'badge-reconciled' : latestEvent?.costStatus === 'projected' ? 'badge-estimated' : 'badge-unavailable'}" id="pulseStatus">
                 ${latestEvent ? (latestEvent.costStatus === 'reconciled' ? 'Actual Reconciled' : latestEvent.costStatus === 'projected' ? 'Projected (Estimated)' : 'Cost Unavailable') : 'No Requests'}
             </span>
         </div>
@@ -544,7 +560,7 @@ export class DashboardWebviewPanel {
                 <span style="font-size: 10px; color: var(--cyan);">Raw (Red) vs Optimized (Cyan)</span>
             </div>
             <div class="chart-container">
-                <svg id="tokenStreamChart" class="live-chart" viewBox="0 0 400 100" preserveAspectRatio="none">
+                <svg id="tokenStreamChart" class="live-chart" viewBox="0 0 400 100" preserveAspectRatio="none" role="img" aria-label="Raw and optimized token trend for recent prompts">
                     <path id="rawTokenPath" d="" fill="none" stroke="var(--red)" stroke-width="2" opacity="0.75" />
                     <path id="optTokenPath" d="" fill="none" stroke="var(--cyan)" stroke-width="2.5" />
                 </svg>
@@ -555,10 +571,10 @@ export class DashboardWebviewPanel {
         <div class="section-box">
             <div class="section-title">
                 <span>📊 Live Dollar Cost Stream</span>
-                <span style="font-size: 10px; color: var(--green);">Projected vs Actual Savings</span>
+                <span style="font-size: 10px; color: var(--green);">Raw vs Optimized Cost</span>
             </div>
             <div class="chart-container">
-                <svg id="costStreamChart" class="live-chart" viewBox="0 0 400 100" preserveAspectRatio="none">
+                <svg id="costStreamChart" class="live-chart" viewBox="0 0 400 100" preserveAspectRatio="none" role="img" aria-label="Raw and optimized cost trend for recent prompts">
                     <path id="rawCostPath" d="" fill="none" stroke="var(--orange)" stroke-width="2" opacity="0.75" />
                     <path id="optCostPath" d="" fill="none" stroke="var(--green)" stroke-width="2.5" />
                 </svg>
@@ -574,7 +590,7 @@ export class DashboardWebviewPanel {
                 <span>🌊 Stage-by-Stage Token Reduction Waterfall</span>
                 <span style="font-size: 10px; color: var(--cyan);">Authoritative Compiler Stages</span>
             </div>
-            ${stageWaterfall}
+            <div id="stageWaterfall" aria-live="polite">${stageWaterfall}</div>
         </div>
 
         <!-- 7-Tier Cost Attribution Waterfall -->
@@ -583,7 +599,7 @@ export class DashboardWebviewPanel {
                 <span>💰 Request Cost Evidence</span>
                 <span style="font-size: 10px; color: var(--green);">Projected and reconciled remain distinct</span>
             </div>
-            ${costEvidence}
+            <div id="requestCostEvidence" aria-live="polite">${costEvidence}</div>
         </div>
     </div>
 
@@ -593,6 +609,7 @@ export class DashboardWebviewPanel {
             <span>📋 Live Prompt Optimization Ledger (Click row to inspect)</span>
             <span style="font-size: 10px; color: var(--text-muted);">Real-time stream</span>
         </div>
+        <div class="ledger-scroll">
         <table class="ledger-table">
             <thead>
                 <tr>
@@ -607,25 +624,26 @@ export class DashboardWebviewPanel {
             </thead>
             <tbody id="ledgerBody">
                 ${recentEvents.slice().reverse().map(e => `
-                <tr class="ledger-row" data-request-id="${this.escapeHtml(e.id)}">
+                <tr class="ledger-row" data-request-id="${this.escapeHtml(e.id)}" tabindex="0" role="button" aria-label="Inspect ${this.escapeHtml(e.taskType || 'prompt')} request">
                     <td>${new Date(e.timestamp).toLocaleTimeString()}</td>
-                    <td><strong style="color: #fff;">${this.escapeHtml(e.taskType?.toUpperCase() || 'Unavailable')}</strong></td>
+                    <td><strong style="color: var(--text-primary);">${this.escapeHtml(e.taskType?.toUpperCase() || 'Unavailable')}</strong></td>
                     <td>${this.escapeHtml(e.model || 'Unavailable')}</td>
                     <td>${this.escapeHtml(e.rawInputTokens.toLocaleString())} ➔ ${this.escapeHtml(e.optimizedInputTokens.toLocaleString())}</td>
                     <td style="color: var(--cyan); font-weight: 700;">-${this.escapeHtml(e.reductionPercentage)}%</td>
                     <td style="color: var(--green); font-weight: 700;">${this.escapeHtml(e.costStatus === 'reconciled' ? money(e.actualSavingsUSD) : e.costStatus === 'projected' ? money(e.projectedSavingsUSD, true) : 'Unavailable')}</td>
-                    <td><span class="badge-status ${e.costStatus === 'reconciled' ? 'badge-reconciled' : 'badge-estimated'}">${e.costStatus === 'reconciled' ? 'Reconciled' : e.costStatus === 'projected' ? 'Projected' : 'Unavailable'}</span></td>
+                    <td><span class="badge-status ${e.costStatus === 'reconciled' ? 'badge-reconciled' : e.costStatus === 'projected' ? 'badge-estimated' : 'badge-unavailable'}">${e.costStatus === 'reconciled' ? 'Reconciled' : e.costStatus === 'projected' ? 'Projected' : 'Unavailable'}</span></td>
                 </tr>
                 `).join('')}
             </tbody>
         </table>
+        </div>
     </div>
 
     <!-- Deep Optimization Inspector Modal -->
-    <div id="inspectorModal" class="modal" onclick="closeInspector(event)">
+    <div id="inspectorModal" class="modal" onclick="closeInspector(event)" role="dialog" aria-modal="true" aria-labelledby="inspectorTitle">
         <div class="modal-content" onclick="event.stopPropagation()">
-            <span class="modal-close" onclick="closeModal()">&times;</span>
-            <h3 style="color: var(--cyan); margin-bottom: 14px;">🔍 Deep Optimization Decision Inspector</h3>
+            <button class="modal-close" onclick="closeModal()" aria-label="Close inspector">&times;</button>
+            <h3 id="inspectorTitle" style="color: var(--cyan); margin-bottom: 14px;">🔍 Deep Optimization Decision Inspector</h3>
             
             <div class="inspector-section">
                 <div class="inspector-title">🎯 Task Intent & Model Target</div>
@@ -661,6 +679,7 @@ export class DashboardWebviewPanel {
                 const existing = eventsCache.findIndex(item => item.id === e.id);
                 if (existing >= 0) eventsCache[existing] = e;
                 else eventsCache.push(e);
+                eventsCache = eventsCache.slice(-50);
                 updatePulseCard(e);
                 upsertLedgerRow(e);
                 updateLiveCharts();
@@ -670,6 +689,7 @@ export class DashboardWebviewPanel {
                 eventsCache = msg.payload.recentEvents || [];
                 if (msg.payload.summary) updateSummaryCards(msg.payload.summary);
                 if (msg.payload.latestEvent) updatePulseCard(msg.payload.latestEvent);
+                renderLedger();
                 updateLiveCharts();
             } else if (msg.type === 'TRACE_DETAIL') {
                 document.getElementById('inspectorContent').innerText = JSON.stringify(msg.payload, null, 2);
@@ -698,8 +718,56 @@ export class DashboardWebviewPanel {
             document.getElementById('pulseCQ').innerText = Number.isFinite(e.predictedCQ) ? e.predictedCQ + '% [' + e.cqRating + ']' : 'Unavailable';
             
             const badge = document.getElementById('pulseStatus');
-            badge.className = 'badge-status ' + (e.costStatus === 'reconciled' ? 'badge-reconciled' : 'badge-estimated');
+            badge.className = 'badge-status ' + (e.costStatus === 'reconciled' ? 'badge-reconciled' : e.costStatus === 'projected' ? 'badge-estimated' : 'badge-unavailable');
             badge.innerText = e.costStatus === 'reconciled' ? 'Actual Reconciled' : e.costStatus === 'projected' ? 'Projected (Estimated)' : 'Cost Unavailable';
+            updateStageWaterfall(e);
+            updateCostEvidence(e);
+        }
+
+        function updateStageWaterfall(e) {
+            const container = document.getElementById('stageWaterfall');
+            container.replaceChildren();
+            if (!Array.isArray(e.stageMetrics) || e.stageMetrics.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'card-sub';
+                empty.innerText = 'Unavailable - no stage metrics have been recorded.';
+                container.appendChild(empty);
+                return;
+            }
+            e.stageMetrics.forEach(stage => {
+                const row = document.createElement('div');
+                row.className = 'waterfall-bar';
+                const label = document.createElement('span');
+                label.innerText = stage.stageName || 'Stage';
+                const track = document.createElement('div');
+                track.className = 'waterfall-fill-container';
+                const fill = document.createElement('div');
+                fill.className = 'waterfall-fill';
+                const percentage = stage.tokensBefore > 0
+                    ? Math.max(0, Math.min(100, (stage.tokensSaved / stage.tokensBefore) * 100)) : 0;
+                fill.style.width = percentage.toFixed(1) + '%';
+                fill.style.background = 'var(--cyan)';
+                const value = document.createElement('strong');
+                value.style.color = 'var(--cyan)';
+                value.innerText = '-' + Number(stage.tokensSaved || 0).toLocaleString() + ' tokens';
+                track.appendChild(fill);
+                row.append(label, track, value);
+                container.appendChild(row);
+            });
+        }
+
+        function updateCostEvidence(e) {
+            const container = document.getElementById('requestCostEvidence');
+            const line = document.createElement('div');
+            line.className = 'card-sub';
+            if (e.costStatus === 'reconciled' && Number.isFinite(e.actualSavingsUSD)) {
+                line.innerText = 'Provider-reconciled request savings: $' + e.actualSavingsUSD.toFixed(4) + '. Per-stage financial attribution is unavailable.';
+            } else if (e.costStatus === 'projected' && Number.isFinite(e.projectedSavingsUSD)) {
+                line.innerText = 'Projected request savings: ~$' + e.projectedSavingsUSD.toFixed(4) + '. Per-stage financial attribution is unavailable.';
+            } else {
+                line.innerText = 'Cost unavailable - no verified usage or versioned price is attached to this request.';
+            }
+            container.replaceChildren(line);
         }
 
         function upsertLedgerRow(e) {
@@ -707,18 +775,35 @@ export class DashboardWebviewPanel {
             const old = Array.from(tbody.querySelectorAll('tr')).find(row => row.dataset.requestId === e.id);
             if (old) old.remove();
             const tr = document.createElement('tr');
+            tr.className = 'ledger-row';
             tr.dataset.requestId = e.id;
+            tr.tabIndex = 0;
+            tr.setAttribute('role', 'button');
+            tr.setAttribute('aria-label', 'Inspect ' + (e.taskType || 'prompt') + ' request');
             tr.onclick = () => inspectEvent(e.id);
+            tr.onkeydown = event => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    inspectEvent(e.id);
+                }
+            };
             tr.innerHTML = \`
                 <td>\${escapeText(new Date(e.timestamp).toLocaleTimeString())}</td>
-                <td><strong style="color: #fff;">\${escapeText(e.taskType ? e.taskType.toUpperCase() : 'Unavailable')}</strong></td>
+                <td><strong style="color: var(--text-primary);">\${escapeText(e.taskType ? e.taskType.toUpperCase() : 'Unavailable')}</strong></td>
                 <td>\${escapeText(e.model || 'Unavailable')}</td>
                 <td>\${e.rawInputTokens.toLocaleString()} ➔ \${e.optimizedInputTokens.toLocaleString()}</td>
                 <td style="color: var(--cyan); font-weight: 700;">-\${e.reductionPercentage}%</td>
                 <td style="color: var(--green); font-weight: 700;">\${e.costStatus === 'reconciled' && Number.isFinite(e.actualSavingsUSD) ? '$' + e.actualSavingsUSD.toFixed(4) : e.costStatus === 'projected' && Number.isFinite(e.projectedSavingsUSD) ? '~$' + e.projectedSavingsUSD.toFixed(4) : 'Unavailable'}</td>
-                <td><span class="badge-status \${e.costStatus === 'reconciled' ? 'badge-reconciled' : 'badge-estimated'}">\${e.costStatus === 'reconciled' ? 'Reconciled' : e.costStatus === 'projected' ? 'Projected' : 'Unavailable'}</span></td>
+                <td><span class="badge-status \${e.costStatus === 'reconciled' ? 'badge-reconciled' : e.costStatus === 'projected' ? 'badge-estimated' : 'badge-unavailable'}">\${e.costStatus === 'reconciled' ? 'Reconciled' : e.costStatus === 'projected' ? 'Projected' : 'Unavailable'}</span></td>
             \`;
             tbody.insertBefore(tr, tbody.firstChild);
+            while (tbody.children.length > 50) tbody.lastElementChild.remove();
+        }
+
+        function renderLedger() {
+            const tbody = document.getElementById('ledgerBody');
+            tbody.replaceChildren();
+            eventsCache.forEach(upsertLedgerRow);
         }
 
         function escapeText(value) {
@@ -743,9 +828,14 @@ export class DashboardWebviewPanel {
         }
 
         function buildPaths(pairs) {
-            if (pairs.length < 2) return { first: '', second: '' };
+            if (pairs.length === 0) return { first: '', second: '' };
             const maximum = Math.max(...pairs.flat(), 0);
             if (maximum <= 0) return { first: '', second: '' };
+            if (pairs.length === 1) {
+                const firstY = Math.max(10, Math.round(90 - ((pairs[0][0] / maximum) * 75)));
+                const secondY = Math.max(10, Math.round(90 - ((pairs[0][1] / maximum) * 75)));
+                return { first: 'M195,' + firstY + ' L205,' + firstY, second: 'M195,' + secondY + ' L205,' + secondY };
+            }
             const first = [];
             const second = [];
             pairs.forEach((pair, index) => {
@@ -761,14 +851,14 @@ export class DashboardWebviewPanel {
             if (ev) {
                 document.getElementById('inspIntent').innerText =
                     'Task Type: ' + (ev.taskType ? ev.taskType.toUpperCase() : 'Unavailable') +
-                    ' | Confidence: ' + (Number.isFinite(ev.taskConfidence) ? ev.taskConfidence : 'Unavailable') + '\n' +
-                    'Model: ' + (ev.model || 'Unavailable') + ' | Provider: ' + (ev.provider || 'Unavailable') + '\n' +
+                    ' | Confidence: ' + (Number.isFinite(ev.taskConfidence) ? ev.taskConfidence : 'Unavailable') + '\\n' +
+                    'Model: ' + (ev.model || 'Unavailable') + ' | Provider: ' + (ev.provider || 'Unavailable') + '\\n' +
                     'Cache state: ' + (ev.cacheState || 'Unavailable') + ' | Cached tokens: ' + (Number.isFinite(ev.cachedTokens) ? ev.cachedTokens : 'Unavailable');
                 document.getElementById('inspCQ').innerText = Number.isFinite(ev.predictedCQ)
-                    ? 'Context Quality: ' + ev.predictedCQ + '% [' + ev.cqRating + ']\nEvidence Coverage: ' + Math.round(ev.evidenceCoverage * 100) + '% | Slice Confidence: ' + ev.sliceConfidence
+                    ? 'Context Quality: ' + ev.predictedCQ + '% [' + ev.cqRating + ']\\nEvidence Coverage: ' + Math.round(ev.evidenceCoverage * 100) + '% | Slice Confidence: ' + ev.sliceConfidence
                     : 'Context quality unavailable.';
                 document.getElementById('inspStages').innerText = ev.stageMetrics && ev.stageMetrics.length
-                    ? ev.stageMetrics.map(m => '• ' + m.stageName + ': ' + m.tokensBefore + ' ➔ ' + m.tokensAfter + ' tokens (-' + m.tokensSaved + ' in ' + m.latencyMs + 'ms)').join('\n')
+                    ? ev.stageMetrics.map(m => '• ' + m.stageName + ': ' + m.tokensBefore + ' ➔ ' + m.tokensAfter + ' tokens (-' + m.tokensSaved + ' in ' + m.latencyMs + 'ms)').join('\\n')
                     : 'Stage metrics unavailable.';
                 document.getElementById('inspectorContent').innerText = 'Loading privacy-safe ledger trace…';
                 vscode.postMessage({ action: 'REQUEST_TRACE', requestId: id });
@@ -787,8 +877,12 @@ export class DashboardWebviewPanel {
         // Time window buttons
         document.querySelectorAll('.window-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                document.querySelectorAll('.window-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.window-btn').forEach(b => {
+                    b.classList.remove('active');
+                    b.setAttribute('aria-pressed', 'false');
+                });
                 btn.classList.add('active');
+                btn.setAttribute('aria-pressed', 'true');
                 vscode.postMessage({ action: 'CHANGE_TIME_WINDOW', window: btn.dataset.window });
             });
         });
@@ -801,9 +895,16 @@ export class DashboardWebviewPanel {
         document.getElementById('btnReset').addEventListener('click', () => vscode.postMessage({ command: 'resetMetrics' }));
         document.querySelectorAll('.ledger-row').forEach(row => {
             row.addEventListener('click', () => inspectEvent(row.dataset.requestId));
+            row.addEventListener('keydown', event => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    inspectEvent(row.dataset.requestId);
+                }
+            });
         });
-        
+
         updateLiveCharts();
+        vscode.postMessage({ action: 'DASHBOARD_READY' });
     </script>
 </body>
 </html>`;
