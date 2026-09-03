@@ -54,6 +54,9 @@ export function runPhase0MeasurementTruthTests(): void {
     assert.strictEqual(registryResult.valid, true, registryResult.errors.join('; '));
     assert.ok(registryResult.registry.claims.some((claim: any) => claim.status === 'unverified'),
         'The registry must expose unresolved claims rather than silently treating all claims as verified');
+    assert.ok(registryResult.registry.claims.some((claim: any) =>
+        claim.status === 'unverified' && claim.publicLocations.length === 0),
+    'Unverified claims may remain auditable without being repeated in public release material');
     assert.ok(registryResult.registry.claims.some((claim: any) => claim.status === 'retired'),
         'Retired certification claims must remain auditable');
 

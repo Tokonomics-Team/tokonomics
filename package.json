@@ -283,22 +283,22 @@
         "tokenOptimizer.enforceEvidenceSafetyGate": {
           "type": "boolean",
           "default": true,
-          "description": "Mathematically enforce RequiredEvidence ⊆ ProvidedEvidence, failing closed on missing critical evidence."
+          "description": "Validate required context and use conservative fallback when it is incomplete."
         },
         "tokenOptimizer.enableAstPruning": {
           "type": "boolean",
           "default": true,
-          "description": "Enable AST structural code signature pruning across TypeScript, JavaScript, Python, Go, Rust, Java, and C#."
+          "description": "Enable structured code context preparation."
         },
         "tokenOptimizer.enableCacheAlignment": {
           "type": "boolean",
           "default": true,
-          "description": "Enable 1024-token prefix stabilization and 4-tier provider prompt cache alignment."
+          "description": "Enable provider-aware context preparation."
         },
         "tokenOptimizer.enableTextCompression": {
           "type": "boolean",
           "default": true,
-          "description": "Enable semantic token filtering on conversational logs and natural language contexts."
+          "description": "Enable context compaction for eligible text."
         },
         "tokenOptimizer.compressionRatio": {
           "type": "number",
@@ -358,7 +358,7 @@
             "high"
           ],
           "default": "medium",
-          "description": "MCP/Tool schema compression level. 'low': truncate descriptions. 'medium': strip descriptions + enums + defaults. 'high': collapse 15+ tools into a single meta-tool."
+          "description": "Context-efficiency level for eligible tool definitions."
         },
         "tokenOptimizer.enableDiffOutputOptimization": {
           "type": "boolean",
@@ -373,7 +373,7 @@
         "tokenOptimizer.enableResponseCache": {
           "type": "boolean",
           "default": true,
-          "description": "Enable instant zero-token exact-hash response caching for read-only questions."
+          "description": "Enable eligible exact-match response reuse for read-only questions."
         },
         "tokenOptimizer.tabRelevanceThreshold": {
           "type": "number",
@@ -414,7 +414,7 @@
           "default": 512,
           "minimum": 128,
           "maximum": 2048,
-          "description": "Maximum dimension (width or height in pixels) for rightsized images. Lower values save more tokens but reduce image quality."
+          "description": "Maximum dimension in pixels for eligible rightsized images. Lower values reduce image detail."
         },
         "tokenOptimizer.ramBudgetMB": {
           "type": "number",

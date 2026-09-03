@@ -272,9 +272,12 @@ function validateClaimRegistry(rootDir, registryPath) {
         if (!CLAIM_STATUSES.has(claim.status)) {
             errors.push(`claim ${claim.id} has unsupported status ${claim.status}`);
         }
-        if (!Array.isArray(claim.publicLocations) || claim.publicLocations.length === 0) {
-            errors.push(`claim ${claim.id} must name at least one public location`);
+        if (!Array.isArray(claim.publicLocations)) {
+            errors.push(`claim ${claim.id} publicLocations must be an array`);
         } else {
+            if ((claim.status === 'verified' || claim.status === 'qualified') && claim.publicLocations.length === 0) {
+                errors.push(`claim ${claim.id} must name at least one public location`);
+            }
             for (const location of claim.publicLocations) {
                 if (!fs.existsSync(path.resolve(rootDir, location))) {
                     errors.push(`claim ${claim.id} references missing public location ${location}`);
