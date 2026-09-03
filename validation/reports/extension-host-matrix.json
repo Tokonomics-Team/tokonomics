@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "classification": "installed-vsix-extension-host-evidence",
-  "generatedAt": "2026-09-03T07:09:23.622Z",
+  "generatedAt": "2026-09-03T12:11:04.889Z",
   "mode": "full-matrix",
   "artifact": {
-    "path": "tokonomics-5.1.1.vsix",
-    "sha256": "5354543e75b0e1f151e3ee3521e130d0a6201fd86298561943a2ff6891105491"
+    "path": "tokonomics-6.0.0.vsix",
+    "sha256": "69d1f83b07bd51b34a2a5157bd8dd303d02d56ea4a6dfb15edf8f6d0da33d93b"
   },
   "results": [
     {
@@ -21,7 +21,7 @@
       "trustedWorkspacePassed": true,
       "restrictedWorkspaceRuntime": "not-executed-development-host-forces-trust",
       "manifestNormalization": "host-owned __metadata removed before comparison",
-      "durationMs": 3346
+      "durationMs": 4081
     },
     {
       "id": "stable",
@@ -29,14 +29,14 @@
       "channel": "current-stable",
       "requiredForRelease": true,
       "status": "passed",
-      "actualVersion": "1.135.0",
-      "hostCommit": "08d4889f9ec4a1685d257b9b95de036c8e1ce1e5",
+      "actualVersion": "1.136.0",
+      "hostCommit": "520fb30b2d3d324b4cb2342f6e88e2cd93751de1",
       "hostQuality": "stable",
       "installedPayloadMatched": true,
       "trustedWorkspacePassed": true,
       "restrictedWorkspaceRuntime": "not-executed-development-host-forces-trust",
       "manifestNormalization": "host-owned __metadata removed before comparison",
-      "durationMs": 4228
+      "durationMs": 2258
     },
     {
       "id": "insiders",
@@ -45,18 +45,18 @@
       "requiredForRelease": true,
       "status": "passed",
       "actualVersion": "1.137.0-insider",
-      "hostCommit": "a3c780be1ff7381b665d0592052fb1c7c9e93ab6",
+      "hostCommit": "af195aabe861b9d99fcb322904793322ae7f0952",
       "hostQuality": "insider",
       "installedPayloadMatched": true,
       "trustedWorkspacePassed": true,
       "restrictedWorkspaceRuntime": "not-executed-development-host-forces-trust",
       "manifestNormalization": "host-owned __metadata removed before comparison",
-      "durationMs": 4273
+      "durationMs": 135243
     }
   ],
   "allRequiredPassed": true,
   "releaseCertified": false,
-  "cleanupWarning": null,
+  "cleanupWarning": "Temporary profile cleanup deferred: EPERM",
   "limitations": [
     "Provider availability and account-backed model behavior remain environment-dependent."
   ]

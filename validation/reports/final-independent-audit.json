@@ -1,7 +1,7 @@
 {
   "metadata": {
-    "repositoryCommitSha": "8d7bf1dbc7555633d2176b2f356eb327d9e6401e",
-    "tokonomicsVersion": "5.1.1",
+    "repositoryCommitSha": "6a7d3ea572ba14261e63ff3ceddc34eaec7f674e",
+    "tokonomicsVersion": "6.0.0",
     "benchmarkDatasetVersion": "2026-v2.1",
     "modelProvider": "none (controlled synthetic fixture)",
     "modelVersion": "not applicable",
@@ -22,9 +22,9 @@
     "pricingProfileVersion": "synthetic-estimate-only",
     "benchmarkClassification": "Controlled Synthetic Benchmark",
     "datasetMetadataSha256": "0347d021aa250511b865a987c4fdf4dee8586335e5f48fdba4a79efdc6fed1d2",
-    "timestamp": "2026-09-03T07:09:27.185Z"
+    "timestamp": "2026-09-03T12:11:07.927Z"
   },
-  "executionDurationSec": "0.77",
+  "executionDurationSec": "0.71",
   "section01_ArchitectureCoverage": {
     "featureCoveragePct": 100,
     "reachabilityPct": 100,
@@ -35,7 +35,7 @@
     "governorIntegrated": true,
     "orchestratorExecuted": true,
     "finalContextPacked": true,
-    "latencyMs": 0.14
+    "latencyMs": 0.12
   },
   "section03_Governor": {
     "intentPrecisionPct": 100,
@@ -725,9 +725,9 @@
     "killScorePct": 100
   },
   "section28_Reproducibility": {
-    "gitSha": "8d7bf1dbc7555633d2176b2f356eb327d9e6401e",
+    "gitSha": "6a7d3ea572ba14261e63ff3ceddc34eaec7f674e",
     "datasetSha256": "754d1fa43e95396c1be1c07586326e0dc798871d272390a3657bfe09ef3927cd",
-    "timestamp": "2026-09-03T07:09:27.185Z"
+    "timestamp": "2026-09-03T12:11:07.927Z"
   },
   "section29_RedTeamAudit": {
     "totalAdversarialChallenges": 12,

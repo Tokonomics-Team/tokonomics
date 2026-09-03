@@ -1,7 +1,7 @@
-# 🏆 Tokonomics 5.1.x Master Forensic Independent Audit & Certification Report
+# Tokonomics 6.0.0 controlled independent audit report
 
-> **Tokonomics Version**: `5.1.1`
-> **Repository Commit SHA**: `8d7bf1dbc7555633d2176b2f356eb327d9e6401e`
+> **Tokonomics Version**: `6.0.0`
+> **Repository Commit SHA**: `6a7d3ea572ba14261e63ff3ceddc34eaec7f674e`
 > **Benchmark Classification**: `Controlled Synthetic Benchmark` ($N=160$)
 > **Holdout Dataset SHA-256**: `754d1fa43e95396c1be1c07586326e0dc798871d272390a3657bfe09ef3927cd`
 > **Independent-Oracle Coverage**: **12 / 12** (**100%**)
@@ -78,7 +78,7 @@
 - **Memory Leak Invariant**: Zero leak envelope across 100 sequential compilation cycles.
 - **Cross-Request Isolation**: Complete request-scoped isolation across 50 concurrent compilations.
 - **Network Isolation**: Certified 0 outbound network requests during compilation.
-- **VSIX Package Cleanliness**: Verified 0 validation modules in production package (`tokonomics-5.1.1.vsix`).
+- **VSIX Package Cleanliness**: Verified 0 validation modules in production package (`tokonomics-6.0.0.vsix`).
 
 ---
 

@@ -2,9 +2,9 @@
   "_type": "https://in-toto.io/Statement/v1",
   "subject": [
     {
-      "name": "tokonomics-5.1.1.vsix",
+      "name": "tokonomics-6.0.0.vsix",
       "digest": {
-        "sha256": "5354543e75b0e1f151e3ee3521e130d0a6201fd86298561943a2ff6891105491"
+        "sha256": "69d1f83b07bd51b34a2a5157bd8dd303d02d56ea4a6dfb15edf8f6d0da33d93b"
       }
     }
   ],
@@ -13,7 +13,7 @@
     "buildDefinition": {
       "buildType": "https://tokonomics.dev/build/vsix/v1",
       "externalParameters": {
-        "package": "tokonomics@5.1.1",
+        "package": "tokonomics@6.0.0",
         "command": "npm run vsce:package -- --no-dependencies"
       },
       "internalParameters": {
@@ -24,13 +24,13 @@
         {
           "uri": "package.json",
           "digest": {
-            "sha256": "741034f86cbc8bfc08f8678b40f21d93fa43ee0d61ddf3ee475f063eb025879d"
+            "sha256": "27dc59383b9fb458d3e458b4d449c6ca7352e9edfd0f8c3871006ad3e8c960e2"
           }
         },
         {
           "uri": "package-lock.json",
           "digest": {
-            "sha256": "c2a11ed22c26d21bc790d70928506911cc7314fa80e0b8b4c4c0157c10f48c5b"
+            "sha256": "5b81f69b30e0713da6ca7319e57dba5e94057bf5b92f1f605de7edc8d1602e33"
           }
         },
         {
@@ -42,7 +42,7 @@
         {
           "uri": ".vscodeignore",
           "digest": {
-            "sha256": "ffb54478b1141bcc0f63d43394903acecb6e0c963768f89c387827d84766bec7"
+            "sha256": "c3a388a02ffaa837abeb1864fde9cda760cc5db55719de0984de8e856b2c1c99"
           }
         }
       ]
@@ -52,14 +52,14 @@
         "id": "https://tokonomics.dev/local-builder/v1"
       },
       "metadata": {
-        "invocationId": "c40661e9-e816-4e94-9523-86460d3e2b38",
-        "startedOn": "2026-09-03T07:09:11.247Z",
-        "finishedOn": "2026-09-03T07:09:11.248Z"
+        "invocationId": "67404286-ef00-4e05-97cd-f4a8775c015a",
+        "startedOn": "2026-09-03T12:08:42.877Z",
+        "finishedOn": "2026-09-03T12:08:42.879Z"
       },
       "byproducts": [
         {
           "name": "repository-commit",
-          "content": "8d7bf1dbc7555633d2176b2f356eb327d9e6401e"
+          "content": "6a7d3ea572ba14261e63ff3ceddc34eaec7f674e"
         },
         {
           "name": "node",

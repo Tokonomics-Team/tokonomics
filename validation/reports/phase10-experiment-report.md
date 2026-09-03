@@ -1,7 +1,7 @@
 # Phase 10 experiment evaluation
 
 > Decision: **NO_CANDIDATE_PROMOTED_IN_PHASE_10**
-> Source commit: `8d7bf1dbc7555633d2176b2f356eb327d9e6401e`
+> Source commit: `6a7d3ea572ba14261e63ff3ceddc34eaec7f674e`
 > Release certified: **No**
 
 | Candidate | Runtime mode | Production hook reached | Decision | Blocking evidence |

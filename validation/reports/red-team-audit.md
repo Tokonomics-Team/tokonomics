@@ -62,7 +62,7 @@
 ### RED_07_VSIX_AIRGAP_LEAKAGE — Production VSIX Package Contamination
 - **Adversarial Vector**: Inspecting bundled extension.js and VSIX archive for test/validation modules
 - **Attempted Invalidation**: Checking for accidental imports of validation/ runner or test datasets
-- **Observed Defense Evidence**: tokonomics-5.1.1.vsix contains 0 validation files; bundle size 185 KB with 0 test symbols.
+- **Observed Defense Evidence**: Artifact inspection found zero validation files and zero test-source markers in the packaged VSIX.
 
 ### RED_08_CORRUPT_CONTEXT_INJECTION — Corrupt Context Semantic Injection
 - **Adversarial Vector**: Injecting malformed syntax, unclosed braces, and truncated strings into context stream

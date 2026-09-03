@@ -1,10 +1,10 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.5",
-  "serialNumber": "urn:uuid:6f1ddadc-0352-47db-9338-c17aae48ace1",
+  "serialNumber": "urn:uuid:962ef862-16c9-4856-8674-9000cb6f8826",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-09-03T07:09:11.247Z",
+    "timestamp": "2026-09-03T12:08:42.877Z",
     "tools": [
       {
         "vendor": "Tokonomics",
@@ -15,17 +15,17 @@
     "component": {
       "type": "application",
       "name": "tokonomics",
-      "version": "5.1.1",
-      "bom-ref": "pkg:npm/tokonomics@5.1.1"
+      "version": "6.0.0",
+      "bom-ref": "pkg:npm/tokonomics@6.0.0"
     },
     "properties": [
       {
         "name": "tokonomics:artifact:sha256",
-        "value": "5354543e75b0e1f151e3ee3521e130d0a6201fd86298561943a2ff6891105491"
+        "value": "69d1f83b07bd51b34a2a5157bd8dd303d02d56ea4a6dfb15edf8f6d0da33d93b"
       },
       {
         "name": "tokonomics:artifact:fileCount",
-        "value": "25"
+        "value": "15"
       }
     ]
   },
@@ -47,7 +47,7 @@
   ],
   "dependencies": [
     {
-      "ref": "pkg:npm/tokonomics@5.1.1",
+      "ref": "pkg:npm/tokonomics@6.0.0",
       "dependsOn": [
         "pkg:npm/%40vscode%2Ftree-sitter-wasm@0.3.1"
       ]

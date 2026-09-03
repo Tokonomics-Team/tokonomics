@@ -1,8 +1,8 @@
 {
-  "timestamp": "2026-09-03T07:09:27.185Z",
+  "timestamp": "2026-09-03T12:11:07.927Z",
   "metadata": {
-    "repositoryCommitSha": "8d7bf1dbc7555633d2176b2f356eb327d9e6401e",
-    "tokonomicsVersion": "5.1.1",
+    "repositoryCommitSha": "6a7d3ea572ba14261e63ff3ceddc34eaec7f674e",
+    "tokonomicsVersion": "6.0.0",
     "benchmarkDatasetVersion": "2026-v2.1",
     "modelProvider": "none (controlled synthetic fixture)",
     "modelVersion": "not applicable",
@@ -23,7 +23,7 @@
     "pricingProfileVersion": "synthetic-estimate-only",
     "benchmarkClassification": "Controlled Synthetic Benchmark",
     "datasetMetadataSha256": "0347d021aa250511b865a987c4fdf4dee8586335e5f48fdba4a79efdc6fed1d2",
-    "timestamp": "2026-09-03T07:09:27.185Z"
+    "timestamp": "2026-09-03T12:11:07.927Z"
   },
   "threeRunStudy": {
     "totalTasks": 160,
@@ -329,7 +329,7 @@
         "claimedProperty": "100% air-gapping: 0 validation or test files in production package",
         "attemptedInvalidation": "Checking for accidental imports of validation/ runner or test datasets",
         "challengePassed": true,
-        "evidence": "tokonomics-5.1.1.vsix contains 0 validation files; bundle size 185 KB with 0 test symbols."
+        "evidence": "Artifact inspection found zero validation files and zero test-source markers in the packaged VSIX."
       },
       {
         "challengeId": "RED_08_CORRUPT_CONTEXT_INJECTION",
