@@ -93,7 +93,7 @@ export function registerChatParticipant(
         // 1. /dashboard Command: Open Interactive Real-Time Dashboard Webview
         if (command === 'dashboard') {
             DashboardWebviewPanel.createOrShow(metricsTracker, astEngine);
-            response.markdown(`### 📊 Tokonomics 5.0 Real-Time Dashboard\n\nOpening the interactive event-driven visualizer dashboard with dual waterfalls, live token streams, and AST decision inspector.\n\n*You can also run \`@tokonomics /live\` for a fast text summary or \`@tokonomics /explain\` to inspect compiler decisions.*`);
+            response.markdown(`### Tokonomics 6.0 Dashboard\n\nOpening the activity dashboard.\n\n*You can also run \`@tokonomics /live\` for a session summary or \`@tokonomics /explain\` to review the latest context decision.*`);
             return;
         }
 

@@ -19,7 +19,7 @@ function request(overrides: Partial<ResponseCacheRequest> = {}): ResponseCacheRe
         tools: [],
         compilerConfiguration: { mode: 'compiler', compression: 0.4 },
         policies: { trusted: true, contextMode: 'automatic' },
-        extensionVersion: '5.1.1',
+        extensionVersion: '6.0.0',
         safety: { intent: 'question' }
     };
     return { ...base, ...overrides };
@@ -43,7 +43,7 @@ export async function runPhase6CacheEconomicsTests(): Promise<boolean> {
         request({ tools: [{ name: 'read_file', schema: { type: 'object' } }] }),
         request({ compilerConfiguration: { mode: 'compiler', compression: 0.6 } }),
         request({ policies: { trusted: true, contextMode: 'selection' } }),
-        request({ extensionVersion: '5.1.2' })
+        request({ extensionVersion: '6.0.1' })
     ];
     for (const variant of variants) assert.strictEqual(cache.lookup(variant).hit, false, 'Changed answer input produced a false hit');
 

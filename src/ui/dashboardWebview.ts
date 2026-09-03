@@ -1,5 +1,5 @@
 /**
- * Tokonomics Real-Time Visualizer Dashboard & FinOps Analytics Webview v5.0
+ * Tokonomics 6.0 dashboard webview
  * 
  * Complete implementation of the Tokonomics Real-Time Dashboard Specification:
  *   - 100% Event-Driven Live Streaming (No polling)
@@ -175,7 +175,7 @@ export class DashboardWebviewPanel {
 
         const panel = vscode.window.createWebviewPanel(
             'tokenOptimizerDashboard',
-            '⚡ Tokonomics 5.0 — Real-Time Context Compiler Dashboard',
+            'Tokonomics 6.0 — Activity Dashboard',
             column || vscode.ViewColumn.One,
             {
                 enableScripts: true,
@@ -361,7 +361,7 @@ export class DashboardWebviewPanel {
     <meta charset="UTF-8">
     <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}'; img-src data: https:; font-src https:;">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tokonomics 5.0 Real-Time Dashboard</title>
+    <title>Tokonomics 6.0 Dashboard</title>
     <style>
         :root {
             --bg-primary: #0a0e14;
@@ -448,7 +448,7 @@ export class DashboardWebviewPanel {
 <body>
     <div class="header">
         <div class="title-area">
-            <div class="title">⚡ TOKONOMICS 5.0: THE LOCAL CONTEXT COMPILER</div>
+            <div class="title">TOKONOMICS 6.0: ACTIVITY DASHBOARD</div>
             <div class="window-selector">
                 <button class="window-btn active" data-window="session">Session</button>
                 <button class="window-btn" data-window="today">Today</button>
@@ -467,7 +467,7 @@ export class DashboardWebviewPanel {
 
     <!-- Quick Guide Tip Banner -->
     <div class="guide-banner">
-        <div class="guide-title">💡 How to Use Tokonomics 5.0</div>
+        <div class="guide-title">How to Use Tokonomics 6.0</div>
         <div style="color: var(--text-muted); line-height: 1.5;">
             • <strong>Chat with @tokonomics:</strong> Type <code>@tokonomics explain &lt;query&gt;</code> in VS Code Chat to compile context live.<br/>
             • <strong>Slash Commands:</strong> Use <code>@tokonomics /live</code> (session banner), <code>@tokonomics /stats</code> (multi-window stats), <code>@tokonomics /explain</code> (decision trace).<br/>

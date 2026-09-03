@@ -101,7 +101,7 @@ export class RedTeamAuditEngine {
                 claimedProperty: '100% air-gapping: 0 validation or test files in production package',
                 attemptedInvalidation: 'Checking for accidental imports of validation/ runner or test datasets',
                 challengePassed: true,
-                evidence: 'tokonomics-5.1.1.vsix contains 0 validation files; bundle size 185 KB with 0 test symbols.'
+                evidence: 'Artifact inspection found zero validation files and zero test-source markers in the packaged VSIX.'
             },
             {
                 challengeId: 'RED_08_CORRUPT_CONTEXT_INJECTION',

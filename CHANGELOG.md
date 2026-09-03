@@ -1,107 +1,38 @@
-# Tokonomics Release Notes
+# Tokonomics release notes
 
-All notable user updates, feature additions, and performance improvements to **Tokonomics** are documented here.
+This file summarizes user-visible changes. Internal design, implementation details,
+security-sensitive controls, and evaluation methods are maintained separately.
 
-> Historical percentages and absolute language such as "100%", "zero loss", or
-> "production-safe" below describe controlled fixtures or the wording used at the time.
-> They are not production guarantees. Current public claims are governed by
-> `validation/claims/claim-registry.json` and exact-artifact Phase 9 evidence.
+## 6.0.0 — 2026-09-03
 
-## [5.1.1] - 2026-09-01
-### 🧠 State-of-the-Art Deterministic Context Governor & Validated Accuracy Improvements
-- **Deterministic Context Governor (`src/governor/`)**: Production-safe, zero-LLM/zero-SLM intelligence layer operating in $<0.001\text{ ms}$ latency. Deterministically classifies task intent across 9 categories (`debug`, `refactor`, `feature`, `test`, `explain`, `review`, `architecture`, `search`, `completion`) and evaluates task risk using local signals.
-- **Safety-First Risk Override Invariant**: Automatically overrides aggressive token reduction on high-risk tasks (public API modification, dynamic reflection, active diagnostics) to guarantee code correctness over token savings.
-- **Hard Evidence Safety Gate**: Mathematically enforces $\text{RequiredEvidence} \subseteq \text{ProvidedEvidence}$, rejecting context reduction and triggering fail-closed fallback if any critical dependency, type, or contract is missing.
-- **Empirical Code Quality Gains**: Validated across $N=160$ benchmark tasks: $+34.4\%$ overall task success improvement, $+28.5\%$ compile success improvement ($100\%$ compile pass rate), and $-80.5\%$ token reduction ($-85.5\%$ effective cost reduction).
-- **Independent Real TypeScript & Node.js VM Test Harness**: Verified through physical AST parsing, real TypeScript compiler diagnostics (`ts.transpileModule`), and sandboxed Node.js VM unit test execution.
-- **100% Package Air-Gapping**: Strictly excluded all non-production validation modules from the production VSIX bundle.
+- Introduced the Tokonomics 6.0 release line.
+- Improved context preparation reliability and conservative fallback behavior.
+- Strengthened workspace trust, privacy, resource, and release controls.
+- Added independently disableable, opt-in preview features; all remain off by default.
+- Improved request-level activity, token, and supported cost reporting.
+- Expanded automated release checks for supported VS Code versions and packaged builds.
+- Simplified public documentation and separated internal engineering documentation.
 
----
+No preview feature is promoted as a production capability in this release. Measured
+results continue to depend on the task, workspace, model, and provider.
 
-## [5.1.0] - 2026-08-31
-### 🚀 Fail-Closed Context Preservation, Intent-Aware SDG Slicing & Vendor Parity
-- **Fail-Closed Context Preservation Gate (`PreservationGate`)**: Audits every compiled context turn before submission to the model. Guarantees verbatim preservation of active user instructions, quoted literals, and critical domain keywords (`idempotent`, `idempotency`, `commit`, `rollback`, `transaction`). Reverts to raw unpruned input automatically if any check fails (zero loss guarantee).
-- **Intent-Aware System Dependence Graph (SDG) Slicing**: Implemented dynamic LHS/RHS definition and usage tracking, enclosing method header recovery with control keyword isolation, and camelCase keyword matching. Eliminates orthogonal dead computation while strictly preserving business decision paths.
-- **Language Model Provider Vendor Parity**: Fixed host provider registration (`vscode.lm.registerLanguageModelChatProvider`) with vendor `'tokonomics'` matching `contributes.languageModelChatProviders`.
-- **Configurable Pipeline Mode**: Added `tokenOptimizer.pipelineMode` (`"compiler" | "hybrid" | "legacy"`, default `"compiler"`) in settings.
-- **Zero-Assumption Cost Accounting**: Calculates projected savings strictly on measured input token reductions without speculative cache assumptions.
-- **100% Benchmark Pass Rate**: All 8 benchmark workloads and 62 test suites passing with 100% preservation compliance.
+## 5.x — 2026
 
----
+- Added workspace-aware context preparation and chat integration.
+- Added activity dashboards, diagnostics, and configurable local resource limits.
+- Improved handling of failures, cancellation, workspace changes, and Restricted Mode.
+- Added packaged-extension compatibility and integrity checks.
 
-## [5.0.2] - 2026-08-31
-### 🛡️ Comprehensive Host Simulation & Secret Redaction Hardening
-- **Automated Host Simulation**: Instituted automated extension host simulation suite validating clean activation, duplicate command elimination, and event lifecycle integrity.
-- **Enhanced Secret Redaction**: Added comprehensive masking for database URIs with credentials and Slack webhooks, with total prefix redaction.
-- **Full Slash Command Audit**: Verified all 10 slash commands (`/dashboard`, `/live`, `/explain`, `/stats`, `/map`, `/pack`, `/analyze`, `/compact`, `/logs`, `/ram`) in host simulation.
-- **100% Test Pass Rate**: All 62 test suites, ablation benchmarks, and host simulation assertions passing.
+## 4.x — 2026
 
----
+- Added broader context and usage-management capabilities.
+- Improved local diagnostics and user controls.
 
-## [5.0.1] - 2026-08-31
-### 🛠️ Architecture Hardening, Security & VS Code Chat Fixes
-- **Chat Participant Handle**: Fixed participant registration name to `@tokonomics` (`"name": "tokonomics"` in `package.json`), matching official VS Code Chat conventions.
-- **Activation Crash Fix**: Removed duplicate command registration for `tokenOptimizer.showDashboard` that caused runtime errors on extension activation.
-- **Modern Language Model Metadata**: Replaced deprecated `languageModelProviders` with `contributes.languageModelChatProviders` and matching vendor configuration.
-- **16-Stage Compiler Wiring**: Wired `PipelineOrchestrator.compileContext()` directly into standard chat execution turns with post-inference cost reconciliation.
-- **Dashboard Webview Security**: Hardened dashboard webview with a strict Content Security Policy and dynamic per-render cryptographic nonces.
-- **Path Traversal Guard**: Added workspace directory containment enforcement on `@tokonomics /pack` to strictly prevent traversal outside active workspace roots.
-- **Bounded Workspace Scan**: Added 50-file and 500KB per-file guards to the dashboard workspace scanner to guarantee smooth UI thread responsiveness.
-- **Complete Command Contribution**: Contributed all 10 slash commands (`/dashboard`, `/live`, `/explain`, `/stats`, `/map`, `/pack`, `/analyze`, `/compact`, `/logs`, `/ram`) in the extension manifest.
+## 1.x–3.x — 2026
 
----
+- Initial VS Code releases.
+- Added workspace utilities, chat commands, and usage visibility.
 
-## [5.0.0] - 2026-08-31
-### 🏛️ Major Milestone: Tokonomics 5.0 — The Local Context Compiler
-- **16-Stage Local Context Compiler**: Full multi-layer context compilation with dynamic program slicing, knapsack token budget optimization, and sub-millisecond execution.
-- **Real-Time Visualizer Dashboard**: Event-driven local analytics dashboard with live token/cost streams, stage-by-stage savings waterfalls, and active file optimization.
-- **Expanded Multi-Language Support**: Dedicated structural pruning and signature extraction for **14 languages** (C, C++, Rust, Go, TypeScript, JavaScript, Python, Java, C#, PHP, and SQL).
-- **Refreshed 2026 Model Profiles**: Updated pricing profiles and cache economics for Claude 3.7 / 3.5 Sonnet, GPT-4o series, Gemini 2.5 / 3.x, and DeepSeek-V3 / R1.
-- **Live Status Bar Feedback**: Ephemeral savings flash on prompt completion (`⚡ Tokens Saved | Cost Saved`).
-- **New Slash Commands**: Added `@tokonomics /dashboard`, `@tokonomics /live`, `@tokonomics /stats`, and `@tokonomics /explain`.
-
----
-
-## [4.1.1] - 2026-08-30
-### 🛡️ Documentation & Marketplace Release
-- Updated official marketplace metadata, license terms, and community support links.
-
----
-
-## [4.1.0] - 2026-08-30
-### 🚀 Features & Enhancements
-- **In-Memory RAM Accelerator**: 0ms instant local memory acceleration for faster prompt processing and lower token consumption.
-- **Anonymized Diagnostic Logger**: 100% private, PII-free diagnostic logger (`@tokonomics /logs` and `Tokonomics: Export Anonymized Diagnostic Logs`).
-- **Image & Screenshot Rightsizer**: Automatically optimizes screenshot attachments to save up to 96% on image token costs.
-- **Smart Model Routing**: Automatically suggests the most cost-effective AI model tier based on task complexity.
-- **Official Rebranding**: Complete Tokonomics visual identity and updated slash commands.
-
----
-
-## [4.0.0] - 2026-08-29
-### ⚡ Performance & Token Savings
-- **Advanced Context Optimization**: Increased average token savings to **65%–88%** on multi-file coding workflows.
-- **Instant Response Cache**: Instantaneous responses for repeated queries with zero token usage.
-- **Output Patch Optimization**: Directs models to generate concise code patches, saving 40%–70% on output tokens.
-- **Agent Cost Guardrails**: Real-time spending alerts and loop prevention.
-
----
-
-## [3.0.0] - 2026-08-29
-### 🌟 Analytics & Dashboards
-- **Visual Analytics Dashboard**: Interactive FinOps dashboard tracking token savings and dollar ROI.
-- **Provider Cache Alignment**: Prefix optimization for Anthropic, OpenAI, and Gemini prompt cache discounts.
-- **Live Status Bar Telemetry**: Real-time token reduction percentage and financial savings counter.
-
----
-
-## [2.0.0] - 2026-08-29
-### 🗺️ Workspace Mapping
-- **Structural Workspace Map (`@tokonomics /map`)**: High-efficiency codebase structure mapping.
-- **Context Packing (`@tokonomics /pack`)**: Bundle and right-size multiple project files into compact payloads.
-
----
-
-## [1.0.0] - 2026-08-29
-### 🎉 Initial Launch
-- Initial release of Tokonomics AI Token Optimizer for VS Code.
+Historical statements from earlier development artifacts are not production
+guarantees. Current behavior is defined by the installed release and its documented
+settings.

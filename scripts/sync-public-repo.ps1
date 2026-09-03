@@ -1,28 +1,51 @@
-# Tokonomics Public Docs Sync & Leak Prevention Script
+# Tokonomics public-document sync and disclosure guard
 param(
     [string]$PublicRepoPath = "..\tokonomics-public"
 )
 
-Write-Host "🛡️ Syncing documentation and assets to public repo..." -ForegroundColor Cyan
+Write-Host "Syncing approved Tokonomics public documentation and assets..." -ForegroundColor Cyan
 
-if (-not (Test-Path $PublicRepoPath)) {
+if (-not (Test-Path -LiteralPath $PublicRepoPath)) {
     New-Item -ItemType Directory -Path $PublicRepoPath -Force | Out-Null
 }
 
-# 1. Copy ONLY public files
-Copy-Item "README.md" "$PublicRepoPath\" -Force
-Copy-Item "CHANGELOG.md" "$PublicRepoPath\" -Force
-Copy-Item "LICENSE" "$PublicRepoPath\LICENSE.txt" -Force
-Copy-Item "FEATURES_AND_SAVINGS.md" "$PublicRepoPath\" -Force
-Copy-Item ".github" "$PublicRepoPath\" -Recurse -Force
-Copy-Item "assets" "$PublicRepoPath\" -Recurse -Force
+# Copy only explicitly approved public material. Internal architecture, engineering
+# contracts, implementation plans, validation reports, and source are intentionally absent.
+Copy-Item -LiteralPath "README.md" -Destination $PublicRepoPath -Force
+Copy-Item -LiteralPath "CHANGELOG.md" -Destination $PublicRepoPath -Force
+Copy-Item -LiteralPath "LICENSE" -Destination (Join-Path $PublicRepoPath "LICENSE.txt") -Force
+Copy-Item -LiteralPath ".github" -Destination $PublicRepoPath -Recurse -Force
+Copy-Item -LiteralPath "assets" -Destination $PublicRepoPath -Recurse -Force
 
-# 2. Strict Security Check: Verify NO source files were copied
-$forbidden = Get-ChildItem -Path $PublicRepoPath -Recurse -Include *.ts, *.tsx, *.map, tsconfig.json, esbuild.js -Exclude node_modules
-if ($forbidden.Count -gt 0) {
-    Write-Host "🚨 [SECURITY ALERT] Source files detected in public repo! Aborting sync:" -ForegroundColor Red
-    $forbidden | ForEach-Object { Write-Host "  - $($_.FullName)" -ForegroundColor Red }
+$forbiddenFiles = Get-ChildItem -LiteralPath $PublicRepoPath -Recurse -File | Where-Object {
+    $_.Extension -in @('.ts', '.tsx', '.map') -or $_.Name -in @('tsconfig.json', 'esbuild.js')
+}
+if ($forbiddenFiles.Count -gt 0) {
+    Write-Host "[SECURITY ALERT] Source files detected in the public target. Aborting." -ForegroundColor Red
+    $forbiddenFiles | ForEach-Object { Write-Host "  - $($_.FullName)" -ForegroundColor Red }
     exit 1
 }
 
-Write-Host "✅ Public documentation synced with 100% source isolation (0 code files)." -ForegroundColor Green
+$privateDocuments = Get-ChildItem -LiteralPath $PublicRepoPath -Recurse -File | Where-Object {
+    $_.Name -eq 'FEATURES_AND_SAVINGS.md' -or $_.Name -like 'INTERNAL_*.md' -or
+    $_.Name -like 'PHASE_*.md' -or $_.Name -like '*_CONTRACT.md'
+}
+if ($privateDocuments.Count -gt 0) {
+    Write-Host "[SECURITY ALERT] Internal documentation exists in the public target. Remove it before syncing." -ForegroundColor Red
+    $privateDocuments | ForEach-Object { Write-Host "  - $($_.FullName)" -ForegroundColor Red }
+    exit 1
+}
+
+$publicDocs = @(
+    (Join-Path $PublicRepoPath "README.md"),
+    (Join-Path $PublicRepoPath "CHANGELOG.md")
+)
+$sensitiveTerms = 'src/|PipelineOrchestrator|tree-sitter|PageRank|BM25|knapsack|McNemar|HMAC|16-stage|System Dependence Graph|Reciprocal Rank'
+foreach ($doc in $publicDocs) {
+    if ((Get-Content -LiteralPath $doc -Raw) -match $sensitiveTerms) {
+        Write-Host "[SECURITY ALERT] Internal architecture detail detected in $doc. Aborting." -ForegroundColor Red
+        exit 1
+    }
+}
+
+Write-Host "Public documentation synced with source and architecture-detail isolation." -ForegroundColor Green

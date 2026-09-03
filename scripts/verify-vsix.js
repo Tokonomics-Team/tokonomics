@@ -14,7 +14,7 @@ const required = [
     'extension/parsers/tree-sitter.wasm', 'extension/parsers/tree-sitter-typescript.wasm',
     'extension/parsers/tree-sitter-javascript.wasm', 'extension/parsers/tree-sitter-python.wasm'
 ];
-const forbiddenPath = /(^|\/)(?:src|tests?|validation|scripts|out|out_test|\.git|\.github|\.vscode-test)(?:\/|$)|(?:\.map|\.ts|\.log|\.env|\.pem|\.key|package-lock\.json)$/i;
+const forbiddenPath = /(^|\/)(?:src|tests?|validation|scripts|out|out_test|\.git|\.github|\.vscode-test)(?:\/|$)|(?:\.map|\.ts|\.log|\.env|\.pem|\.key|package-lock\.json)$|\/(?:INTERNAL_.*|PHASE_.*|.*_CONTRACT|SECURITY_AND_PRIVACY)\.md$/i;
 
 async function verify() {
     const inspected = await inspectVsix(artifact);
@@ -31,7 +31,8 @@ async function verify() {
     if ((packagedManifest.activationEvents || []).includes('*')) throw new Error('Wildcard activation is forbidden.');
     const commandIds = (packagedManifest.contributes?.commands || []).map(command => command.command);
     if (new Set(commandIds).size !== commandIds.length) throw new Error('Packaged command identifiers are not unique.');
-    for (const key of ['tokenOptimizer.releaseChannel', 'tokenOptimizer.stagedRolloutPercent', 'tokenOptimizer.emergencyDisableOptimization', 'tokenOptimizer.disabledCapabilities']) {
+    for (const key of ['tokenOptimizer.releaseChannel', 'tokenOptimizer.stagedRolloutPercent', 'tokenOptimizer.emergencyDisableOptimization', 'tokenOptimizer.disabledCapabilities',
+        'tokenOptimizer.experimentalConsent', 'tokenOptimizer.experimentalFeatures', 'tokenOptimizer.disabledExperiments']) {
         if (!packagedManifest.contributes?.configuration?.properties?.[key]) throw new Error(`Packaged release control is missing: ${key}`);
     }
 
@@ -47,7 +48,7 @@ async function verify() {
         generatedAt: new Date().toISOString(),
         artifact: { path: path.basename(artifact), sha256: inspected.sha256, sizeBytes: inspected.sizeBytes, totalUncompressedBytes: inspected.totalUncompressedBytes },
         package: { name: packagedManifest.name, version: packagedManifest.version, vscodeEngine: packagedManifest.engines.vscode },
-        checks: { safeArchivePaths: true, boundedArchive: true, requiredEntries: true, parserWasmCompiled: true, manifestParity: true, releaseControlsPresent: true, developmentArtifactsAbsent: true },
+        checks: { safeArchivePaths: true, boundedArchive: true, requiredEntries: true, parserWasmCompiled: true, manifestParity: true, releaseControlsPresent: true, developmentArtifactsAbsent: true, internalDocumentsAbsent: true },
         entries: [...inspected.entries.values()].map(({ name, sizeBytes, compressedSizeBytes, sha256 }) => ({ name, sizeBytes, compressedSizeBytes, sha256 }))
     };
     fs.mkdirSync(path.dirname(reportPath), { recursive: true });

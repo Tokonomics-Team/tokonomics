@@ -240,7 +240,7 @@ export class FinalIndependentAuditGenerator {
         };
 
         // 4. Emit Comprehensive 31-Section Markdown Report
-        const mdContent = `# 🏆 Tokonomics 5.1.x Master Forensic Independent Audit & Certification Report
+        const mdContent = `# Tokonomics ${metadata.tokonomicsVersion} controlled independent audit report
 
 > **Tokonomics Version**: \`${metadata.tokonomicsVersion}\`
 > **Repository Commit SHA**: \`${metadata.repositoryCommitSha}\`

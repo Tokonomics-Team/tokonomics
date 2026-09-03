@@ -52,6 +52,7 @@ import { runPhase7ObservabilityLedgerTests } from '../tests/phase7ObservabilityL
 import { runPhase8PerformanceResilienceTests } from '../tests/phase8PerformanceResilience.test';
 import { runPhase9ReleaseCertificationTests } from '../tests/phase9ReleaseCertification.test';
 import { runPhase10ExperimentTests } from '../tests/phase10Experiments.test';
+import { runPublicDocumentationTests } from '../tests/publicDocumentation.test';
 
 async function runAll() {
     try {
@@ -100,6 +101,7 @@ async function runAll() {
         await runPhase8PerformanceResilienceTests();
         await runPhase9ReleaseCertificationTests();
         await runPhase10ExperimentTests();
+        runPublicDocumentationTests();
         console.log('\\n====================================================================================');
         console.log('ALL AUTOMATED REPOSITORY TESTS PASSED');
         console.log('Synthetic benchmark passes do not constitute release, provider, or model-quality certification.');

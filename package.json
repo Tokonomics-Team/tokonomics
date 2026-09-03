@@ -1,8 +1,8 @@
 {
   "name": "tokonomics",
-  "displayName": "Tokonomics 5.1.1 — The Local Context Compiler & Real-Time Analytics",
+  "displayName": "Tokonomics 6.0 — AI Context Efficiency for VS Code",
   "description": "A local context-compilation and token-analysis extension for VS Code. Optimization results vary by task, model, and workspace.",
-  "version": "5.1.1",
+  "version": "6.0.0",
   "publisher": "tokonomics",
   "license": "SEE LICENSE IN LICENSE.txt",
   "icon": "assets/icon.png",
@@ -91,7 +91,7 @@
         "id": "token-optimizer-participant",
         "name": "tokonomics",
         "fullName": "Tokonomics",
-        "description": "Tokonomics 5.0: The Local Context Compiler - Compacts code context, reduces token usage, and tracks live cost savings",
+        "description": "Tokonomics 6.0: AI context efficiency and usage visibility for VS Code",
         "isSticky": true,
         "commands": [
           {
@@ -104,15 +104,15 @@
           },
           {
             "name": "explain",
-            "description": "Inspect the 16-stage compiler decision trace for the most recent optimization"
+            "description": "Review the latest context decision"
           },
           {
             "name": "map",
-            "description": "Generate workspace PageRank structural repository map"
+            "description": "Create a concise workspace overview"
           },
           {
             "name": "pack",
-            "description": "Pack multiple workspace files into an AST-pruned context payload"
+            "description": "Prepare selected workspace files for AI use"
           },
           {
             "name": "stats",
@@ -421,7 +421,7 @@
           "default": 64,
           "minimum": 16,
           "maximum": 1024,
-          "description": "Maximum RAM (in MB) allocated for in-memory AST skeletons, PageRank graph, background pre-warming, and symbol search. Lower on low-RAM devices (e.g. 16MB/32MB); increase on large enterprise repos (e.g. 128MB/256MB)."
+          "description": "Maximum local memory in MB available to Tokonomics workspace features."
         },
         "tokenOptimizer.enableBackgroundRamWarming": {
           "type": "boolean",
@@ -441,7 +441,7 @@
             "legacy"
           ],
           "default": "compiler",
-          "description": "Context compilation mode (compiler: full evidence-aware pipeline; hybrid: transitional; legacy: basic AST pruner)."
+          "description": "Context preparation mode. Compiler is recommended; hybrid and legacy are compatibility options."
         },
         "tokenOptimizer.releaseChannel": {
           "type": "string",
@@ -562,9 +562,9 @@
     "validate:all": "node scripts/validate-all.js",
     "audit:clean-room": "node scripts/clean-room-audit.js",
     "download-parsers": "node scripts/download-parsers.js",
-    "vsce:package": "npx @vscode/vsce package --no-dependencies --out tokonomics-5.1.1.vsix",
+    "vsce:package": "npx @vscode/vsce package --no-dependencies --out tokonomics-6.0.0.vsix",
     "publish:vsce": "npx @vscode/vsce publish --no-dependencies",
-    "publish:ovsx": "npx ovsx publish tokonomics-5.1.1.vsix",
+    "publish:ovsx": "npx ovsx publish tokonomics-6.0.0.vsix",
     "publish:all": "npm run publish:vsce && npm run publish:ovsx",
     "sync:public": "powershell -ExecutionPolicy Bypass -File ./scripts/sync-public-repo.ps1"
   },

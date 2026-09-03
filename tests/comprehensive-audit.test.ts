@@ -1,5 +1,5 @@
 /**
- * Tokonomics 5.0.1 — Comprehensive Host Simulation & Exhaustive Audit Test Suite
+ * Tokonomics 6.0 — Comprehensive Host Simulation & Exhaustive Audit Test Suite
  * 
  * Validates:
  * 1. Manifest Integrity & Schema Validation (package.json vs VS Code schemas)
@@ -44,7 +44,7 @@ export async function runComprehensiveAuditTests(): Promise<void> {
     const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
 
     // Check version
-    assert.strictEqual(pkg.version, '5.1.1', 'package.json version must be 5.1.1');
+    assert.strictEqual(pkg.version, '6.0.0', 'package.json version must be 6.0.0');
 
     // Check chat participant name
     assert.ok(pkg.contributes?.chatParticipants, 'contributes.chatParticipants must exist');
