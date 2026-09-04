@@ -53,6 +53,24 @@ export interface ReconciledCostResult {
 
 export class CostCalculator {
     /**
+     * Preserve a valid compile-time estimate when the host does not expose
+     * provider usage. This never promotes estimated economics to reconciled.
+     */
+    public static statusWhenProviderUsageUnavailable(projection: {
+        costStatus?: string;
+        projectedRawCostUSD?: number;
+        projectedOptimizedCostUSD?: number;
+        projectedSavingsUSD?: number;
+    }): 'projected' | 'unavailable' {
+        return projection.costStatus === 'projected' &&
+            Number.isFinite(projection.projectedRawCostUSD) &&
+            Number.isFinite(projection.projectedOptimizedCostUSD) &&
+            Number.isFinite(projection.projectedSavingsUSD)
+            ? 'projected'
+            : 'unavailable';
+    }
+
+    /**
      * Compile-time projection. Cache eligibility is recorded, but no cache-read
      * discount is claimed before provider usage confirms a hit.
      */

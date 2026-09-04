@@ -157,10 +157,10 @@ export class TokenOptimizerLanguageModelProvider {
                 OptimizationEventBus.getInstance().emit(reconciledEvent);
             } catch {
                 costReconciliationLedger.abandon(compiled.requestId);
-                this.emitCostUnavailable(stats.event, compiled.requestId, providerId, modelId);
+                this.emitFinalCostStatusWithoutUsage(stats.event, compiled.requestId, providerId, modelId);
             }
         } else {
-            this.emitCostUnavailable(stats.event, compiled.requestId, providerId, modelId);
+            this.emitFinalCostStatusWithoutUsage(stats.event, compiled.requestId, providerId, modelId);
         }
         } catch (error) {
             this.compiler.fail(compiled, token.isCancellationRequested ? 'CANCELLED' : error instanceof ProtocolError ? error.code
@@ -174,7 +174,8 @@ export class TokenOptimizerLanguageModelProvider {
         for await (const fragment of text) yield new vscode.LanguageModelTextPart(fragment);
     }
 
-    private emitCostUnavailable(base: PromptOptimizationEvent, requestId: string, provider: string, model: string): void {
+    private emitFinalCostStatusWithoutUsage(base: PromptOptimizationEvent, requestId: string, provider: string, model: string): void {
+        const fallbackCostStatus = CostCalculator.statusWhenProviderUsageUnavailable(base);
         OptimizationEventBus.getInstance().emit({
             ...base,
             id: requestId,
@@ -183,8 +184,8 @@ export class TokenOptimizerLanguageModelProvider {
             provider,
             model,
             isCostReconciled: false,
-            costStatus: 'unavailable',
-            traceId: `${requestId}:cost-unavailable`
+            costStatus: fallbackCostStatus,
+            traceId: `${requestId}:cost-${fallbackCostStatus}`
         });
     }
 

@@ -96,6 +96,14 @@ export async function runPhase6CacheEconomicsTests(): Promise<boolean> {
     assert.strictEqual(projected.optimizedCostUSD, 0.03);
     assert.ok(projected.pricingCatalogVersion && projected.pricingSource);
     assert.strictEqual(CostCalculator.calculateProjectedCost(10, 5, 0, 'unknown-model').pricingAvailable, false);
+    assert.strictEqual(CostCalculator.statusWhenProviderUsageUnavailable({
+        costStatus: 'projected', projectedRawCostUSD: 0.01,
+        projectedOptimizedCostUSD: 0.004, projectedSavingsUSD: 0.006
+    }), 'projected', 'A valid estimate must remain projected when provider usage is unavailable');
+    assert.strictEqual(CostCalculator.statusWhenProviderUsageUnavailable({
+        costStatus: 'unavailable', projectedRawCostUSD: 0,
+        projectedOptimizedCostUSD: 0, projectedSavingsUSD: 0
+    }), 'unavailable', 'Missing model pricing must remain unavailable');
 
     const usage: VerifiedProviderUsage = {
         requestId: 'req-6', provider: 'anthropic', model: 'claude-3-7-sonnet',

@@ -749,7 +749,8 @@ export function registerChatParticipant(
             const modelId = targetModel.id || targetModel.name || 'claude-3-7-sonnet';
             const providerId = targetModel.vendor || 'anthropic';
             const verifiedUsage = CostCalculator.parseVerifiedProviderUsage(responseUsage, compiled.requestId, providerId, modelId);
-            const emitCostUnavailable = () => OptimizationEventBus.getInstance().emit({
+            const fallbackCostStatus = CostCalculator.statusWhenProviderUsageUnavailable(compileResult.event);
+            const emitFinalCostStatusWithoutUsage = () => OptimizationEventBus.getInstance().emit({
                 ...compileResult.event,
                 id: compiled.requestId,
                 timestamp: Date.now(),
@@ -757,8 +758,8 @@ export function registerChatParticipant(
                 provider: providerId as any,
                 model: modelId,
                 isCostReconciled: false,
-                costStatus: 'unavailable',
-                traceId: `${compiled.requestId}:cost-unavailable`
+                costStatus: fallbackCostStatus,
+                traceId: `${compiled.requestId}:cost-${fallbackCostStatus}`
             });
             if (verifiedUsage) {
                 costReconciliationLedger.begin({
@@ -793,9 +794,9 @@ export function registerChatParticipant(
                     OptimizationEventBus.getInstance().emit(reconciledEvent);
                 } catch {
                     costReconciliationLedger.abandon(compiled.requestId);
-                    emitCostUnavailable();
+                    emitFinalCostStatusWithoutUsage();
                 }
-            } else emitCostUnavailable();
+            } else emitFinalCostStatusWithoutUsage();
 
             if (capabilityEnabled('responseCache') && config.enableResponseCache !== false && completeResponseText.length > 20) {
                 cache.store(exactCacheRequest, completeResponseText, 'completed');

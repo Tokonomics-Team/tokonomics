@@ -11,6 +11,7 @@ security-sensitive controls, and evaluation methods are maintained separately.
 - Added independently disableable, opt-in preview features; all remain off by default.
 - Improved request-level activity, token, and supported cost reporting.
 - Improved live dashboard refresh behavior, theme integration, responsiveness, and accessibility.
+- Kept supported cost estimates visible when providers do not return usage details.
 - Expanded automated release checks for supported VS Code versions and packaged builds.
 - Simplified public documentation and separated internal engineering documentation.
 
