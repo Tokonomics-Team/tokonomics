@@ -1,7 +1,7 @@
 # Tokonomics 6.0.0 controlled independent audit report
 
 > **Tokonomics Version**: `6.0.0`
-> **Repository Commit SHA**: `a6b35b11a94a7d94dec44c2402fe2c8c783b9bd9`
+> **Repository Commit SHA**: `1fcc71872b4021d59fce80f9b0284119a399040d`
 > **Benchmark Classification**: `Controlled Synthetic Benchmark` ($N=160$)
 > **Holdout Dataset SHA-256**: `754d1fa43e95396c1be1c07586326e0dc798871d272390a3657bfe09ef3927cd`
 > **Independent-Oracle Coverage**: **12 / 12** (**100%**)

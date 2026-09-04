@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "classification": "experimental-governance-evidence",
-  "generatedAt": "2026-09-03T12:21:48.241Z",
-  "sourceCommit": "a6b35b11a94a7d94dec44c2402fe2c8c783b9bd9",
+  "generatedAt": "2026-09-04T02:53:13.014Z",
+  "sourceCommit": "1fcc71872b4021d59fce80f9b0284119a399040d",
   "artifact": {
     "path": "tokonomics-6.0.0.vsix",
-    "sha256": "e5b808f541e0297c44b3edc0a33a4fa1549a37d5eafe9cff475a339122a1bfee"
+    "sha256": "2ca661eeda14e69c6257e0b3e7ea23b169031b181415c060a73a2cd9aa2629a7"
   },
   "policy": {
     "defaultEnabled": false,

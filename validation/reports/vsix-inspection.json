@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
   "classification": "artifact-inspection-evidence",
-  "generatedAt": "2026-09-03T12:21:33.319Z",
+  "generatedAt": "2026-09-04T02:51:19.299Z",
   "artifact": {
     "path": "tokonomics-6.0.0.vsix",
-    "sha256": "e5b808f541e0297c44b3edc0a33a4fa1549a37d5eafe9cff475a339122a1bfee",
-    "sizeBytes": 1206483,
-    "totalUncompressedBytes": 3645774
+    "sha256": "2ca661eeda14e69c6257e0b3e7ea23b169031b181415c060a73a2cd9aa2629a7",
+    "sizeBytes": 1206598,
+    "totalUncompressedBytes": 3646187
   },
   "package": {
     "name": "tokonomics",
@@ -62,9 +62,9 @@
     },
     {
       "name": "extension/changelog.md",
-      "sizeBytes": 1731,
-      "compressedSizeBytes": 845,
-      "sha256": "c6051fa5f5a6fbb0128c1606dea66153d4ac706767cf433a8d4a840763454715"
+      "sizeBytes": 1815,
+      "compressedSizeBytes": 879,
+      "sha256": "53bea337a5d56b85ca221a5b43678c817f067eee3bac0a1eadd65deb6f2a8cf3"
     },
     {
       "name": "extension/parsers/tree-sitter.wasm",
@@ -92,9 +92,9 @@
     },
     {
       "name": "extension/dist/extension.js",
-      "sizeBytes": 369939,
-      "compressedSizeBytes": 106061,
-      "sha256": "8dcfe20def2e57a261f20e29aebff9be39a903a6b9106bfdb1db6e7253b83a30"
+      "sizeBytes": 370268,
+      "compressedSizeBytes": 106142,
+      "sha256": "3d4f07e69f9dd2760c3712eaa02f7511ff01130beb9ba861387a2bc73780e728"
     },
     {
       "name": "extension/assets/icon.png",
