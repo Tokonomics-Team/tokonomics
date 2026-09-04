@@ -79,6 +79,15 @@ Request lifecycle -> append-only ledger -> dashboard and diagnostics
 | 8 | Performance, concurrency, and resilience | Blocked on approval | Yes |
 | 9 | Integration certification and release hardening | Blocked on approval | Yes |
 | 10 | Evaluated state-of-the-art experiments | Blocked on approval | Yes |
+| 11 | Production reachability truth and measurement repair | Planned | Yes |
+| 12 | Snapshot-safe LSP intelligence | Blocked on Phase 11 | Yes |
+| 13 | Delta, diagnostic, test, and Git intelligence | Blocked on Phase 12 | Yes |
+| 14 | Terminal optimization and source provenance | Blocked on Phase 13 | Yes |
+| 15 | Local dense and hybrid retrieval | Blocked on Phase 14 | Yes |
+| 16 | Cross-encoder/MMR reranking and semantic deduplication | Blocked on Phase 15 | Yes |
+| 17 | Inspectable project memory | Blocked on Phase 16 | Yes |
+| 18 | Optional local SLM support | Blocked on Phase 17 | Yes |
+| 19 | Unified integration and artifact certification | Blocked on Phases 11-18 | Yes |
 
 ## Phase 0 - Measurement truth and release safety
 
@@ -619,6 +628,18 @@ The normative implementation, promotion rules, adversarial matrix, and current
 non-promotion decision are documented in `PHASE_10_EVALUATED_EXPERIMENTS_CONTRACT.md`.
 No candidate is promoted because external independent artifact-bound task evidence has
 not been supplied.
+
+## Phases 11-19 - Remaining component production wiring
+
+The production-reachability audit found several independently tested components whose
+default production integration is absent, incomplete, shadow-only, or not evidenced by an
+installed-artifact test. The approved implementation sequence, per-phase contracts, threat
+models, test matrices, promotion gates, rollback controls, and savings baseline are defined in
+`PHASE_11_19_REMAINING_COMPONENTS_IMPLEMENTATION_PLAN.md`.
+
+No Phase 11-19 component is promoted by documenting the plan. Phase 11 requires explicit
+repository-owner approval before implementation, and every later phase requires a separate
+approval after the previous phase is tested, audited, and locally committed.
 
 ## Program definition of done
 
