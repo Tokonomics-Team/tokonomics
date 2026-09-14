@@ -1,8 +1,8 @@
 # Tokonomics release notes
 
-## Unreleased
+## 8.0.0
 
-- Documented the economic ROI model, detailing 3x-4x prompt capacity headroom for fixed subscriptions ($20/mo) and direct token invoice savings for API teams.
+- Documented the economic ROI model, detailing 3x–4x prompt capacity headroom for fixed subscriptions ($20/mo) and direct token invoice savings for API teams.
 - Expanded structural context preparation to 14 languages, adding Ruby, Swift, Kotlin, and C/C++ support with safe non-brace block preservation.
 - Documented native chat panel usage in the secondary sidebar and editor tab, including direct prompts, model selection, and local session history.
 - Restored Open Chat to a dockable view in the Secondary Side Bar (right by default). The optional editor has an Open in sidebar button; conversation history and Markdown formatting are preserved.
