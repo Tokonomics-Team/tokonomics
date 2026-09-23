@@ -22,6 +22,9 @@ INTERNAL_ARCHITECTURE_AND_FEATURES.md
 FEATURES_AND_SAVINGS.md
 *_CONTRACT.md
 PHASE_*.md
+*_PLAN.md
+*_ROADMAP.md
+TOKONOMICS_*.md
 SECURITY_AND_PRIVACY.md
 implementation_plan.md
 walkthrough.md
@@ -32,7 +35,14 @@ BIG_TECH_PM_SUITE.md
 *PM*.md
 *SUITE*.md
 MODERNIZATION_ROADMAP.md
+docs/**
+portfolio-site/**
+tokonomics-pm-portfolio/**
+.continue/**
+compass_artifact_*.md
 *.log
 *.vsix
 *.map
+**/*.map
+dist/*.map
 package-lock.json

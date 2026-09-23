@@ -5,6 +5,12 @@ development artifacts. They are not release certificates and must not be used as
 for marketplace, privacy, savings, task-success, semantic-preservation, or production-readiness
 claims.
 
+The v7.0.1 Phase 0 baseline is generated with `npm run baseline:v7.0.1`. Its JSON and
+Markdown outputs bind the current source state to a frozen fixture/suite fingerprint,
+static runtime-resource inventory, explicit reachability-evidence strength, and two
+executable measurement probes. It is an internal development comparison point, not a
+release certificate or a production-savings claim.
+
 The active `npm run certify` command regenerates `certification-report.json` and
 `certification-report.md` from commands executed during that run. It packages, inspects,
 installs, and launches the exact VSIX on the local Stable host, but deliberately labels the

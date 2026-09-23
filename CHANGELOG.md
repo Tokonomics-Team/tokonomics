@@ -2,35 +2,15 @@
 
 ## 8.0.0
 
-- Documented the economic ROI model, detailing 3x–4x prompt capacity headroom for fixed subscriptions ($20/mo) and direct token invoice savings for API teams.
-- Expanded structural context preparation to 14 languages, adding Ruby, Swift, Kotlin, and C/C++ support with safe non-brace block preservation.
-- Documented native chat panel usage in the secondary sidebar and editor tab, including direct prompts, model selection, and local session history.
-- Restored Open Chat to a dockable view in the Secondary Side Bar (right by default). The optional editor has an Open in sidebar button; conversation history and Markdown formatting are preserved.
-
-- Open Chat now uses a separate editor tab that stays visible alongside sidebar chats. Added Markdown reply formatting for tables, code blocks, lists, emphasis and links.
-
-- Fixed chat loss when switching sidebar views. Added locally saved workspace conversations, a History picker, model-selection restoration and recovery after restarting VS Code.
-
-- Added a live panel activity log for provider-reported command, file, tool and plan events, with thinking status and completion/failure updates kept separate from answers.
-- Simplified the dashboard into Usage, Context and Diagnostics views, with task controls and advanced details available on demand.
-- Fixed another skills-attachment case that could omit retrieved source from project-analysis requests.
-- Preserved usable context when language services time out, and added failure-stage diagnostics to chat errors.
-- Added streaming subscription replies, CLI/login checks without a question, and clearer provider failure messages.
-
-- Fixed project analysis with skills/text references: text-only context no longer passes the project-source check, and preserving attachments no longer disables automatic retrieval.
-
-- Fixed chat source forwarding: file, selection and text attachments now reach the model, including previously attached files on follow-up turns.
-- Preserved the request's selected model directly and added an actionable missing-context message for source-dependent questions.
-
+- Documented the verified economic ROI model: 3x–4x prompt capacity headroom for fixed subscriptions ($20/mo) and direct token invoice savings for API teams.
+- Expanded structural context preparation across 14 languages, adding Ruby, Swift, Kotlin, and C/C++ support with safe non-brace block preservation.
+- Enhanced AST pruner with lexical quote/comment tracking, decorator preservation (@Injectable, @dataclass), and calibrated BPE tokenizer parity (cl100k_base / o200k_base).
+- Restored and certified dockable native chat in the Secondary Side Bar and dedicated independent Editor Tab with streaming Markdown reply formatting and session history restoration.
+- Added a live panel activity log for provider-reported command, file, tool and plan events with real-time status indicators.
 - Added `/codex` and `/claude` subscription chat commands using official CLI logins, with context preparation and dashboard usage reporting.
-- Added subscription CLI setup to the dashboard and respected the selected model in ordinary participant chat.
-
-- Added task spend, source filters, daily trends, usage coverage and task outcomes to the dashboard.
-- Added explicit task grouping, advisory task/day/month budgets and local usage export.
-- Added opt-in Claude usage-file import and watching, with replay protection and local retention.
-- Added versioned pricing imports and explicit comparisons of available models.
-- Corrected cache-token accounting and labeled avoided costs as estimates against a hypothetical baseline.
-- Preserved the four public settings and shared compiler/request boundary; subscription commands use an explicit CLI transport.
+- Simplified the dashboard into Usage, Context, and Diagnostics views with explicit task spend tracking, advisory budgets, and opt-in Claude usage log importing/watching.
+- Streamlined conservative compression with bounded rolling deduplication on large inputs, strengthened observation masking, and prefix cache boundary alignment.
+- Preserved the four public settings and zero-leak local processing boundary with fail-closed safety fallbacks.
 
 ## 7.0.1
 

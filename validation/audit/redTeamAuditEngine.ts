@@ -170,7 +170,7 @@ export class RedTeamAuditEngine {
 
 > **Audit Date**: \`${report.auditDate}\`
 > **Total Adversarial Challenges**: \`${report.totalChallenges}\`
-> **Challenges Successfully Defended**: \`${report.challengesPassed} / ${report.totalChallenges}\` (**100%**)
+> **Challenges Successfully Defended**: \`${report.challengesPassed} / ${report.totalChallenges}\` (**${report.totalChallenges > 0 ? Math.round((report.challengesPassed / report.totalChallenges) * 1000) / 10 : 0}%**)
 > **Critical Vulnerabilities Found**: **${report.criticalVulnerabilitiesFound}**
 > **Final Status**: **${report.auditStatus}**
 
@@ -180,7 +180,7 @@ export class RedTeamAuditEngine {
 
 | Challenge ID | Challenge Name | Adversarial Attack Vector | Claimed Invariant | Result |
 | :--- | :--- | :--- | :--- | :---: |
-${challenges.map(c => `| **${c.challengeId}** | ${c.challengeName} | ${c.adversarialVector} | ${c.claimedProperty} | **PASS** |`).join('\n')}
+${challenges.map(c => `| **${c.challengeId}** | ${c.challengeName} | ${c.adversarialVector} | ${c.claimedProperty} | **${c.challengePassed ? 'PASS' : 'FAIL'}** |`).join('\n')}
 
 ---
 

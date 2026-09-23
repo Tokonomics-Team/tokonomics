@@ -14,8 +14,11 @@ export interface MemorySnapshot {
     jsHeapUsedMB: number;
     jsHeapTotalMB: number;
     processRssMB: number;
+    externalMB: number;
     arrayBuffersMB: number;
+    workerThreadsEstimateMB: number;
     modelBufferEstimateMB: number;
+    totalProcessFootprintMB: number; // processRssMB + workerThreadsEstimateMB
 }
 
 export interface ScaleStressResult {
@@ -35,6 +38,8 @@ export interface MemoryAuditReport {
     indexedRssMB: number;
     mlActiveRssMB: number;
     peakRssMB: number;
+    peakHeapUsedMB: number;
+    peakTotalProcessFootprintMB: number;
     postUnloadRssMB: number;
     isEnvelopePreserved: boolean;
 }
@@ -64,7 +69,7 @@ export class MemoryProfiler {
         }
         snapshots.push(this.takeSnapshot('after_indexing'));
 
-        // 3. After Embedding Model Load (Dense Vector Index)
+        // 3. After hashed structural projection index construction
         const dense = new DenseVectorIndex();
         for (let i = 0; i < 5000; i++) {
             dense.addVector(`vec_${i}`, [0.1, 0.2, 0.3, 0.4]);
@@ -72,7 +77,7 @@ export class MemoryProfiler {
         snapshots.push(this.takeSnapshot('after_embedding_model_load', 1.5));
 
         // 4. After Local SLM Load
-        const slm = new LocalSlmBrain(false);
+        const slm = new LocalSlmBrain();
         snapshots.push(this.takeSnapshot('after_slm_load', 2.0));
 
         // 5. Peak Compilation Load (Concurrent Compiler Runs)
@@ -111,22 +116,33 @@ export class MemoryProfiler {
             indexedRssMB: indexedSnapshot.processRssMB,
             mlActiveRssMB: mlSnapshot.processRssMB,
             peakRssMB: peakSnapshot.processRssMB,
+            peakHeapUsedMB: peakSnapshot.jsHeapUsedMB,
+            peakTotalProcessFootprintMB: peakSnapshot.totalProcessFootprintMB,
             postUnloadRssMB: unloadSnapshot.processRssMB,
-            isEnvelopePreserved: peakSnapshot.jsHeapUsedMB < 64.0
+            isEnvelopePreserved: peakSnapshot.jsHeapUsedMB < 64.0 && peakSnapshot.processRssMB < 256.0
         };
     }
 
-    private static takeSnapshot(milestone: string, modelEstimateMB: number = 0): MemorySnapshot {
+    private static takeSnapshot(milestone: string, modelEstimateMB: number = 0, workerEstimateMB: number = 0): MemorySnapshot {
         const mem = process.memoryUsage();
         const toMB = (bytes: number) => Math.round((bytes / (1024 * 1024)) * 100) / 100;
+        const jsHeapUsedMB = toMB(mem.heapUsed);
+        const jsHeapTotalMB = toMB(mem.heapTotal);
+        const processRssMB = toMB(mem.rss);
+        const externalMB = toMB(mem.external || 0);
+        const arrayBuffersMB = toMB(mem.arrayBuffers || 0);
+        const totalProcessFootprintMB = Math.round((processRssMB + workerEstimateMB) * 100) / 100;
 
         return {
             milestone,
-            jsHeapUsedMB: toMB(mem.heapUsed),
-            jsHeapTotalMB: toMB(mem.heapTotal),
-            processRssMB: toMB(mem.rss),
-            arrayBuffersMB: toMB(mem.arrayBuffers || 0),
-            modelBufferEstimateMB: modelEstimateMB
+            jsHeapUsedMB,
+            jsHeapTotalMB,
+            processRssMB,
+            externalMB,
+            arrayBuffersMB,
+            workerThreadsEstimateMB: workerEstimateMB,
+            modelBufferEstimateMB: modelEstimateMB,
+            totalProcessFootprintMB
         };
     }
 

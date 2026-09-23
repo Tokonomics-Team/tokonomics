@@ -45,30 +45,23 @@ export class ScratchpadManager {
      * Reads current scratchpad state from disk or returns default empty state.
      */
     public readState(): ScratchpadState {
-        if (!this.scratchpadPath || !fs.existsSync(this.scratchpadPath)) {
-            return {
-                activeGoal: 'General assistance',
-                completedSteps: [],
-                pendingSteps: [],
-                keyDecisions: [],
-                knownBlockers: [],
-                lastUpdated: Date.now()
-            };
-        }
-
+        const empty = (): ScratchpadState => ({ activeGoal: 'General assistance', completedSteps: [],
+            pendingSteps: [], keyDecisions: [], knownBlockers: [], lastUpdated: 0 });
+        if (!this.scratchpadPath) return empty();
         try {
-            const raw = fs.readFileSync(this.scratchpadPath, 'utf8');
-            return JSON.parse(raw);
-        } catch {
-            return {
-                activeGoal: 'General assistance',
-                completedSteps: [],
-                pendingSteps: [],
-                keyDecisions: [],
-                knownBlockers: [],
-                lastUpdated: Date.now()
-            };
-        }
+            const stat = fs.lstatSync(this.scratchpadPath);
+            if (!stat.isFile() || stat.isSymbolicLink() || stat.size > 64 * 1024) return empty();
+            const value: unknown = JSON.parse(fs.readFileSync(this.scratchpadPath, 'utf8'));
+            if (!value || typeof value !== 'object') return empty();
+            const state = value as Record<string, unknown>;
+            if (typeof state.activeGoal !== 'string' || state.activeGoal.length > 4096) return empty();
+            for (const key of ['completedSteps', 'pendingSteps', 'keyDecisions', 'knownBlockers']) {
+                const items = state[key];
+                if (!Array.isArray(items) || items.length > 64 || items.some(item => typeof item !== 'string' || item.length > 4096)) return empty();
+            }
+            if (typeof state.lastUpdated !== 'number' || !Number.isFinite(state.lastUpdated)) return empty();
+            return state as unknown as ScratchpadState;
+        } catch { return empty(); }
     }
 
     /**
@@ -84,8 +77,8 @@ export class ScratchpadManager {
             }
             state.lastUpdated = Date.now();
             fs.writeFileSync(this.scratchpadPath, JSON.stringify(state, null, 2), 'utf8');
-        } catch (err) {
-            console.warn('[ScratchpadManager] Failed to write scratchpad:', err);
+        } catch {
+            console.warn('[ScratchpadManager] Scratchpad write failed safely.');
         }
     }
 

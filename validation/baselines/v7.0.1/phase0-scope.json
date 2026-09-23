@@ -1,0 +1,139 @@
+{
+  "schemaVersion": 1,
+  "targetRelease": "7.0.1",
+  "classification": "development-baseline-not-release-certification",
+  "authoritativePlan": "PHASE_V7.0.1_FINAL_IMPLEMENTATION_PLAN.md",
+  "fixtureSets": [
+    {
+      "id": "multilanguage",
+      "requiredCoverage": ["typescript", "javascript", "python", "java", "csharp", "go", "rust", "cpp"],
+      "paths": [
+        "validation/datasets/datasetMetadata.json",
+        "validation/datasets/taskCorpus.ts",
+        "validation/datasets/executableCorpus.ts",
+        "tests/multiLangAst.test.ts"
+      ]
+    },
+    {
+      "id": "workspace-shapes",
+      "requiredCoverage": ["multi-root", "large-workspace", "incremental-update", "unsaved-buffer", "restricted-workspace"],
+      "paths": [
+        "tests/phase3WorkspaceSnapshot.test.ts",
+        "tests/phase8PerformanceResilience.test.ts",
+        "tests/monorepoScale.test.ts"
+      ]
+    },
+    {
+      "id": "protocol",
+      "requiredCoverage": ["roles", "tool-call", "tool-result", "data", "image", "options", "streaming", "cancellation", "malformed-input", "usage-reconciliation"],
+      "paths": [
+        "tests/phase2ProtocolCompiler.test.ts",
+        "tests/phase6CacheEconomics.test.ts",
+        "tests/phase9ExtensionHost.test.ts",
+        "tests/eventReconciliation.test.ts"
+      ]
+    },
+    {
+      "id": "adversarial",
+      "requiredCoverage": ["secret", "prompt-injection", "symlink", "ignore-rule", "binary", "archive", "oversized-file", "untrusted-workspace", "unsaved-buffer"],
+      "paths": [
+        "tests/phase1SecurityBoundary.test.ts",
+        "tests/phase8SecuritySanitizer.test.ts",
+        "tests/phase9ReleaseCertification.test.ts",
+        "tests/adversarialSlicing.test.ts"
+      ]
+    },
+    {
+      "id": "quality-and-economics",
+      "requiredCoverage": ["critical-evidence-recall", "preservation", "token-accounting", "cost-accounting", "task-oracle"],
+      "paths": [
+        "tests/phase4EvidenceRetrieval.test.ts",
+        "tests/phase5GlobalBudget.test.ts",
+        "tests/phase6CacheEconomics.test.ts",
+        "tests/taskSuccessCalibration.test.ts"
+      ]
+    }
+  ],
+  "reachabilityProbes": [
+    {
+      "entryPoint": "chat-participant",
+      "state": "production-receipt-and-output-probed",
+      "evidence": ["tests/comprehensive-audit.test.ts", "tests/phase19UnifiedCertification.test.ts"]
+    },
+    {
+      "entryPoint": "language-model-provider",
+      "state": "production-protocol-probed",
+      "evidence": ["tests/phase2ProtocolCompiler.test.ts", "tests/phase9ExtensionHost.test.ts"]
+    },
+    {
+      "entryPoint": "commands",
+      "state": "production-command-probed",
+      "evidence": ["tests/comprehensive-audit.test.ts"]
+    },
+    {
+      "entryPoint": "installed-vsix",
+      "state": "artifact-bound-host-probe-required-for-release",
+      "evidence": ["scripts/run-extension-host-matrix.js", "scripts/verify-vsix.js"]
+    }
+  ],
+  "metricContract": {
+    "required": [
+      "coldCompileLatencyMs",
+      "warmCompileLatencyMs",
+      "indexBuildLatencyMs",
+      "indexRebuildLatencyMs",
+      "retrievalLatencyMs",
+      "criticalEvidenceRecall",
+      "preservationRate",
+      "peakQueueDepth",
+      "eventLoopDelayMs",
+      "heapDeltaBytes",
+      "rssDeltaBytes",
+      "originalTokens",
+      "optimizedTokens",
+      "projectedCostSavedUsd"
+    ],
+    "repeatTolerance": {
+      "latencyRatioMaximum": 8,
+      "memoryDeltaAbsoluteBytes": 134217728,
+      "exactFields": ["filesIndexed", "criticalEvidenceRecall", "preservationRate", "originalTokens", "optimizedTokens"]
+    }
+  },
+  "auditFindings": [
+    { "id": "orchestrator-monolith", "ownerPhase": 6 },
+    { "id": "settings-runtime-mismatch", "ownerPhase": 1 },
+    { "id": "shadow-status-overclaim", "ownerPhase": 1 },
+    { "id": "flags-do-not-bypass-work", "ownerPhase": 6 },
+    { "id": "signal-snapshot-production-gap", "ownerPhase": 7 },
+    { "id": "signal-freshness-domain-mismatch", "ownerPhase": 7 },
+    { "id": "lsp-position-version-timeout-defects", "ownerPhase": 7 },
+    { "id": "workspace-index-linear-publication", "ownerPhase": 5 },
+    { "id": "retrieval-full-scans-and-quadratic-ranking", "ownerPhase": 8 },
+    { "id": "eager-workers-and-unbounded-queues", "ownerPhase": 3 },
+    { "id": "unbounded-ledger-persistence", "ownerPhase": 3 },
+    { "id": "dashboard-unavailable-cost-stream", "ownerPhase": 4 },
+    { "id": "pricing-alias-and-duplicate-logic", "ownerPhase": 4 },
+    { "id": "cache-control-protocol-loss", "ownerPhase": 9 },
+    { "id": "history-limit-and-ui-contamination", "ownerPhase": 9 },
+    { "id": "heuristic-tokenizer-truth", "ownerPhase": 9 },
+    { "id": "dense-index-and-semantic-claim-gap", "ownerPhase": 8 },
+    { "id": "computed-results-discarded", "ownerPhase": 8 },
+    { "id": "unconditional-provenance-receipt", "ownerPhase": 7 },
+    { "id": "fallback-restores-injection-content", "ownerPhase": 2 },
+    { "id": "opaque-protocol-part-sanitization", "ownerPhase": 2 },
+    { "id": "hard-coded-memory-encryption-secret", "ownerPhase": 10 },
+    { "id": "webview-nonce-and-csp", "ownerPhase": 2 },
+    { "id": "duplicate-dashboard-message-handling", "ownerPhase": 4 },
+    { "id": "mock-local-slm-claim", "ownerPhase": 10 },
+    { "id": "receipt-only-test-assertions", "ownerPhase": 0 },
+    { "id": "coverage-and-tokenizer-oracle-gap", "ownerPhase": 9 },
+    { "id": "synthetic-savings-overclaim", "ownerPhase": 4 },
+    { "id": "stale-dirty-certification-evidence", "ownerPhase": 11 }
+  ],
+  "knownLimitations": [
+    "The frozen corpus is controlled and synthetic; it does not invoke an upstream model.",
+    "Receipt observations prove control-flow reachability, not useful output contribution.",
+    "Real provider billing and model task quality require separately authorized external evaluation.",
+    "Installed-host evidence is artifact, platform, and VS Code-version specific."
+  ]
+}

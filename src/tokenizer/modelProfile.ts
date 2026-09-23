@@ -18,6 +18,10 @@ export interface ModelPricingCurve {
     cacheWriteCostPer1M?: number; // Cache creation/write cost (if applicable, e.g. Anthropic)
     cacheStorageCostPerHourPer1M?: number; // Storage duration fee (e.g. Gemini context caching)
     outputCostPer1M: number;      // Output token cost
+    cacheWrite1HourCostPer1M?: number;
+    /** Whole-request rates above the inclusive input threshold, ascending. */
+    tiers?: readonly { aboveInputTokens: number; inputCostPer1M: number; outputCostPer1M: number;
+        cachedInputCostPer1M: number; cacheWriteCostPer1M?: number; cacheWrite1HourCostPer1M?: number }[];
 }
 
 export interface ModelCachePolicy {

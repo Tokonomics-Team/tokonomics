@@ -12,13 +12,16 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
+import { subscriptionDiagnostics, subscriptionModel } from '../subscriptions/subscriptionModels';
+import { SubscriptionActivity } from '../subscriptions/cliTransport';
+import { SubscriptionError } from '../subscriptions/cliTransport';
+import { asksForWorkspaceSource, resolveChatReferences } from './chatContextReferences';
 import { MetricsTracker } from '../metrics/tracker';
 import { AstPrunerEngine } from '../ast/pruner';
 import { TokenCounter } from '../engine/tokenizer';
 import { MessagePayload, TokenOptimizationConfig } from '../types';
 import { TokenIgnoreFilter } from '../ignore/tokenIgnore';
 import { BudgetGuardrail } from '../metrics/budgetGuard';
-import { ModelRouter } from '../engine/modelRouter';
 import { ResponseCache, ResponseCacheRequest, isTimeSensitiveRequest } from '../cache/responseCache';
 import { RelevanceScorer } from '../engine/relevanceScorer';
 import { DiffOutputOptimizer } from '../engine/diffOutputOptimizer';
@@ -36,12 +39,25 @@ import { DashboardWebviewPanel } from '../ui/dashboardWebview';
 import { WorkspaceSourcePolicy } from '../security/sourcePolicy';
 import { CanonicalRequestCompiler } from '../protocol/canonicalCompiler';
 import { canonicalTextMessage, VsCodeProtocolAdapter } from '../protocol/canonicalProtocol';
-import { prepareCanonicalEgress } from '../protocol/canonicalEgress';
+import { CanonicalProviderGateway } from '../protocol/providerGateway';
+import { FeatureFlagRegistry } from '../engine/featureFlags';
 import { VersionedWorkspaceIndex } from '../workspace/workspaceIndex';
 import { EvidenceSignal } from '../retrieval/evidenceTypes';
 import { CpuWorkerBoundary } from '../performance/cpuWorkerBoundary';
 import { BoundedPriorityScheduler } from '../performance/boundedScheduler';
 import { KillSwitchCapability } from '../release/releaseControl';
+import { UserPreferenceRegistry } from '../config/userPreferences';
+import { boundedHistory, sanitizeModelHistoryText } from '../history/modelHistory';
+import {
+    resolveContextEpoch, applyContextEpoch, recordPrefixStability, DEFAULT_CONTEXT_EPOCH,
+    buildConversationCheckpoint, renderCheckpoint
+} from '../history/contextEpoch';
+import { countAuthoritative, requiresRepack, planRepack } from '../engine/authoritativeCount';
+import { collectSignalSnapshot } from '../workspace/signalCollection';
+import {
+    RequestContextEnvelope, AttachmentDecision, resolveInitialAttachment,
+    resolveFallbackAttachment, buildAttachmentReceipt
+} from '../engine/requestContextEnvelope';
 
 export function registerChatParticipant(
     context: vscode.ExtensionContext,
@@ -73,6 +89,8 @@ export function registerChatParticipant(
     const protocol = new VsCodeProtocolAdapter();
 
     let lastActiveDocUri: vscode.Uri | undefined = vscode.window.activeTextEditor?.document?.uri;
+    // Monotonic, content-free counter giving each request envelope a distinct identity.
+    let compileSequence = 0;
     context.subscriptions.push(
         vscode.window.onDidChangeActiveTextEditor(editor => {
             if (editor && editor.document && !editor.document.isUntitled) {
@@ -83,6 +101,18 @@ export function registerChatParticipant(
 
     const participant = vscode.chat.createChatParticipant('token-optimizer-participant', async (request, chatContext, response, token) => {
         const command = request.command;
+        const subscription = command === 'codex' || command === 'claude' ? command : undefined;
+        if (subscription && !request.prompt.trim()) {
+            // No question means nothing to ask the provider, so the turn is spent on the two things
+            // that actually break this feature: whether the CLI was found, and whether its login is
+            // one this transport accepts. Both used to be invisible until a request had failed.
+            try {
+                response.markdown(await subscriptionDiagnostics(subscription, token));
+            } catch (error) {
+                response.markdown(`Subscription check failed: ${error instanceof Error ? error.message : String(error)}`);
+            }
+            return;
+        }
         let requestSnapshot = workspaceIndex.captureSnapshot();
 
         if ((!workspaceTrusted() || !capabilityEnabled('workspaceIndex')) && (command === 'map' || command === 'pack' || command === 'analyze')) {
@@ -92,8 +122,8 @@ export function registerChatParticipant(
 
         // 1. /dashboard Command: Open Interactive Real-Time Dashboard Webview
         if (command === 'dashboard') {
-            DashboardWebviewPanel.createOrShow(metricsTracker, astEngine);
-            response.markdown(`### Tokonomics 6.0 Dashboard\n\nOpening the activity dashboard.\n\n*You can also run \`@tokonomics /live\` for a session summary or \`@tokonomics /explain\` to review the latest context decision.*`);
+            DashboardWebviewPanel.createOrShow(metricsTracker, astEngine, workspaceIndex);
+            response.markdown(`### Tokonomics 8.0.0 Dashboard\n\nOpening the activity dashboard.\n\n*You can also run \`@tokonomics /live\` for a session summary or \`@tokonomics /explain\` to review the latest context decision.*`);
             return;
         }
 
@@ -105,7 +135,7 @@ export function registerChatParticipant(
             response.markdown(`### ⚡ Tokonomics Live Session Efficiency Stream\n\n` +
                 `- **Requests Observed:** ${summary.totalPrompts} (${summary.completedPrompts} completed, ${summary.failedPrompts} failed)\n` +
                 `- **Total Tokens Saved:** **${summary.savedTokens.toLocaleString()} tokens** (-${summary.averageReductionPercentage}%)\n` +
-                `- **Financial Savings:** **${financialSavings}**\n` +
+                `- **Estimated Avoided Cost:** **${financialSavings}**\n` +
                 `- **Predicted Context Quality (CQ):** **${summary.averagePredictedCQ === null ? 'Unavailable' : `${summary.averagePredictedCQ}%`}**\n` +
                 `- **Compiler Latency:** **${summary.averageOptimizationLatencyMs === null ? 'Unavailable' : `${summary.averageOptimizationLatencyMs}ms`}**\n\n` +
                 `*Run \`@tokonomics /dashboard\` to view full real-time SVG charts.*`);
@@ -137,8 +167,7 @@ export function registerChatParticipant(
                 return;
             }
 
-            const mapMode = vscode.workspace.getConfiguration('tokenOptimizer')
-                .get<'off' | 'selection' | 'referenced' | 'automatic'>('workspaceContextMode', 'selection');
+            const mapMode = UserPreferenceRegistry.get().workspace.contextMode;
             requestSnapshot = mapMode === 'automatic' ? await workspaceIndex.ensureInitialized() : await workspaceIndex.rebuild();
             const activeEditor = vscode.window.activeTextEditor;
             const activeFiles = activeEditor ? [activeEditor.document.fileName] : (lastActiveDocUri ? [lastActiveDocUri.fsPath] : []);
@@ -430,26 +459,30 @@ export function registerChatParticipant(
 
         // 6. Default AI Pair Programmer & Code Generation Handler
         let activeCompilation: Awaited<ReturnType<CanonicalRequestCompiler['compile']>> | undefined;
+        let failureStage = 'context preparation';
         try {
             if (token.isCancellationRequested) return;
-            const conf = vscode.workspace.getConfiguration('tokenOptimizer');
-            const configuredContextMode = conf.get<'off' | 'selection' | 'referenced' | 'automatic'>('workspaceContextMode', 'selection');
+            const runtime = UserPreferenceRegistry.get();
+            const configuredContextMode = runtime.workspace.contextMode;
             const contextMode = capabilityEnabled('workspaceIndex') ? configuredContextMode : 'off';
             if (contextMode === 'automatic' && requestSnapshot.files.size === 0) {
                 requestSnapshot = await workspaceIndex.ensureInitialized();
             }
             const mayReadWorkspace = workspaceTrusted() && contextMode !== 'off';
-            const mayResolveReferencedFile = mayReadWorkspace && (contextMode === 'referenced' || contextMode === 'automatic');
-            const mayAttachFullDocument = mayReadWorkspace && contextMode === 'automatic';
+            const mayResolveReferencedFile = mayReadWorkspace && contextMode === 'automatic';
+            // Resolving which document is in focus is separate from sending all of it. Automatic mode
+            // still needs the focal file - retrieval is focused by it - but knowing the file no longer
+            // implies attaching it. The envelope below decides attachment.
+            const mayResolveDocument = mayReadWorkspace && contextMode === 'automatic';
             // Resolve target active document with 4-tier fallback:
             let doc: vscode.TextDocument | undefined = mayReadWorkspace && !vscode.window.activeTextEditor?.document.isUntitled
                 ? vscode.window.activeTextEditor?.document
                 : undefined;
-            if (!doc && mayAttachFullDocument) {
+            if (!doc && mayResolveDocument) {
                 const visible = vscode.window.visibleTextEditors.find(e => e.document && !e.document.isUntitled && !e.document.uri.scheme.includes('output') && !e.document.uri.scheme.includes('debug'));
                 if (visible) doc = visible.document;
             }
-            if (!doc && mayAttachFullDocument && lastActiveDocUri) {
+            if (!doc && mayResolveDocument && lastActiveDocUri) {
                 try {
                     doc = await vscode.workspace.openTextDocument(lastActiveDocUri);
                 } catch {}
@@ -473,17 +506,31 @@ export function registerChatParticipant(
             let activeFileName = '';
             const evidenceSignals: EvidenceSignal[] = [];
 
+            const focusEditor = vscode.window.activeTextEditor;
+            const envelopeSelection = doc && focusEditor?.document.fileName === doc.fileName && focusEditor.selection
+                ? doc.getText(focusEditor.selection)
+                : '';
+            const envelope: RequestContextEnvelope = Object.freeze({
+                envelopeId: `env_${requestSnapshot.generation}_${(compileSequence += 1)}`,
+                contextMode,
+                promptChars: request.prompt.length,
+                activeFilePath: doc?.fileName,
+                documentVersion: doc?.version,
+                cursorLine: focusEditor?.selection?.active?.line,
+                selectionText: envelopeSelection,
+                documentIsDirty: Boolean(doc?.isDirty),
+                unsavedBuffersPermitted: runtime.workspace.includeUnsavedBuffers === true,
+                workspaceTrusted: workspaceTrusted(),
+                retrievalAvailable: contextMode === 'automatic' && requestSnapshot.files.size > 0
+            });
+            let attachment: AttachmentDecision = resolveInitialAttachment(envelope);
+
             if (doc && mayReadWorkspace && !ignoreFilter.isIgnored(doc.fileName)) {
                 activeFileName = doc.fileName;
-                const activeEditor = vscode.window.activeTextEditor;
-                const selectedText = (activeEditor?.document.fileName === doc.fileName && activeEditor.selection) 
-                    ? doc.getText(activeEditor.selection) 
-                    : '';
-                const includeUnsaved = conf.get<boolean>('includeUnsavedBuffers', false);
-                const canUseBuffer = includeUnsaved || !doc.isDirty;
-                const codeToAttach = canUseBuffer && selectedText && selectedText.trim().length > 30
+                const selectedText = envelopeSelection;
+                const codeToAttach = attachment.attachSelection
                     ? selectedText
-                    : (canUseBuffer && mayAttachFullDocument ? doc.getText() : '');
+                    : (attachment.attachFullDocument ? doc.getText() : '');
 
                 if (codeToAttach && codeToAttach.length > 30) {
                     const lang = doc.languageId || 'typescript';
@@ -510,82 +557,173 @@ export function registerChatParticipant(
                 evidenceSignals.push({ source: 'diff', content: diff[1] });
             }
 
-            const config: TokenOptimizationConfig = {
-                enableAstPruning: conf.get<boolean>('enableAstPruning', true),
-                enableCacheAlignment: conf.get<boolean>('enableCacheAlignment', true),
-                enableTextCompression: conf.get<boolean>('enableTextCompression', true),
-                compressionRatio: conf.get<number>('compressionRatio', 0.4),
-                targetProvider: conf.get<'auto' | 'anthropic' | 'openai' | 'gemini' | 'deepseek' | 'generic'>('targetProvider', 'auto'),
-                maxHistoryTurns: conf.get<number>('maxHistoryTurns', 8),
-                stripDiffsAndLogs: conf.get<boolean>('stripDiffsAndLogs', true),
-                targetUpstreamModelFamily: conf.get<string>('targetUpstreamModelFamily', 'auto'),
-                enableDiffOutputOptimization: conf.get<boolean>('enableDiffOutputOptimization', true),
-                enableModelRouting: conf.get<boolean>('enableModelRouting', true),
-                enableResponseCache: conf.get<boolean>('enableResponseCache', true)
-            };
+            // The request-scoped signal snapshot. The orchestrator has always accepted one - it uses
+            // the document version to discard evidence captured against a file that has since
+            // changed, and feeds the signal engines from it - but no production caller supplied one,
+            // so in the shipped extension those engines received nothing at all.
+            const signalSnapshot = collectSignalSnapshot({
+                snapshotGeneration: requestSnapshot.generation,
+                capturedAt: Date.now(),
+                workspaceContextAuthorised: contextMode !== 'off',
+                workspaceTrusted: workspaceTrusted(),
+                activeFilePath: doc?.fileName,
+                documentUri: doc?.uri?.toString(),
+                documentVersion: doc?.version,
+                cursorLine: focusEditor?.selection?.active?.line,
+                cursorCharacter: focusEditor?.selection?.active?.character,
+                selection: focusEditor?.selection && doc && focusEditor.document.fileName === doc.fileName
+                    ? {
+                        startLine: focusEditor.selection.start.line,
+                        startCharacter: focusEditor.selection.start.character,
+                        endLine: focusEditor.selection.end.line,
+                        endCharacter: focusEditor.selection.end.character
+                    }
+                    : undefined,
+                diagnostics: doc && contextMode === 'automatic'
+                    && typeof vscode.languages?.getDiagnostics === 'function'
+                    ? vscode.languages.getDiagnostics(doc.uri).map(diagnostic => ({
+                        message: diagnostic.message,
+                        severity: Number(diagnostic.severity),
+                        source: diagnostic.source,
+                        startLine: diagnostic.range.start.line,
+                        startCharacter: diagnostic.range.start.character
+                    }))
+                    : undefined
+            });
+
+            const config: TokenOptimizationConfig = { ...runtime.tokenOptimization };
 
             const diffAnalysis = DiffOutputOptimizer.analyzeIntent(request.prompt, !!activeFileContext);
 
-            // Phase 5: Model Routing Suggestion
-            if (config.enableModelRouting !== false) {
-                const routing = ModelRouter.analyzeComplexity(
-                    request.prompt,
-                    activeFileContext ? 1 : 0,
-                    chatContext.history.length
-                );
-                response.markdown(`> ${ModelRouter.formatSuggestion(routing)}\n\n`);
-            }
+            // Price/capability comparisons are user-initiated from the spend dashboard.
+            // Keyword complexity alone cannot justify a percentage savings claim.
 
             // The compiler owns workspace evidence rendering; do not append a second RAM slice bundle.
-            const fullPrompt = `${request.prompt}${activeFileContext}`;
+            const previousReferences = chatContext.history.filter(turn => turn instanceof vscode.ChatRequestTurn)
+                .slice(-10).reverse().flatMap(turn => (turn as vscode.ChatRequestTurn).references ?? []);
+            const references = await resolveChatReferences([...(request.references ?? []), ...previousReferences], {
+                roots: workspaceRoots(), trusted: workspaceTrusted(), enabled: contextMode !== 'off',
+                includeUnsaved: runtime.workspace.includeUnsavedBuffers, token
+            });
+            for (const notice of references.notices) response.markdown(`> Context: ${notice}\n\n`);
+            const fullPrompt = `${request.prompt}${activeFileContext}${references.text}`;
 
             // Phase 8: Image Rightsizing (inspired by TokenShift)
-            const imageConf = vscode.workspace.getConfiguration('tokenOptimizer');
-            const imageRightsizer = new ImageRightsizer({
-                enabled: capabilityEnabled('imageRightsizing') && imageConf.get<boolean>('enableImageRightsizing', true),
-                maxDimension: imageConf.get<number>('imageMaxDimension', 512),
+            // Gated by the release capability, the user image preference AND the declared compiler
+            // flag, so the capability snapshot for 'image_rightsizing' matches what actually runs.
+            const imageOptimizationEnabled = capabilityEnabled('imageRightsizing')
+                && runtime.image.enabled
+                && FeatureFlagRegistry.getFlags().enableImageRightsizing;
+            const imageRightsizer = imageOptimizationEnabled ? new ImageRightsizer({
+                enabled: true,
+                maxDimension: runtime.image.maxDimension,
                 quality: 70
+            }) : undefined;
+            const unchangedImageText = (text: string) => ({
+                text,
+                stats: { originalBytes: 0, compressedBytes: 0, reductionPercentage: 0, estimatedTokensSaved: 0, wasProcessed: false }
             });
 
             // Build multi-turn raw messages with turn deduplication
             const rawMessages: MessagePayload[] = [];
             let totalImageTokensSaved = 0;
-            for (const h of chatContext.history) {
+            // History is retained append-only inside a context epoch, rather than by a sliding window.
+            // A window dropped the oldest turn on every request once the conversation passed its
+            // limit, which shifted the rendered prefix every turn and meant the longest conversations
+            // - where caching is worth the most - never reused a cached prefix at all. The anchor now
+            // moves once per epoch instead, so the prefix stays byte-identical between moves.
+            const epochHistory = chatContext.history.map(turn => ({
+                content: turn instanceof vscode.ChatRequestTurn
+                    ? turn.prompt
+                    : String((turn as { response?: unknown }).response ?? '')
+            }));
+            const epochDecision = resolveContextEpoch(epochHistory, {
+                ...DEFAULT_CONTEXT_EPOCH,
+                maxRetainedTurns: Math.max(2, Math.min(80, config.maxHistoryTurns * 2))
+            });
+            const retainedHistory = applyContextEpoch(chatContext.history, epochDecision);
+            // Turns before the anchor stop being sent. Most of what they held is spent, but decisions,
+            // constraints, referenced files, outstanding work and unresolved errors stay load-bearing,
+            // and losing them silently is how a long session contradicts itself. The checkpoint lifts
+            // those spans verbatim - it is deterministic extraction, not a generated summary, so it
+            // can be asserted against rather than trusted.
+            if (epochDecision.droppedTurns > 0) {
+                const checkpoint = buildConversationCheckpoint(
+                    epochHistory.slice(0, epochDecision.startIndex), epochDecision.epoch, 0);
+                const rendered = renderCheckpoint(checkpoint);
+                const carriesFacts = checkpoint.decisions.length + checkpoint.constraints.length
+                    + checkpoint.referencedFiles.length + checkpoint.unresolvedTasks.length
+                    + checkpoint.openErrors.length > 0;
+                if (carriesFacts) rawMessages.push({ role: 'user', content: rendered });
+            }
+            const prefixStability = recordPrefixStability(
+                applyContextEpoch(epochHistory, epochDecision), epochDecision);
+            for (const h of retainedHistory) {
                 if (h instanceof vscode.ChatRequestTurn) {
-                    const { text: rsText, stats: rsStats } = cpuWorkerBoundary
-                        ? await imageRightsizer.rightsizeInlineImagesAsync(h.prompt, cpuWorkerBoundary, token)
-                        : imageRightsizer.rightsizeInlineImages(h.prompt);
+                    const { text: rsText, stats: rsStats } = imageRightsizer
+                        ? cpuWorkerBoundary
+                            ? await imageRightsizer.rightsizeInlineImagesAsync(h.prompt, cpuWorkerBoundary, token)
+                            : imageRightsizer.rightsizeInlineImages(h.prompt)
+                        : unchangedImageText(h.prompt);
                     totalImageTokensSaved += rsStats.estimatedTokensSaved;
                     const dedup = turnCache.deduplicateTurnCode(rsText, activeFileName || 'workspace');
                     rawMessages.push({ role: 'user', content: dedup.text });
                 } else if (h instanceof vscode.ChatResponseTurn) {
                     const participantName = (h as any).participant || (h as any).name || 'tokonomics';
-                    const resText = h.response.map((part: any) => {
+                    const resText = sanitizeModelHistoryText(h.response.map((part: any) => {
                         if (part instanceof vscode.ChatResponseMarkdownPart) {
                             return part.value.value;
                         }
                         if (typeof part?.value === 'string') return part.value;
                         if (typeof part?.value?.value === 'string') return part.value.value;
                         return '';
-                    }).join('');
+                    }).join(''));
                     if (resText.trim().length > 0) {
                         rawMessages.push({ role: 'assistant', content: resText, name: participantName });
                     }
                 }
             }
             // Rightsize images in the current prompt too
-            const { text: rsFullPrompt, stats: rsPromptStats } = cpuWorkerBoundary
-                ? await imageRightsizer.rightsizeAsync(fullPrompt, cpuWorkerBoundary, mayReadWorkspace ? workspaceRoot : undefined, token)
-                : imageRightsizer.rightsize(fullPrompt, mayReadWorkspace ? workspaceRoot : undefined);
+            const { text: rsFullPrompt, stats: rsPromptStats } = imageRightsizer
+                ? cpuWorkerBoundary
+                    ? await imageRightsizer.rightsizeAsync(fullPrompt, cpuWorkerBoundary, mayReadWorkspace ? workspaceRoot : undefined, token)
+                    : imageRightsizer.rightsize(fullPrompt, mayReadWorkspace ? workspaceRoot : undefined)
+                : unchangedImageText(fullPrompt);
             totalImageTokensSaved += rsPromptStats.estimatedTokensSaved;
             rawMessages.push({ role: 'user', content: rsFullPrompt });
 
             // Resolve the concrete upstream model before compilation so context limits,
             // cache identity, and projected pricing refer to the request actually sent.
-            const allModels = await vscode.lm.selectChatModels();
+            const selectedModel = request.model;
+            const selectedIsUpstream = selectedModel && selectedModel.id !== 'token-optimizer-proxy' && selectedModel.vendor !== 'tokonomics';
+            // What the provider is doing, while it does it. The CLIs report the model they picked
+            // and their reasoning on the same stream as the answer, and all of it used to be parsed
+            // only after the process exited - so a long turn showed nothing until it was over.
+            let reportedModel: string | undefined;
+            let reasoningChars = 0;
+            const showActivity = (activity: SubscriptionActivity) => {
+                if (typeof (response as any).progress !== 'function') return;
+                if (activity.kind === 'model' && activity.model && activity.model !== reportedModel) {
+                    reportedModel = activity.model;
+                    (response as any).progress(`${subscription} CLI answering with ${activity.model}`);
+                } else if (activity.kind === 'reasoning' && activity.text) {
+                    // The reasoning text itself is the provider's working, not the answer: its volume
+                    // is reported so the turn is visibly alive, and its content is not rendered,
+                    // cached, or carried into the next turn.
+                    reasoningChars += activity.text.length;
+                    (response as any).progress(`Reasoning (${reasoningChars.toLocaleString()} characters so far)`);
+                }
+            };
+            failureStage = 'provider setup';
+            const allModels = subscription ? [subscriptionModel(subscription, { onActivity: showActivity })] : selectedIsUpstream ? [selectedModel] : await vscode.lm.selectChatModels();
             let models = allModels ? allModels.filter(m => m.id !== 'token-optimizer-proxy' && (m as any).vendor !== 'tokonomics') : [];
-            const allowList = conf.get<string[]>('modelAllowList', []);
-            if (allowList && allowList.length > 0) {
+            const allowList = [...runtime.modelAllowList];
+            // The allow list governs which discovered upstream models may be selected. A subscription
+            // command is not a selection: the user named a CLI they are already signed into, billed
+            // under their own seat, and its synthetic model id ("claude-subscription") matches no
+            // administrator's list - so applying the list here rejected the one transport the user
+            // explicitly asked for.
+            if (!subscription && allowList && allowList.length > 0) {
                 const allowedLower = allowList.map(a => a.toLowerCase());
                 const filtered = models.filter(m => {
                     const identity = `${m.id || ''} ${m.name || ''} ${m.family || ''}`.toLowerCase();
@@ -597,34 +735,154 @@ export function registerChatParticipant(
                 }
                 models = filtered.length > 0 ? filtered : models;
             }
-            const targetModel = models[0];
+            const targetModel = subscription ? models[0] : models.find(m => m.id === request.model?.id) ?? models[0];
+            if (subscription) response.markdown(`> Using your **${subscription} CLI login** with compiled context. Answers and suggested changes only. Reported tokens include provider overhead; subscription charges and remaining quota are not inferred.\n\n`);
             const detectedProvider = targetModel?.vendor === 'google' ? 'gemini' : targetModel?.vendor;
             const compileProvider = config.targetProvider === 'auto'
                 ? (detectedProvider || 'generic')
                 : config.targetProvider;
 
-            const compiled = await compiler.compile({
-                messages: rawMessages.map(message => canonicalTextMessage(message.role, message.content, message.name)),
+            // Whether this request already carries workspace source of its own. The compiler cannot
+            // tell from message shape - the editor attaches a skills list on every turn that is long
+            // and full of fenced code, and reading that as attached source made the compiler discard
+            // everything retrieval had found and answer from the skills list alone. The participant
+            // resolved the attachments, so it is the one that knows.
+            const callerSuppliedSource = references.containsWorkspaceData || activeFileContext.length > 0
+                || [request.prompt, ...retainedHistory.filter(turn => turn instanceof vscode.ChatRequestTurn)
+                    .map(turn => (turn as vscode.ChatRequestTurn).prompt)].some(text => /```[\s\S]+```/.test(text));
+            failureStage = 'context compilation';
+            const compileWith = (messages: MessagePayload[], decision: AttachmentDecision) => compiler.compile({
+                callerSuppliedSource,
+                messages: messages.map(message => canonicalTextMessage(message.role, message.content, message.name)),
+                preserveText: references.count > 0,
                 sessionId: 'session_chat_participant',
+                envelopeId: envelope.envelopeId,
                 targetProvider: compileProvider as any,
                 targetModel: targetModel?.id || targetModel?.family,
                 maxTokenBudget: typeof (targetModel as any)?.maxInputTokens === 'number' ? (targetModel as any).maxInputTokens : undefined,
                 maxOutputTokens: typeof (targetModel as any)?.maxOutputTokens === 'number' ? (targetModel as any).maxOutputTokens : undefined,
                 activeFilePath: doc?.fileName,
+                cursorLine: envelope.cursorLine,
                 userIntent: diffAnalysis.intent,
                 cancellation: token,
                 workspaceSnapshot: requestSnapshot,
-                allowWorkspaceRetrieval: contextMode === 'automatic',
+                signalSnapshot,
+                allowWorkspaceRetrieval: decision.allowRetrieval,
                 evidenceSignals
             });
+
+            let compiled = await compileWith(rawMessages, attachment);
+
+            // Second pass. Attaching the focal document costs the whole file, so it happens only
+            // here - after retrieval has actually been tried and admitted nothing - rather than
+            // pre-emptively alongside retrieval, which is what previously made a request carry both.
+            let fallbackTokens = 0;
+            const retrievalResult = compiled.compilation.evidenceRetrieval;
+            const fallbackDecision = resolveFallbackAttachment(envelope, attachment, {
+                attempted: attachment.allowRetrieval,
+                selectedCount: retrievalResult?.selected.length ?? 0,
+                sufficient: retrievalResult?.sufficient === true,
+                conservativeFallback: retrievalResult?.conservativeFallback === true,
+                missingRequired: (retrievalResult?.missingRequired ?? []).map(category => String(category)),
+                sufficiency: retrievalResult?.sufficiency
+            });
+            if (fallbackDecision && doc && !token.isCancellationRequested
+                && !ignoreFilter.isIgnored(doc.fileName)) {
+                const fallbackLang = doc.languageId || 'typescript';
+                const fallbackPolicy = new WorkspaceSourcePolicy(workspaceRoots(), true);
+                const fallbackPath = fallbackPolicy.assertReadable(doc.fileName).displayPath;
+                const fallbackCode = doc.getText().split(String.fromCharCode(13, 10)).join(String.fromCharCode(10));
+                activeFileContext = String.fromCharCode(10, 10) + '```' + fallbackLang + String.fromCharCode(10)
+                    + `// Context File: <workspace>/${fallbackPath}` + String.fromCharCode(10)
+                    + fallbackCode + String.fromCharCode(10) + '```';
+                fileInfo = ` (with context from ${path.basename(doc.fileName)})`;
+                fallbackTokens = TokenCounter.countTokens(activeFileContext);
+                const fallbackMessages = rawMessages.map((message, index) => index === rawMessages.length - 1
+                    ? { ...message, content: `${message.content}${activeFileContext}` }
+                    : message);
+                compiler.abandon(compiled);
+                compiled = await compileWith(fallbackMessages, fallbackDecision);
+                attachment = fallbackDecision;
+            }
+            const attachmentReceipt = buildAttachmentReceipt(envelope, attachment, fallbackTokens);
             activeCompilation = compiled;
             const compileResult = compiled.compilation;
-            const prepared = prepareCanonicalEgress(compiled.messages, {}, {
+            const containsWorkspaceData = references.containsWorkspaceData || activeFileContext.length > 0
+                || Boolean(compileResult.evidenceRetrieval?.selected.length);
+            const hasInlineSource = callerSuppliedSource;
+            if (!containsWorkspaceData && !hasInlineSource
+                && (asksForWorkspaceSource(request.prompt) || (references.count === 0 && (request.references?.length ?? 0) > 0))) {
+                compiler.abandon(compiled); activeCompilation = undefined;
+                response.markdown(`No project files were prepared for this request${references.textCount ? `; ${references.textCount} text reference(s) were supplied, but text such as a skills list is not a workspace file` : ''}. Workspace Context is **${contextMode === 'off' ? 'None' : contextMode}**. For project analysis, choose **Automatic** workspace context, or attach the relevant source files with **Add Context**, then resend your question.\n\n`);
+                response.button({ command: 'workbench.action.openSettings', title: 'Open workspace context setting', arguments: ['tokenOptimizer.workspaceContext'] });
+                return;
+            }
+            response.markdown(`> Context prepared: ${references.files.length} file attachment(s), ${references.textCount} text reference(s)`
+                + `${activeFileContext ? ', active editor context' : ''}${compileResult.evidenceRetrieval?.selected.length ? ', retrieved workspace evidence' : ''}.\n\n`);
+            const prepared = CanonicalProviderGateway.prepare(protocol, compiled.messages, {}, {
                 workspaceRoots: workspaceRoots(),
                 workspaceTrusted: workspaceTrusted(),
-                containsWorkspaceData: activeFileContext.length > 0 || (contextMode === 'automatic' && requestSnapshot.files.size > 0),
+                containsWorkspaceData,
+                workspaceConsent: contextMode !== 'off',
+                sourcePolicySatisfied: !containsWorkspaceData || workspaceTrusted(),
                 isCancellationRequested: token.isCancellationRequested
             });
+            // Final pre-send count with the model's own tokenizer, when it offers one. Packing uses
+            // the fast estimator because it evaluates many candidate payloads; this runs once, on the
+            // payload actually being sent, so a request the estimator thought fit cannot silently
+            // exceed the real input budget. It is a count, never billed usage - see ADR-001.
+            const preparedText = prepared.messages
+                .map(message => message.parts
+                    .filter(part => part.kind === 'text')
+                    .map(part => (part as { text: string }).text).join(''))
+                .join(String.fromCharCode(10));
+            const authoritativeCount = await countAuthoritative(
+                targetModel as never, preparedText, compileResult.optimizedTokens,
+                typeof (targetModel as any)?.maxInputTokens === 'number'
+                    ? (targetModel as any).maxInputTokens : undefined,
+                token);
+            const inputBudget = typeof (targetModel as any)?.maxInputTokens === 'number'
+                ? (targetModel as any).maxInputTokens as number
+                : undefined;
+            if (inputBudget && requiresRepack(authoritativeCount, compileResult.optimizedTokens, inputBudget)) {
+                // The model's own tokenizer says this does not fit, and the estimator thought it did.
+                // Drop optional evidence lowest-value first and recount once. Mandatory evidence is
+                // never dropped: a request missing the evidence it declared it needed produces a
+                // confident answer to a question it could not see.
+                const evidenceItems = (compileResult.evidenceRetrieval?.selected || []).map(candidate => ({
+                    id: candidate.id,
+                    tokens: TokenCounter.countTokens(candidate.content),
+                    mandatory: candidate.mandatory === true,
+                    value: candidate.fusedScore
+                }));
+                const overflow = authoritativeCount.tokens - inputBudget;
+                const plan = planRepack(evidenceItems,
+                    Math.max(0, authoritativeCount.tokens
+                        - evidenceItems.reduce((sum, item) => sum + item.tokens, 0)),
+                    inputBudget);
+                if (plan.fits && plan.droppedIds.length > 0) {
+                    response.markdown(`> ⚠️ **Context repacked**: the model counted `
+                        + `${authoritativeCount.tokens.toLocaleString()} tokens against a limit of `
+                        + `${inputBudget.toLocaleString()}, so ${plan.droppedIds.length} optional evidence `
+                        + `item(s) were dropped. Required evidence was kept.
+
+`);
+                } else {
+                    // Fails closed. Truncating mandatory evidence to fit would be the one outcome
+                    // worse than declining: an answer that looks informed and is not.
+                    compiler.fail(compiled, 'CONTEXT_EXCEEDS_MODEL_BUDGET');
+                    activeCompilation = undefined;
+                    if (onOptimizationComplete) onOptimizationComplete();
+                    response.markdown(`> ⛔ **Context exceeds this model's limit by `
+                        + `${overflow.toLocaleString()} tokens** and cannot be reduced without dropping `
+                        + `evidence this request needs. Narrow the selection, or choose a model with a `
+                        + `larger context window.
+
+`);
+                    return;
+                }
+            }
+
             const originalTokens = compileResult.originalTokens;
             const optimizedTokens = compileResult.optimizedTokens;
             const savedTokens = compileResult.tokensSaved;
@@ -635,12 +893,33 @@ export function registerChatParticipant(
             const cbStatus = circuitBreaker.evaluateTurn(optimizedTokens, request.prompt);
             if (cbStatus.tripped) {
                 response.markdown(`> ${cbStatus.message}\n\n`);
+                compiler.fail(compiled, 'CIRCUIT_BREAKER_TRIPPED');
+                activeCompilation = undefined;
+                return;
+            }
+
+            // A conservative fallback is declared, not absorbed. The user is told the whole file was
+            // sent and why, so a costly request is never indistinguishable from a retrieval-first one.
+            if (attachmentReceipt.fellBack && attachmentReceipt.fallbackTokens > 0) {
+                response.markdown(`> ⚠️ **Full file attached** (${attachmentReceipt.fallbackTokens.toLocaleString()} tokens): `
+                    + `workspace retrieval found no usable evidence for this request, so the active file was sent in full.
+
+`);
             }
 
             // Build savings banner with image rightsizing info
             const imageNote = totalImageTokensSaved > 0 ? ` | 📸 ${totalImageTokensSaved.toLocaleString()} image tokens rightsized` : '';
-            if (savedTokens > 0 || totalImageTokensSaved > 0) {
+            if (subscription) {
+                response.markdown(`> Compiled context: ${originalTokens.toLocaleString()} → ${optimizedTokens.toLocaleString()} locally counted tokens. Provider overhead is additional.\n\n`);
+            } else if (savedTokens > 0 || totalImageTokensSaved > 0) {
                 response.markdown(`> ⚡ **Tokonomics${fileInfo}:** ${originalTokens.toLocaleString()} → ${optimizedTokens.toLocaleString()} tokens (**${reductionPercentage}% saved** | ~$${costSavedUSD.toFixed(4)} USD${imageNote})\n\n`);
+            } else if (optimizedTokens > originalTokens) {
+                // Retrieval adds context that was not in the prompt, so the payload is larger than
+                // what the user typed. Reporting that as a "standalone prompt" of the original size
+                // described the request that was never sent and hid the work that was done.
+                const evidenceCount = compileResult.evidenceRetrieval?.selected.length ?? 0;
+                response.markdown(`> ⚡ **Tokonomics${fileInfo}:** ${originalTokens.toLocaleString()} → ${optimizedTokens.toLocaleString()} tokens`
+                    + `${evidenceCount ? ` - ${evidenceCount} workspace evidence item(s) retrieved and attached` : ''}${imageNote}.\n\n`);
             } else {
                 response.markdown(`> ⚡ **Tokonomics:** Standalone prompt (${originalTokens} tokens). *Open a code file or run \`@tokonomics /map\` to see structural token optimization.*\n\n`);
             }
@@ -653,8 +932,6 @@ export function registerChatParticipant(
                 response.markdown(`*(No downstream Copilot/Chat model available in active host)*\n\n**Optimized Prompt Payload:**\n\`\`\`markdown\n${prepared.messages.map(m => `[${m.role.toUpperCase()}]: ${m.parts.filter(p => p.kind === 'text').map(p => (p as any).text).join('')}`).join('\n\n')}\n\`\`\``);
                 return;
             }
-
-            const upstreamMessages = protocol.toUpstreamMessages(prepared.messages);
 
             // Evaluate answer reuse only after every answer-affecting input is known.
             const exactCacheRequest: ResponseCacheRequest = {
@@ -687,7 +964,7 @@ export function registerChatParticipant(
                     cancelled: token.isCancellationRequested
                 }
             };
-            if (capabilityEnabled('responseCache') && config.enableResponseCache !== false) {
+            if (!subscription && capabilityEnabled('responseCache') && config.enableResponseCache !== false) {
                 const cacheHit = cache.lookup(exactCacheRequest);
                 if (cacheHit.hit && cacheHit.response) {
                     compiler.commit(compiled);
@@ -710,7 +987,8 @@ export function registerChatParticipant(
 
             const performInference = async (checkpoint: () => void) => {
                 checkpoint();
-                const llmResponse = await targetModel.sendRequest(upstreamMessages, prepared.options as any, token);
+                failureStage = 'provider response';
+                const llmResponse = await CanonicalProviderGateway.send(targetModel, prepared, token);
                 let completeResponseText = '';
                 if ((llmResponse as any).stream) {
                     for await (const part of (llmResponse as any).stream as AsyncIterable<unknown>) {
@@ -746,7 +1024,7 @@ export function registerChatParticipant(
             // Reconcile only from provider-reported complete usage; locally estimated
             // tokens remain projected metrics and are never relabelled as actual cost.
             const responseUsage = (llmResponse as any)?.usage || (llmResponse as any)?.result?.usage;
-            const modelId = targetModel.id || targetModel.name || 'claude-3-7-sonnet';
+            const modelId = (llmResponse as any).subscriptionModel || targetModel.id || targetModel.name || 'claude-3-7-sonnet';
             const providerId = targetModel.vendor || 'anthropic';
             const verifiedUsage = CostCalculator.parseVerifiedProviderUsage(responseUsage, compiled.requestId, providerId, modelId);
             const fallbackCostStatus = CostCalculator.statusWhenProviderUsageUnavailable(compileResult.event);
@@ -759,9 +1037,13 @@ export function registerChatParticipant(
                 model: modelId,
                 isCostReconciled: false,
                 costStatus: fallbackCostStatus,
+                ...(subscription ? { costStatus: 'unavailable' as const, costState: 'billed_unavailable' as const, observedInputTokens: verifiedUsage?.inputTokens,
+                    projectedRawCostUSD: 0, projectedOptimizedCostUSD: 0, projectedSavingsUSD: 0,
+                    outputTokens: verifiedUsage?.outputTokens, cachedTokens: verifiedUsage?.cacheReadInputTokens,
+                    cacheWriteTokens: verifiedUsage?.cacheWriteInputTokens, subscriptionTransport: subscription } : {}),
                 traceId: `${compiled.requestId}:cost-${fallbackCostStatus}`
             });
-            if (verifiedUsage) {
+            if (verifiedUsage && !subscription) {
                 costReconciliationLedger.begin({
                     requestId: compiled.requestId,
                     provider: providerId,
@@ -778,6 +1060,8 @@ export function registerChatParticipant(
                         provider: providerId as any,
                         model: modelId,
                         cachedTokens: verifiedUsage.cacheReadInputTokens,
+                        cacheWriteTokens: verifiedUsage.cacheWriteInputTokens,
+                        observedInputTokens: verifiedUsage.inputTokens,
                         outputTokens: verifiedUsage.outputTokens,
                         actualRawCostUSD: costReconciled.actualRawCostUSD,
                         actualOptimizedCostUSD: costReconciled.actualOptimizedCostUSD,
@@ -798,15 +1082,29 @@ export function registerChatParticipant(
                 }
             } else emitFinalCostStatusWithoutUsage();
 
-            if (capabilityEnabled('responseCache') && config.enableResponseCache !== false && completeResponseText.length > 20) {
+            if (!subscription && capabilityEnabled('responseCache') && config.enableResponseCache !== false && completeResponseText.length > 20) {
                 cache.store(exactCacheRequest, completeResponseText, 'completed');
             }
+            // The CLI picks its own model per request, so which one answered is a fact about this
+            // turn that only the provider knows. Reported after the answer rather than guessed before.
+            if (subscription) {
+                const answeredBy = (llmResponse as any).subscriptionModel || reportedModel;
+                const observed = verifiedUsage
+                    ? ` - ${verifiedUsage.inputTokens.toLocaleString()} in / ${verifiedUsage.outputTokens.toLocaleString()} out, as reported by the provider`
+                    : '';
+                if (answeredBy) response.markdown(`\n\n> Answered by **${answeredBy}** through your ${subscription} CLI${observed}.`);
+            }
         } catch (err: any) {
+            AnonymizedLogger.getInstance().error('ChatParticipant', `Request failed during ${failureStage}.`, err);
             if (activeCompilation) {
                 compiler.fail(activeCompilation, token.isCancellationRequested ? 'CANCELLED' : 'GENERATION_ERROR');
                 activeCompilation = undefined;
             }
-            response.markdown(`❌ Error during generation: ${err?.message || err}`);
+            const safeCode = typeof err?.code === 'string' && /^[A-Z0-9_]{1,64}$/.test(err.code)
+                ? err.code : token.isCancellationRequested ? 'CANCELLED' : 'GENERATION_ERROR';
+            if (err instanceof SubscriptionError) response.markdown(`Subscription chat stopped: ${err.message}`);
+            else response.markdown(`The request stopped during ${failureStage} (${safeCode}). Export diagnostics for the failure details.`);
+            response.button({ command: 'tokenOptimizer.exportLogs', title: 'Export diagnostics' });
         }
     });
 

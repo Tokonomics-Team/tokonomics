@@ -9,6 +9,8 @@ import { CanonicalWorkspaceFile, WorkspaceIdentity, WorkspaceRootIdentity } from
 import { BoundedPriorityScheduler, WorkCancelledError, WorkContext, WorkQueueFullError, WorkSupersededError } from '../performance/boundedScheduler';
 import { CpuWorkerBoundary } from '../performance/cpuWorkerBoundary';
 
+import { SemanticChunkRange, extractChunkRanges } from './semanticChunk';
+
 export interface WorkspaceIndexSymbol {
     readonly name: string;
     readonly kind: 'class' | 'interface' | 'function' | 'type' | 'enum' | 'struct' | 'method';
@@ -23,6 +25,12 @@ export interface WorkspaceFileRecord extends CanonicalWorkspaceFile {
     readonly contentHash: string;
     readonly language: string;
     readonly skeleton: string;
+    /**
+     * Exact symbol ranges: offsets and hashes only, never the text. A skeleton may nominate a
+     * candidate for ranking, but only these ranges can be rehydrated into rendered implementation
+     * evidence, and only while the file still hashes to what was captured here.
+     */
+    readonly chunkRanges: readonly SemanticChunkRange[];
     readonly symbols: readonly WorkspaceIndexSymbol[];
     readonly references: readonly string[];
     readonly sizeBytes: number;
@@ -38,6 +46,16 @@ export interface WorkspaceSnapshot {
     readonly files: ReadonlyMap<string, WorkspaceFileRecord>;
     readonly symbols: readonly WorkspaceIndexSymbol[];
     readonly memoryBytes: number;
+    readonly coverage: WorkspaceCoverage;
+}
+
+export interface WorkspaceCoverage {
+    readonly rootsScanned: number;
+    readonly candidatesExamined: number;
+    readonly filesIndexed: number;
+    readonly filesSkipped: number;
+    readonly truncated: boolean;
+    readonly reason: 'empty' | 'complete' | 'budget_limited' | 'candidate_limit' | 'incremental_update' | 'event_storm' | 'untrusted';
 }
 
 export interface WorkspaceIndexStats {
@@ -47,6 +65,7 @@ export interface WorkspaceIndexStats {
     memoryBytes: number;
     budgetBytes: number;
     ignorePolicyVersion: string;
+    coverage: WorkspaceCoverage;
 }
 
 export interface WorkspaceIndexOptions {
@@ -82,6 +101,43 @@ class ReadonlyMapView<K, V> implements ReadonlyMap<K, V> {
     public readonly [Symbol.toStringTag] = 'ReadonlyMap';
 }
 
+/** Immutable structural-sharing map used by ordinary file events. */
+class PersistentReadonlyMap<K, V> implements ReadonlyMap<K, V> {
+    public readonly size: number;
+    public readonly depth: number;
+    constructor(
+        private readonly base: ReadonlyMap<K, V>,
+        private readonly changes: ReadonlyMap<K, V | undefined>,
+        depth = 1
+    ) {
+        let size = base.size;
+        for (const [key, value] of changes) {
+            const existed = base.has(key);
+            if (value === undefined && existed) size--;
+            else if (value !== undefined && !existed) size++;
+        }
+        this.size = size;
+        this.depth = depth;
+    }
+    public get(key: K): V | undefined { return this.changes.has(key) ? this.changes.get(key) : this.base.get(key); }
+    public has(key: K): boolean { return this.changes.has(key) ? this.changes.get(key) !== undefined : this.base.has(key); }
+    public *entries(): MapIterator<[K, V]> {
+        const emitted = new Set<K>();
+        for (const [key, value] of this.changes) {
+            emitted.add(key);
+            if (value !== undefined) yield [key, value];
+        }
+        for (const [key, value] of this.base) if (!emitted.has(key)) yield [key, value];
+    }
+    public *keys(): MapIterator<K> { for (const [key] of this.entries()) yield key; }
+    public *values(): MapIterator<V> { for (const [, value] of this.entries()) yield value; }
+    public forEach(callbackfn: (value: V, key: K, map: ReadonlyMap<K, V>) => void, thisArg?: unknown): void {
+        for (const [key, value] of this.entries()) callbackfn.call(thisArg, value, key, this);
+    }
+    public [Symbol.iterator](): MapIterator<[K, V]> { return this.entries(); }
+    public readonly [Symbol.toStringTag] = 'ReadonlyMap';
+}
+
 class ReadonlySetView<T> implements ReadonlySet<T> {
     constructor(private readonly source: Set<T>) {}
     public get size(): number { return this.source.size; }
@@ -96,7 +152,10 @@ class ReadonlySetView<T> implements ReadonlySet<T> {
     public readonly [Symbol.toStringTag] = 'ReadonlySet';
 }
 
-const SOURCE_EXTENSIONS = new Set(['.ts', '.js', '.tsx', '.jsx', '.py', '.go', '.rs', '.java', '.cs', '.cpp', '.h', '.php', '.sql']);
+const SOURCE_EXTENSIONS = new Set([
+    '.ts', '.js', '.tsx', '.jsx', '.py', '.go', '.rs', '.java', '.cs', '.cpp', '.c', '.h', '.hpp',
+    '.php', '.sql', '.swift', '.kt', '.kts', '.rb'
+]);
 let workspaceIndexInstance = 0;
 
 export class VersionedWorkspaceIndex {
@@ -110,6 +169,9 @@ export class VersionedWorkspaceIndex {
     private pendingTimer?: ReturnType<typeof setTimeout>;
     private updateBatch?: Promise<void>;
     private rebuildAfterStorm = false;
+    private stormDroppedUpdates = 0;
+    private fullPublicationCount = 0;
+    private incrementalPublicationCount = 0;
     private initializing?: { epoch: number; promise: Promise<WorkspaceSnapshot> };
     private epoch = 0;
     private budgetBytes: number;
@@ -190,16 +252,21 @@ export class VersionedWorkspaceIndex {
             symbolsIndexed: current.symbols.length,
             memoryBytes: current.memoryBytes,
             budgetBytes: this.budgetBytes,
-            ignorePolicyVersion: current.ignorePolicyVersion
+            ignorePolicyVersion: current.ignorePolicyVersion,
+            coverage: current.coverage
         };
     }
 
-    public getOperationalStats(): { pendingUpdates: number; maxPendingUpdates: number; initializing: boolean; rebuildAfterStorm: boolean } {
+    public getOperationalStats(): { pendingUpdates: number; maxPendingUpdates: number; initializing: boolean; rebuildAfterStorm: boolean;
+        structuralSharingDepth: number; fullPublications: number; incrementalPublications: number } {
         return {
             pendingUpdates: this.pendingUpdates.size,
             maxPendingUpdates: this.maxPendingUpdates,
             initializing: !!this.initializing,
-            rebuildAfterStorm: this.rebuildAfterStorm
+            rebuildAfterStorm: this.rebuildAfterStorm,
+            structuralSharingDepth: this.snapshot.files instanceof PersistentReadonlyMap ? this.snapshot.files.depth : 0,
+            fullPublications: this.fullPublicationCount,
+            incrementalPublications: this.incrementalPublicationCount
         };
     }
 
@@ -260,7 +327,9 @@ export class VersionedWorkspaceIndex {
         const sequence = this.nextSequence(identified.key);
         if (!this.pendingUpdates.has(identified.key) && this.pendingUpdates.size >= this.maxPendingUpdates) {
             this.rebuildAfterStorm = true;
-            return;
+            this.stormDroppedUpdates++;
+            const oldestKey = this.pendingUpdates.keys().next().value as string | undefined;
+            if (oldestKey) this.pendingUpdates.delete(oldestKey);
         }
         this.pendingUpdates.set(identified.key, { identified, sequence, buffer });
         this.schedulePendingFlush();
@@ -281,25 +350,58 @@ export class VersionedWorkspaceIndex {
         this.nextSequence(identified.key);
         this.pendingUpdates.delete(identified.key);
         if (!this.snapshot.files.has(identified.key)) return false;
-        const files = new Map(this.snapshot.files);
-        files.delete(identified.key);
-        this.publish(files);
+        this.publishChanges(new Map([[identified.key, undefined]]), 'incremental_update');
         return true;
     }
 
     public async rename(oldPath: string, newPath: string): Promise<boolean> {
+        const operationEpoch = this.epoch;
         if (!this.trusted) return false;
         const oldIdentity = this.identity.identify(oldPath);
         const newIdentity = this.identity.identify(newPath);
         if (!oldIdentity || !newIdentity) return false;
         const oldSequence = this.nextSequence(oldIdentity.key);
         const newSequence = this.nextSequence(newIdentity.key);
-        const record = await this.readRecord(newIdentity, newSequence);
-        if (this.sequences.get(oldIdentity.key) !== oldSequence || this.sequences.get(newIdentity.key) !== newSequence) return false;
-        const files = new Map(this.snapshot.files);
-        files.delete(oldIdentity.key);
-        if (record) files.set(newIdentity.key, record);
-        this.publish(files);
+
+        // Git-Aware Zero-Parsing Refactoring Recovery:
+        // If old record exists in snapshot, transfer it instantaneously without disk read or AST re-parse.
+        const existingRecord = this.snapshot.files.get(oldIdentity.key);
+        let record: WorkspaceFileRecord | undefined;
+
+        if (existingRecord) {
+            const remappedSymbols = Object.freeze(existingRecord.symbols.map(s => Object.freeze({
+                ...s,
+                file: newIdentity.relativePath
+            })));
+            record = Object.freeze({
+                ...newIdentity,
+                sourceVersion: existingRecord.sourceVersion,
+                contentHash: existingRecord.contentHash,
+                language: existingRecord.language,
+                skeleton: existingRecord.skeleton,
+                // The file moved but its content did not, so the offsets stay valid; only the
+                // identity fields are rewritten. Rehydration re-verifies the content hash against
+                // the new path, so a rename that also changed content still fails closed.
+                chunkRanges: Object.freeze(existingRecord.chunkRanges.map(range => Object.freeze({
+                    ...range,
+                    fileKey: newIdentity.key,
+                    relativePath: newIdentity.relativePath,
+                    chunkId: `${newIdentity.key}#${range.symbolName}@${range.startLine}`
+                }))),
+                symbols: remappedSymbols,
+                references: existingRecord.references,
+                sizeBytes: existingRecord.sizeBytes,
+                memoryBytes: existingRecord.memoryBytes,
+                updateSequence: newSequence
+            });
+        } else {
+            record = await this.readRecord(newIdentity, newSequence);
+        }
+
+        if (operationEpoch !== this.epoch || !this.trusted || this.sequences.get(oldIdentity.key) !== oldSequence || this.sequences.get(newIdentity.key) !== newSequence) return false;
+        this.publishChanges(new Map<string, WorkspaceFileRecord | undefined>([
+            [oldIdentity.key, undefined], [newIdentity.key, record]
+        ]), 'incremental_update');
         return true;
     }
 
@@ -429,14 +531,13 @@ export class VersionedWorkspaceIndex {
     }
 
     private async upsertIdentified(identified: CanonicalWorkspaceFile, sequence: number, buffer?: { text: string; version: number }): Promise<boolean> {
+        const operationEpoch = this.epoch;
         const validBuffer = buffer && Buffer.byteLength(buffer.text) <= this.maxFileBytes && !buffer.text.includes('\0') ? buffer : undefined;
         const record = buffer && !validBuffer ? undefined : validBuffer
             ? this.buildRecord(identified, validBuffer.text, `buffer:${validBuffer.version}`, sequence)
             : await this.readRecord(identified, sequence);
-        if (this.sequences.get(identified.key) !== sequence) return false;
-        const files = new Map(this.snapshot.files);
-        if (record) files.set(identified.key, record); else files.delete(identified.key);
-        this.publish(files);
+        if (operationEpoch !== this.epoch || !this.trusted || this.sequences.get(identified.key) !== sequence) return false;
+        this.publishChanges(new Map([[identified.key, record]]), 'incremental_update');
         return !!record;
     }
 
@@ -459,13 +560,19 @@ export class VersionedWorkspaceIndex {
         const symbols = Object.freeze(this.extractSymbols(content, identity.relativePath));
         const references = Object.freeze([...new Set([...content.matchAll(/\b([A-Z][A-Za-z0-9_$]{2,})\b/g)].map(match => match[1]))]);
         const contentHash = createHash('sha256').update(content).digest('hex');
+        // Ranges, not text. Memory stays proportional to symbol count rather than repository size.
+        const chunkRanges = Object.freeze(extractChunkRanges(content, symbols, {
+            fileKey: identity.key, relativePath: identity.relativePath, language,
+            sourceVersion, snapshotGeneration: sequence
+        }));
         const memoryBytes = this.stringBytes(identity.key, identity.absolutePath, identity.relativePath, sourceVersion, contentHash, language, pruned.prunedCode)
             + 192 + symbols.reduce((sum, symbol) => sum + this.symbolBytes(symbol), 0) + this.stringBytes(...references) + references.length * 16;
-        return Object.freeze({ ...identity, sourceVersion, contentHash, language, skeleton: pruned.prunedCode, symbols, references,
+        return Object.freeze({ ...identity, sourceVersion, contentHash, language, skeleton: pruned.prunedCode, chunkRanges, symbols, references,
             sizeBytes: Buffer.byteLength(content), memoryBytes, updateSequence: sequence });
     }
 
     private publish(input: Map<string, WorkspaceFileRecord>): void {
+        this.fullPublicationCount++;
         const prioritized = [...input.values()].sort((a, b) => this.priority(a.absolutePath) - this.priority(b.absolutePath) || a.key.localeCompare(b.key));
         const files = new Map<string, WorkspaceFileRecord>();
         let memoryBytes = this.baseMemoryBytes();
@@ -475,13 +582,53 @@ export class VersionedWorkspaceIndex {
             memoryBytes += record.memoryBytes;
         }
         const symbols = Object.freeze([...files.values()].flatMap(file => [...file.symbols]));
+        const ignorePolicyVersion = (this.snapshot.ignorePolicyVersion && this.snapshot.ignorePolicyVersion !== 'uninitialized')
+            ? this.snapshot.ignorePolicyVersion
+            : this.ignoreVersion();
+        const skipped = Math.max(0, input.size - files.size);
         this.snapshot = Object.freeze({ generation: this.snapshot.generation + 1, createdAt: Date.now(),
-            roots: this.identity.roots, ignorePolicyVersion: this.ignoreVersion(), files: new ReadonlyMapView(files), symbols, memoryBytes });
+            roots: this.identity.roots, ignorePolicyVersion, files: new ReadonlyMapView(files), symbols, memoryBytes,
+            coverage: Object.freeze({ rootsScanned: this.identity.roots.length, candidatesExamined: input.size,
+                filesIndexed: files.size, filesSkipped: skipped, truncated: skipped > 0,
+                reason: skipped > 0 ? 'budget_limited' : 'complete' }) });
+    }
+
+    private publishChanges(changes: Map<string, WorkspaceFileRecord | undefined>, reason: WorkspaceCoverage['reason']): void {
+        this.incrementalPublicationCount++;
+        const admitted = new Map<string, WorkspaceFileRecord | undefined>();
+        let memoryBytes = this.snapshot.memoryBytes;
+        const replacedPaths = new Set<string>();
+        for (const [key, proposed] of changes) {
+            const old = this.snapshot.files.get(key);
+            if (old) { memoryBytes -= old.memoryBytes; replacedPaths.add(old.relativePath); }
+            if (proposed && memoryBytes + proposed.memoryBytes <= this.budgetBytes) {
+                admitted.set(key, proposed);
+                memoryBytes += proposed.memoryBytes;
+            } else {
+                admitted.set(key, undefined);
+            }
+        }
+        const previous = this.snapshot.files;
+        const previousDepth = previous instanceof PersistentReadonlyMap ? previous.depth : 0;
+        const files: ReadonlyMap<string, WorkspaceFileRecord> = previousDepth >= 63
+            ? new ReadonlyMapView(new Map(new PersistentReadonlyMap(previous, admitted, previousDepth + 1)))
+            : new PersistentReadonlyMap(previous, admitted, previousDepth + 1);
+        const nextSymbols = this.snapshot.symbols.filter(symbol => !replacedPaths.has(symbol.file));
+        for (const record of admitted.values()) if (record) nextSymbols.push(...record.symbols);
+        const truncated = [...changes.values()].some(record => record !== undefined) && [...admitted.values()].some(record => record === undefined);
+        this.snapshot = Object.freeze({ generation: this.snapshot.generation + 1, createdAt: Date.now(),
+            roots: this.identity.roots, ignorePolicyVersion: this.snapshot.ignorePolicyVersion,
+            files, symbols: Object.freeze(nextSymbols), memoryBytes,
+            coverage: Object.freeze({ rootsScanned: this.identity.roots.length, candidatesExamined: changes.size,
+                filesIndexed: files.size, filesSkipped: truncated ? 1 : 0, truncated,
+                reason: truncated ? 'budget_limited' : reason }) });
     }
 
     private emptySnapshot(generation: number, ignorePolicyVersion: string = this.trusted ? 'uninitialized' : 'untrusted'): WorkspaceSnapshot {
         return Object.freeze({ generation, createdAt: Date.now(), roots: this.identity.roots,
-            ignorePolicyVersion, files: new ReadonlyMapView(new Map()), symbols: Object.freeze([]), memoryBytes: this.baseMemoryBytes() });
+            ignorePolicyVersion, files: new ReadonlyMapView(new Map()), symbols: Object.freeze([]), memoryBytes: this.baseMemoryBytes(),
+            coverage: Object.freeze({ rootsScanned: 0, candidatesExamined: 0, filesIndexed: 0, filesSkipped: 0,
+                truncated: false, reason: this.trusted ? 'empty' : 'untrusted' }) });
     }
 
     private reloadFilters(): void {
@@ -557,9 +704,10 @@ export class VersionedWorkspaceIndex {
         await this.updateBatch;
         if (this.rebuildAfterStorm) {
             this.rebuildAfterStorm = false;
-            try { await this.initialize(); } catch (error) {
-                if (!(error instanceof WorkQueueFullError)) console.warn('[WorkspaceIndex] Recovery rebuild failed:', error);
-            }
+            const current = this.snapshot;
+            this.snapshot = Object.freeze({ ...current, coverage: Object.freeze({ ...current.coverage,
+                truncated: true, filesSkipped: current.coverage.filesSkipped + this.stormDroppedUpdates, reason: 'event_storm' }) });
+            this.stormDroppedUpdates = 0;
         }
         if (this.pendingUpdates.size > 0) this.schedulePendingFlush();
     }
@@ -569,6 +717,7 @@ export class VersionedWorkspaceIndex {
         this.pendingTimer = undefined;
         this.pendingUpdates.clear();
         this.rebuildAfterStorm = false;
+        this.stormDroppedUpdates = 0;
     }
 
     private extractSymbols(content: string, file: string): WorkspaceIndexSymbol[] {

@@ -36,11 +36,17 @@ export class DeterministicContextGovernor {
         const policy = EvidencePolicyMatrix.getPolicy(intent.taskType);
 
         // 3. Deterministic Risk Evaluation & Safety Overrides
+        const modeAggressiveness = input.optimizationMode === 'off' ? 'none'
+            : input.optimizationMode === 'balanced' && policy.defaultAggressiveness === 'aggressive'
+                ? 'balanced' : policy.defaultAggressiveness;
+        const modeReductionLimit = input.optimizationMode === 'off' ? 0
+            : input.optimizationMode === 'balanced' ? Math.min(60, policy.maxReductionPct)
+                : policy.maxReductionPct;
         const risk = ContextRiskEngine.evaluateRisk(
             input,
             intent.taskType,
-            policy.defaultAggressiveness,
-            policy.maxReductionPct
+            modeAggressiveness,
+            modeReductionLimit
         );
 
         return {
@@ -53,7 +59,7 @@ export class DeterministicContextGovernor {
             optimizationAggressiveness: risk.adjustedAggressiveness,
             maxRecommendedReductionPct: risk.adjustedMaxReductionPct,
             enforcePreservationGate: true,
-            timestamp: Date.now()
+            timestamp: 0 // Deterministic compatibility field; event timestamps belong in telemetry.
         };
     }
 
@@ -62,7 +68,8 @@ export class DeterministicContextGovernor {
      */
     public validateEvidenceSafety(
         decision: ContextGovernorDecision,
-        providedEvidence: EvidenceCategory[]
+        providedEvidence: EvidenceCategory[],
+        _options?: { workspaceRetrievalAuthorized?: boolean }
     ): EvidenceSafetyResult {
         return EvidenceSafetyGate.auditEvidence(decision.requiredEvidence, providedEvidence);
     }

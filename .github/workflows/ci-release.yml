@@ -1,0 +1,63 @@
+name: CI Release & Supply-Chain Attestation
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  id-token: write
+  packages: write
+
+jobs:
+  build-and-attest:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Test Suite (Zero Regression Gate)
+        run: node scripts/run-tests.js
+
+      - name: Compile Production Extension
+        run: node esbuild.js --production
+
+      - name: Build VSIX Package
+        run: npm run vsce:package -- --no-dependencies
+
+      - name: Generate CycloneDX SBOM & SLSA Provenance
+        env:
+          CI: 'true'
+        run: node scripts/generate-supply-chain.js
+
+      - name: Verify Acceptance Gates
+        run: |
+          node scripts/verify-phase4-acceptance.js
+          node scripts/verify-phase5-acceptance.js
+          node scripts/verify-phase7-acceptance.js
+          node scripts/verify-phase8-acceptance.js
+          node scripts/verify-phase10-acceptance.js
+
+      - name: Upload Attestation Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: supply-chain-attestations
+          path: |
+            validation/reports/sbom.cdx.json
+            validation/reports/artifact-provenance.json
+            tokonomics-*.vsix

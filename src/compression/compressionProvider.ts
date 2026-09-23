@@ -5,6 +5,7 @@
 
 import { TokenCounter } from '../engine/tokenizer';
 import { CompressionProviderType } from '../engine/featureFlags';
+import { LocalSlmBrain } from '../engine/localSlmBrain';
 
 export interface CompressionResult {
     originalText: string;
@@ -83,55 +84,31 @@ export class RuleBasedCompressor implements SemanticCompressionProvider {
 }
 
 /**
- * 3. LLMLingua2Compressor: Quantized Token Classification
- * Uses local token-level importance classifier with automatic fallback to RuleBasedCompressor.
+ * 3. LLMLingua2Compressor: reserved identifier, deterministic rule compression.
+ *
+ * No learned compressor ships in this extension. The class is retained only so that persisted
+ * configuration naming `lingua2` keeps resolving to a provider instead of failing, and it always
+ * delegates to the deterministic rule compressor.
+ *
+ * It previously carried a "token classification simulation" that dropped words on `Math.random()`.
+ * That branch was unreachable - the factory constructs this class with `onnxSessionAvailable: false`
+ * - but had it ever been enabled it would have deleted source tokens nondeterministically, producing
+ * a different payload for identical input and breaking both the preservation gate's premise and
+ * prefix stability. It is removed rather than left guarded, because an unreachable hazard is still a
+ * hazard once someone flips the constructor argument.
+ *
+ * A real learned compressor would need signed model artifacts, protected non-compressible spans,
+ * deterministic execution, resource limits, and its own promotion study. None of that is in scope
+ * here, so this provider makes no claim to perform learned compression.
  */
 export class LLMLingua2Compressor implements SemanticCompressionProvider {
     public readonly id: CompressionProviderType = 'lingua2';
-    public readonly name: string = 'LLMLingua-2 Token Classifier';
+    public readonly name: string = 'Deterministic rule compression (no learned model available)';
     private fallbackRule: RuleBasedCompressor = new RuleBasedCompressor();
 
-    constructor(private onnxSessionAvailable: boolean = false) {}
-
-    public async compress(text: string, targetRatio: number = 0.6): Promise<CompressionResult> {
-        const origTokens = TokenCounter.countTokens(text);
-
-        // Deterministic Fallback Cascade: If local ONNX model is uninitialized, fall back safely
-        if (!this.onnxSessionAvailable) {
-            const fb = await this.fallbackRule.compress(text);
-            return { ...fb, providerUsed: `${this.id} (fallback: rule)` };
-        }
-
-        try {
-            // Local token classification simulation: drop stop words and structural filler outside keywords
-            const keywords = new Set(['class', 'function', 'export', 'import', 'return', 'interface', 'type', 'async', 'await']);
-            const words = text.split(/(\s+)/);
-            const filteredWords: string[] = [];
-
-            for (const w of words) {
-                const trimmed = w.trim().toLowerCase();
-                if (keywords.has(trimmed) || w.length > 6 || Math.random() < targetRatio) {
-                    filteredWords.push(w);
-                }
-            }
-
-            const compressed = filteredWords.join('');
-            const compTokens = TokenCounter.countTokens(compressed);
-            const tokensSaved = Math.max(0, origTokens - compTokens);
-            const ratio = origTokens > 0 ? Math.round((compTokens / origTokens) * 100) / 100 : 1.0;
-
-            return {
-                originalText: text,
-                compressedText: compressed,
-                originalTokens: origTokens,
-                compressedTokens: compTokens,
-                tokensSaved,
-                compressionRatio: ratio,
-                providerUsed: this.id
-            };
-        } catch {
-            return this.fallbackRule.compress(text);
-        }
+    public async compress(text: string): Promise<CompressionResult> {
+        const fb = await this.fallbackRule.compress(text);
+        return { ...fb, providerUsed: `${this.id} (fallback: rule)` };
     }
 }
 
@@ -141,10 +118,10 @@ export class LLMLingua2Compressor implements SemanticCompressionProvider {
  */
 export class LocalSLMCompressor implements SemanticCompressionProvider {
     public readonly id: CompressionProviderType = 'slm';
-    public readonly name: string = 'Local SLM Context Compressor';
+    public readonly name: string = 'Deterministic rule compression (local SLM unavailable in standard runtime)';
     private fallbackRule: RuleBasedCompressor = new RuleBasedCompressor();
 
-    constructor(private slmModelAvailable: boolean = false) {}
+    constructor(private slmModelAvailable: boolean = false, private slmBrain?: LocalSlmBrain) {}
 
     public async compress(text: string): Promise<CompressionResult> {
         if (!this.slmModelAvailable) {
@@ -152,8 +129,32 @@ export class LocalSLMCompressor implements SemanticCompressionProvider {
             return { ...fb, providerUsed: `${this.id} (fallback: rule)` };
         }
 
-        // Local SLM summarization
-        return this.fallbackRule.compress(text);
+        // If local SLM brain is provided and ready, attempt fact-validated proposal
+        if (this.slmBrain && this.slmBrain.isReady()) {
+            try {
+                const proposal = await this.slmBrain.proposeCompression(text);
+                if (!proposal.isFallback && proposal.compressedText) {
+                    const origTokens = TokenCounter.countTokens(text);
+                    const compTokens = TokenCounter.countTokens(proposal.compressedText);
+                    const tokensSaved = Math.max(0, origTokens - compTokens);
+                    return {
+                        originalText: text,
+                        compressedText: proposal.compressedText,
+                        originalTokens: origTokens,
+                        compressedTokens: compTokens,
+                        tokensSaved,
+                        compressionRatio: origTokens > 0 ? Math.round((compTokens / origTokens) * 100) / 100 : 1.0,
+                        providerUsed: this.id
+                    };
+                }
+            } catch {
+                // Fallback to rule
+            }
+        }
+
+        // Local SLM summarization fallback to RuleBasedCompressor
+        const fb = await this.fallbackRule.compress(text);
+        return { ...fb, providerUsed: `${this.id} (fallback: rule)` };
     }
 }
 
@@ -190,7 +191,7 @@ export class CompressionProviderFactory {
         switch (type) {
             case 'noop': return new NoOpCompressor();
             case 'rule': return new RuleBasedCompressor();
-            case 'lingua2': return new LLMLingua2Compressor(false);
+            case 'lingua2': return new LLMLingua2Compressor();
             case 'slm': return new LocalSLMCompressor(false);
             case 'legacy': return new LegacyRegexCompressor();
             default: return new RuleBasedCompressor();

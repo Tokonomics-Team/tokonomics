@@ -134,6 +134,22 @@ export async function runPhase3WorkspaceSnapshotTests(): Promise<void> {
         assert.strictEqual([...raceIndex.captureSnapshot().files.values()][0].sourceVersion, 'buffer:101',
             'background scan superseded a newer editor-buffer version');
         raceIndex.dispose();
+
+        // Step 2 Verification: Multi-language source extensions (.c, .swift, .kt, .rb)
+        const multiLangDir = path.join(temp, 'multilang');
+        fs.mkdirSync(multiLangDir, { recursive: true });
+        fs.writeFileSync(path.join(multiLangDir, 'kernel.c'), 'struct DeviceConfig { int id; };\n');
+        fs.writeFileSync(path.join(multiLangDir, 'App.swift'), 'class AppCoordinator { func start() {} }\n');
+        fs.writeFileSync(path.join(multiLangDir, 'Service.kt'), 'class NetworkService { fun connect() {} }\n');
+        fs.writeFileSync(path.join(multiLangDir, 'model.rb'), 'class UserModel\n  def save\n  end\nend\n');
+        const multiLangIndex = new VersionedWorkspaceIndex([multiLangDir], new AstPrunerEngine(), { debounceMs: 1 });
+        const multiSnapshot = await multiLangIndex.initialize();
+        assert.strictEqual(multiSnapshot.files.size, 4, 'multi-language extensions (.c, .swift, .kt, .rb) were not all indexed');
+        assert.ok([...multiSnapshot.files.values()].some(f => f.relativePath.endsWith('kernel.c')), '.c file missing from index');
+        assert.ok([...multiSnapshot.files.values()].some(f => f.relativePath.endsWith('App.swift')), '.swift file missing from index');
+        assert.ok([...multiSnapshot.files.values()].some(f => f.relativePath.endsWith('Service.kt')), '.kt file missing from index');
+        assert.ok([...multiSnapshot.files.values()].some(f => f.relativePath.endsWith('model.rb')), '.rb file missing from index');
+        multiLangIndex.dispose();
     } finally {
         fs.rmSync(temp, { recursive: true, force: true });
     }

@@ -25,6 +25,9 @@ export function prepareCanonicalEgress(
     const binaryParts: Uint8Array[] = [];
     let binaryBytes = 0;
     const serializeData = (mimeType: string, data: Uint8Array): SerializedData => {
+        if (!isSupportedMime(mimeType)) {
+            throw new RequestBoundaryError('UNSUPPORTED_VALUE', 'Unsupported model data MIME type; request was not forwarded.');
+        }
         if (isTextualMime(mimeType)) {
             return { kind: 'data', mimeType, text: new TextDecoder().decode(data) };
         }
@@ -89,4 +92,12 @@ export function prepareCanonicalEgress(
 function isTextualMime(mimeType: string): boolean {
     const normalized = mimeType.toLowerCase();
     return normalized.startsWith('text/') || normalized.includes('json') || normalized.includes('xml') || normalized.includes('javascript');
+}
+
+function isSupportedMime(mimeType: string): boolean {
+    const normalized = mimeType.toLowerCase().split(';', 1)[0].trim();
+    return isTextualMime(normalized) || [
+        'application/json', 'application/xml', 'application/javascript',
+        'image/png', 'image/jpeg', 'image/gif', 'image/webp'
+    ].includes(normalized);
 }

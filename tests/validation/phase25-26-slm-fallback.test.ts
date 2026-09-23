@@ -7,7 +7,7 @@ export async function runPhase25And26SlmFallbackValidation(): Promise<boolean> {
     const tier = HardwareCapabilityDetector.detectTier();
     assert.ok(['webgpu', 'wasm_simd', 'cpu_fallback'].includes(tier), 'Hardware detector must return a valid acceleration tier');
 
-    const slm = new LocalSlmBrain(false);
+    const slm = new LocalSlmBrain();
     // Exercise deterministic fallback cascade with zero network requests
     const intentRes = await slm.refineQuery('Fix null pointer exception in AuthService validateSession');
     assert.strictEqual(intentRes.taskType, 'debug', 'Local SLM must infer task intent as debug');

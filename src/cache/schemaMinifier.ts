@@ -112,9 +112,12 @@ export class ToolSchemaMinifier {
             // Apply per-tool compression
             const compressed = tools.map(tool => this.compressTool(tool, level));
             const output = Array.isArray(parsed) ? compressed
-                : (tools.length === 1 ? compressed[0] : compressed);
+                : (Array.isArray(parsed?.tools) ? { ...parsed, tools: compressed } : compressed[0]);
 
-            const minifiedJson = JSON.stringify(output);
+            const minifiedJson = JSON.stringify(output, (_key, value) => {
+                if (!value || typeof value !== 'object' || Array.isArray(value)) return value;
+                return Object.fromEntries(Object.keys(value).sort().map(key => [key, value[key]]));
+            });
             const minifiedTokens = TokenCounter.countTokens(minifiedJson);
 
             return {
@@ -143,6 +146,9 @@ export class ToolSchemaMinifier {
 
     private static compressTool(tool: any, level: SchemaCompressionLevel): any {
         if (!tool || typeof tool !== 'object') return tool;
+        if (tool.inputSchema) {
+            return tool;
+        }
         const result: any = {};
 
         for (const [key, val] of Object.entries(tool)) {
@@ -155,23 +161,8 @@ export class ToolSchemaMinifier {
                 continue;
             }
 
-            if (level === 'medium' || level === 'high' || level === 'deferred') {
-                if (key === '$schema' || key === 'additionalProperties' || key === 'title' || key === 'examples' || key === 'example' || key === 'default') {
-                    continue;
-                }
-            }
-
-            if (key === 'parameters' || key === 'inputSchema' || key === 'properties'
-                || key === 'items' || key === 'allOf' || key === 'oneOf' || key === 'anyOf') {
+            if (key === 'parameters' && val && typeof val === 'object') {
                 result[key] = this.compressSchemaNode(val, level);
-                continue;
-            }
-
-            if (key === 'enum' && Array.isArray(val) && val.length > MAX_ENUM_VALUES
-                && (level === 'medium' || level === 'high' || level === 'deferred')) {
-                const truncated = val.slice(0, MAX_ENUM_VALUES);
-                truncated.push(`...(${val.length - MAX_ENUM_VALUES} more)`);
-                result[key] = truncated;
                 continue;
             }
 
@@ -183,36 +174,31 @@ export class ToolSchemaMinifier {
 
     private static compressSchemaNode(node: any, level: SchemaCompressionLevel): any {
         if (!node || typeof node !== 'object') return node;
-
         if (Array.isArray(node)) {
             return node.map(item => this.compressSchemaNode(item, level));
         }
 
         const result: any = {};
         for (const [key, val] of Object.entries(node)) {
-            if (key === 'description' && typeof val === 'string') {
-                if (level === 'medium' || level === 'high' || level === 'deferred') {
+            if (key === 'properties' && val && typeof val === 'object' && !Array.isArray(val)) {
+                const props: any = {};
+                for (const [propName, propDef] of Object.entries(val)) {
+                    props[propName] = this.compressSchemaNode(propDef, level);
+                }
+                result[key] = props;
+                continue;
+            }
+
+            if (level === 'medium' || level === 'high') {
+                if (key === 'examples' || key === 'example' || key === 'default') {
                     continue;
                 }
-                if (val.length > LOW_DESC_LIMIT) {
-                    result[key] = val.substring(0, LOW_DESC_LIMIT - 3).trimEnd() + '...';
-                } else {
-                    result[key] = val;
+                if (key === 'enum' && Array.isArray(val) && val.length > MAX_ENUM_VALUES) {
+                    const truncated = val.slice(0, MAX_ENUM_VALUES);
+                    truncated.push(`...(${val.length - MAX_ENUM_VALUES} more)`);
+                    result[key] = truncated;
+                    continue;
                 }
-                continue;
-            }
-
-            if ((level === 'medium' || level === 'high' || level === 'deferred') &&
-                (key === 'examples' || key === 'example' || key === 'default' || key === '$schema' || key === 'title' || key === 'additionalProperties')) {
-                continue;
-            }
-
-            if (key === 'enum' && Array.isArray(val) && val.length > MAX_ENUM_VALUES
-                && (level === 'medium' || level === 'high' || level === 'deferred')) {
-                const truncated = val.slice(0, MAX_ENUM_VALUES);
-                truncated.push(`...(${val.length - MAX_ENUM_VALUES} more)`);
-                result[key] = truncated;
-                continue;
             }
 
             if (typeof val === 'object') {
@@ -221,7 +207,6 @@ export class ToolSchemaMinifier {
                 result[key] = val;
             }
         }
-
         return result;
     }
 

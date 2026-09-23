@@ -8,11 +8,14 @@ import { MetricsTracker } from '../metrics/tracker';
 import { DashboardWebviewPanel } from './dashboardWebview';
 import { OptimizationEventBus, PromptOptimizationEvent } from '../events/optimizationEvent';
 import { LiveMetricsAggregator } from '../metrics/liveAggregator';
+import { FinOpsService } from '../finops/finOpsService';
 
 export class StatusBarManager {
     private statusBarItem: vscode.StatusBarItem;
     private flashTimeout?: NodeJS.Timeout;
     private unsubscribeFromBus?: () => void;
+    private unsubscribeSpend?: () => void;
+    private spendTimer?: ReturnType<typeof setTimeout>;
 
     constructor(private metricsTracker: MetricsTracker) {
         this.statusBarItem = vscode.window.createStatusBarItem(
@@ -24,6 +27,10 @@ export class StatusBarManager {
         this.statusBarItem.show();
 
         this.subscribeToEvents();
+        this.unsubscribeSpend = FinOpsService.getInstance().subscribe(() => {
+            if (this.spendTimer) return;
+            this.spendTimer = setTimeout(() => { this.spendTimer = undefined; this.update(); }, 500);
+        });
     }
 
     private subscribeToEvents(): void {
@@ -32,7 +39,7 @@ export class StatusBarManager {
             if (event.state === 'OPTIMIZATION_COMPLETED' || event.state === 'COST_RECONCILED') {
                 const saved = event.costStatus === 'reconciled' ? event.actualSavingsUSD
                     : event.costStatus === 'projected' ? event.projectedSavingsUSD : undefined;
-                this.flashSavings(event.savedTokens, saved, event.costStatus === 'projected');
+                this.flashSavings(event.savedTokens, saved, true);
             }
         });
     }
@@ -57,6 +64,17 @@ export class StatusBarManager {
     }
 
     public update(): void {
+        const spend = FinOpsService.getInstance().snapshot('today');
+        if (spend.totals.requests > 0) {
+            const total = spend.activeTaskTotals ?? spend.totals;
+            const scope = spend.activeTask ? 'Task' : 'Today';
+            const money = total.pricedRequests ? '~$' + (total.observedUSD + total.projectedUSD).toFixed(3) : 'cost unavailable';
+            this.statusBarItem.text = `$(graph) ${scope}: ${money} | ${total.requests} requests`;
+            this.statusBarItem.tooltip = new vscode.MarkdownString(
+                `${scope} estimated spend. ${total.observedRequests}/${total.requests} requests have observed usage; ${total.pricedRequests}/${total.requests} have prices.\n\n` +
+                'Input projections omit unknown output costs. Estimates are not bills. Click for task budgets and usage details.');
+            return;
+        }
         const metrics = LiveMetricsAggregator.getInstance().getAggregateSummary('lifetime');
         if (metrics.totalPrompts === 0) {
             this.statusBarItem.text = `$(zap) Tokonomics: Active`;
@@ -74,7 +92,7 @@ export class StatusBarManager {
                 `### ⚡ Tokonomics Real-Time Live Savings\n\n` +
                 `- **Total Prompts Processed:** ${metrics.totalPrompts}\n` +
                 `- **Tokens Pruned:** ${metrics.savedTokens.toLocaleString()} (${metrics.averageReductionPercentage}% reduction)\n` +
-                `- **Cost Savings:** ${cost}\n` +
+                `- **Estimated Avoided Cost:** ${cost}\n` +
                 `- **Verified Cache Read Ratio:** ${metrics.cacheHitRatio === null ? 'Unavailable' : `${Math.round(metrics.cacheHitRatio * 100)}%`}\n\n` +
                 `*Click to open Tokonomics Live Dashboard*`
             );
@@ -86,6 +104,8 @@ export class StatusBarManager {
     }
 
     public dispose(): void {
+        this.unsubscribeSpend?.();
+        if (this.spendTimer) clearTimeout(this.spendTimer);
         if (this.flashTimeout) {
             clearTimeout(this.flashTimeout);
         }

@@ -42,6 +42,10 @@ export class AgenticCircuitBreaker {
         actionSignature: string,
         isError: boolean = false
     ): CircuitBreakerStatus {
+        if (!Number.isFinite(tokensConsumed) || tokensConsumed < 0) {
+            return { tripped: true, reason: 'velocity_exceeded', message: 'Invalid token accounting; request paused.',
+                tokensPerMinute: 0, consecutiveDuplicateCount: 0, recommendedAction: 'pause_agent' };
+        }
         const now = Date.now();
 
         // 1. Record and prune velocity history (1-minute sliding window)

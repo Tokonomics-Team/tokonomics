@@ -20,6 +20,7 @@ import { AdversarialValidator } from '../sweep/adversarialValidator';
 import { DegradationDetector } from '../diagnosis/degradationDetector';
 import { FailureDiagnostician } from '../diagnosis/failureDiagnostician';
 import { ReproducibilityRecorder } from './reproducibilityRecorder';
+import { BoundedEconomics } from '../../src/cost/boundedEconomics';
 
 export class ReportGenerator {
     public static async runCompleteValidationSuite(): Promise<{
@@ -54,8 +55,8 @@ export class ReportGenerator {
 
         const baseTokens = baselineResults.reduce((a, r) => a + r.inputTokens, 0) / totalTasks;
         const tokTokens = tokonomicsResults.reduce((a, r) => a + r.inputTokens, 0) / totalTasks;
-        const tokenReductionPct = Math.round(((baseTokens - tokTokens) / baseTokens) * 1000) / 10;
-        const costReductionPct = Math.round((tokenReductionPct + 5) * 10) / 10;
+        const tokenReductionPct = BoundedEconomics.reductionPercentage(baseTokens, tokTokens);
+        const costReductionPct = BoundedEconomics.percentage(tokenReductionPct + 5);
 
         const baseSuccessRate = Math.round((baseTaskPass / totalTasks) * 1000) / 10;
         const tokSuccessRate = Math.round((tokTaskPass / totalTasks) * 1000) / 10;

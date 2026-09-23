@@ -10,6 +10,27 @@ export class CanonicalPayloadTokenEstimator {
         return tokens;
     }
 
+    public static countRequestOptions(value: unknown): number {
+        let nodes = 0;
+        const visit = (item: unknown, depth: number, seen: Set<object>): number => {
+            if (++nodes > 2_000 || depth > 8 || item === null || item === undefined) return 0;
+            if (typeof item === 'string') return TokenCounter.countTokens(item) + 1;
+            if (typeof item === 'number' || typeof item === 'boolean' || typeof item === 'bigint') return 2;
+            if (typeof item !== 'object') return 0;
+            if (item instanceof Uint8Array) return Math.ceil(item.byteLength / 3) + 4;
+            if (seen.has(item)) return 4;
+            seen.add(item);
+            let tokens = 2;
+            if (Array.isArray(item)) for (const child of item.slice(0, 512)) tokens += visit(child, depth + 1, seen);
+            else for (const [key, child] of Object.entries(item).slice(0, 512)) {
+                tokens += TokenCounter.countTokens(key) + visit(child, depth + 1, seen);
+            }
+            seen.delete(item);
+            return tokens;
+        };
+        return visit(value, 0, new Set());
+    }
+
     private static countPart(part: CanonicalPart): number {
         switch (part.kind) {
             case 'text': return 0;

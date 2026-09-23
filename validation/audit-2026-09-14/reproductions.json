@@ -1,0 +1,328 @@
+[
+  {
+    "id": "BUG-GOV-01",
+    "defect": false,
+    "same": true,
+    "requirementsAfterCallerMutation": 5
+  },
+  {
+    "id": "BUG-GOV-02",
+    "defect": false,
+    "audit": {
+      "passed": false,
+      "required": [
+        {
+          "category": "tests",
+          "priority": "high",
+          "reason": "regression"
+        }
+      ],
+      "provided": [],
+      "missing": [
+        {
+          "category": "tests",
+          "priority": "high",
+          "reason": "regression"
+        }
+      ],
+      "confidence": 0,
+      "actionTaken": "downgrade_to_conservative"
+    }
+  },
+  {
+    "id": "BUG-SCHEMA-01",
+    "defect": false,
+    "actual": {
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "default": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "mode": {
+            "enum": [
+              "a",
+              "b",
+              "c",
+              "d"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "mode",
+          "default",
+          "description",
+          "title"
+        ],
+        "type": "object"
+      },
+      "name": "x"
+    }
+  },
+  {
+    "id": "BUG-CACHE-01",
+    "defect": false,
+    "left": "{\"inputSchema\":{\"format\":\"email\",\"type\":\"string\"},\"name\":\"x\"}",
+    "right": "{\"inputSchema\":{\"format\":\"email\",\"type\":\"string\"},\"name\":\"x\"}"
+  },
+  {
+    "id": "BUG-CACHE-02",
+    "defect": false,
+    "input": "const pattern = /foo\\s+bar/;\nconst separator = \"hello\\nworld\";\nTimestamp: retain this required event",
+    "actual": "const pattern = /foo\\s+bar/;\nconst separator = \"hello\\nworld\";\nTimestamp: retain this required event"
+  },
+  {
+    "id": "BUG-AST-01",
+    "defect": false,
+    "actual": "export interface User {\n  id: number;\n  name: string;\n}\n\nexport class Account {\n    balance: number;\n}",
+    "parseErrors": []
+  },
+  {
+    "id": "BUG-AST-02",
+    "defect": false,
+    "actual": {
+      "shakenCode": "export function target() { return helper(); }\n\n\nfunction helper() { return 42; }\n\n\nexport * from \"./contracts\";\n\n\nconst sideEffect = import(\"./register\");",
+      "originalTokens": 74,
+      "shakenTokens": 74,
+      "retainedSymbols": [
+        "target",
+        "helper"
+      ],
+      "prunedSymbols": [],
+      "savedTokens": 0
+    }
+  },
+  {
+    "id": "BUG-AST-03",
+    "defect": false,
+    "actual": "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\npackage main\n\nfunc foo[T interface { Name() string }](x T) string {\n return x.Name()\n}\n// notes // notes // notes // notes // notes // notes // notes // notes // notes // notes // notes // notes // notes // notes // notes // notes // notes // notes // notes // notes // notes // notes // notes // notes // notes // notes // notes // notes // notes // notes "
+  },
+  {
+    "id": "BUG-MEM-01",
+    "defect": false,
+    "stats": {
+      "entries": 0,
+      "maxEntries": 2000,
+      "memoryBytes": 0,
+      "maxMemoryBytes": 1024,
+      "hits": 0,
+      "misses": 0,
+      "evictions": 0,
+      "hitRate": 0,
+      "totalSavedParseTimeMs": 0
+    }
+  },
+  {
+    "id": "BUG-MEM-02",
+    "defect": false,
+    "live": 1,
+    "allocatedSlots": 1,
+    "scoreBytes": 262144
+  },
+  {
+    "id": "BUG-SEC-01",
+    "defect": false,
+    "actual": [
+      {
+        "input": "password=defaultProd2026!",
+        "sanitized": "password=[REDACTED_SECRET]",
+        "redactedCount": 1,
+        "categories": [
+          "credential-assignment"
+        ],
+        "residualSecret": false
+      },
+      {
+        "input": "password=abcd1234",
+        "sanitized": "password=[REDACTED_SECRET]",
+        "redactedCount": 1,
+        "categories": [
+          "credential-assignment"
+        ],
+        "residualSecret": false
+      },
+      {
+        "input": "{\"password\":\"short\"}",
+        "sanitized": "{\"password\":\"[REDACTED_SECRET]\"}",
+        "redactedCount": 1,
+        "categories": [
+          "credential-assignment"
+        ],
+        "residualSecret": false
+      },
+      {
+        "input": "%73%6b%2d%70%72%6f%6a%2d%51%37%76%39%52%74%32%5a%51%37%76%39%52%74%32%5a%51%37%76%39%52%74%32%5a%51%37%76%39%52%74%32%5a%51%37%76%39%52%74%32%5a",
+        "sanitized": "[REDACTED_SECRET]",
+        "redactedCount": 1,
+        "categories": [
+          "encoded-credential"
+        ],
+        "residualSecret": false
+      },
+      {
+        "input": "c2stcHJvai1RN3Y5UnQyWlE3djlSdDJaUTd2OVJ0MlpRN3Y5UnQyWlE3djlSdDJa",
+        "sanitized": "[REDACTED_SECRET]",
+        "redactedCount": 1,
+        "categories": [
+          "encoded-credential"
+        ],
+        "residualSecret": false
+      },
+      {
+        "input": "-----BEGIN ENCRYPTED PRIVATE KEY-----\nQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJD\n-----END ENCRYPTED PRIVATE KEY-----",
+        "sanitized": "[REDACTED_SECRET]",
+        "redactedCount": 1,
+        "categories": [
+          "private-key"
+        ],
+        "residualSecret": false
+      }
+    ]
+  },
+  {
+    "id": "BUG-LOG-01",
+    "defect": false,
+    "actual": "at load (<path>:42:1)"
+  },
+  {
+    "id": "BUG-COMP-01",
+    "defect": false,
+    "actual": "ok\nok\nok\nok\nok\nok\n... [Intermediate lines truncated] ...\npanic: database corruption\n at save (app.ts:22:1)\nexit code: 1\n... [Intermediate lines truncated] ...\nok\nok\nok\nok\nok\nok"
+  },
+  {
+    "id": "BUG-COMP-02",
+    "defect": false,
+    "earlier": 0,
+    "later": 0,
+    "firstText": "panic: essential failure\nevidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence evidence "
+  },
+  {
+    "id": "BUG-LIMIT-01",
+    "defect": false,
+    "actual": {
+      "tripped": true,
+      "reason": "velocity_exceeded",
+      "message": "⚠️ Token Velocity Alert: Consumed 1,00,000 tokens/min (Limit: 50). Pausing runaway loop.",
+      "tokensPerMinute": 100000,
+      "consecutiveDuplicateCount": 0,
+      "recommendedAction": "pause_agent"
+    }
+  },
+  {
+    "id": "BUG-AST-05",
+    "defect": false,
+    "range": {
+      "chunkId": "a#save@1",
+      "fileKey": "a",
+      "relativePath": "a.ts",
+      "language": "ts",
+      "symbolName": "save",
+      "symbolKind": "function",
+      "boundary": "exact_symbol",
+      "startLine": 1,
+      "endLine": 6,
+      "startOffset": 0,
+      "endOffset": 73,
+      "chunkHash": "03feb2fd62c2a1aa0f3daecf754c1be947350e5f41164eccdda0de6567f99b7b",
+      "fileContentHash": "d79c8e8ac6444ba38072f6f3020d3be52b02ca788a375a37096f5fe26f087e2c",
+      "sourceVersion": "v1",
+      "snapshotGeneration": 1,
+      "estimatedTokens": 19
+    },
+    "actual": {
+      "status": "exact",
+      "text": "export function save() {\n /* multiline comment\n }\n */\n criticalWrite();\n}",
+      "reason": "Exact source rehydrated from the captured snapshot."
+    }
+  },
+  {
+    "id": "BUG-CACHE-03",
+    "defect": false,
+    "actual": {
+      "provider": "anthropic",
+      "modelId": "claude-3-5-haiku",
+      "minCacheableTokens": 2048,
+      "cacheWriteMultiplier": 1.25,
+      "cacheReadMultiplier": 0.1,
+      "ttlSeconds": 300,
+      "cacheSemantics": "explicit_breakpoint",
+      "supportsExplicitBreakpoint": true,
+      "effectiveFrom": "2024-10-22",
+      "isDeprecated": false
+    }
+  },
+  {
+    "id": "BUG-REGEX-02",
+    "defect": false,
+    "actual": "{\"matched\":false,\"durationMs\":0.2896000000000001}\n"
+  },
+  {
+    "id": "BUG-GOV-02-END-TO-END",
+    "defect": false,
+    "error": "Error: REQUIRED_EVIDENCE_MISSING: errorStackTrace, targetImplementation, callers, tests, configuration, gitHistory"
+  },
+  {
+    "id": "BUG-GOV-03",
+    "defect": false,
+    "signalForwarded": true
+  },
+  {
+    "id": "BUG-MEM-03",
+    "defect": false,
+    "one": {
+      "budgetMB": 1,
+      "usedBytes": 1296,
+      "usedMB": 0,
+      "skeletonsCached": 1,
+      "symbolsIndexed": 2,
+      "turnPointersCached": 0,
+      "cacheHits": 0,
+      "cacheMisses": 0,
+      "hitRatePercentage": 0,
+      "isWarmed": true
+    },
+    "two": {
+      "budgetMB": 1,
+      "usedBytes": 1296,
+      "usedMB": 0,
+      "skeletonsCached": 1,
+      "symbolsIndexed": 2,
+      "turnPointersCached": 0,
+      "cacheHits": 0,
+      "cacheMisses": 0,
+      "hitRatePercentage": 0,
+      "isWarmed": true
+    }
+  },
+  {
+    "id": "BUG-IDX-01",
+    "defect": true,
+    "before": 1,
+    "after": 1,
+    "patchedTest": "simulate the newly registered filesystem callback"
+  },
+  {
+    "id": "BUG-IDX-02",
+    "defect": false,
+    "before": 1,
+    "after": 1
+  },
+  {
+    "id": "BUG-SCRATCH-01",
+    "defect": false
+  },
+  {
+    "id": "BUG-AST-04",
+    "defect": false,
+    "treeSitter": true,
+    "actual": "class Account {\n    constructor() {}\n    deposit(amount) {}\n}"
+  }
+]

@@ -4,18 +4,9 @@
  */
 
 import { CumulativeMetrics, TargetProvider, TimeWindowMetrics, TokenStats } from '../types';
+import { CostCalculator } from '../cost/costCalculator';
 
 export class MetricsTracker {
-    // Pricing per 1M input tokens ($ USD)
-    private static readonly PRICING_PER_MILLION: Record<string, { standard: number; cached: number }> = {
-        'openai': { standard: 2.50, cached: 1.25 }, // GPT-4o
-        'anthropic': { standard: 3.00, cached: 0.30 }, // Claude 3.5/3.7 Sonnet
-        'gemini': { standard: 1.25, cached: 0.3125 }, // Gemini 1.5/2.0 Pro
-        'deepseek': { standard: 0.27, cached: 0.07 }, // DeepSeek-V3 / R1
-        'generic': { standard: 2.50, cached: 1.25 },
-        'auto': { standard: 3.00, cached: 0.30 }
-    };
-
     private statsHistory: TokenStats[] = [];
     private sessionStartTime = Date.now();
     private storageKey = 'token_optimizer_cumulative_metrics_v2';
@@ -59,17 +50,12 @@ export class MetricsTracker {
             ? Math.round(((originalTokens - optimizedTokens) / originalTokens) * 1000) / 10 
             : 0;
 
-        // Enhanced cost estimation with cached-token discount awareness (inspired by Langfuse)
-        // Standard savings: tokens completely eliminated from the payload
-        const rates = MetricsTracker.PRICING_PER_MILLION[provider] || MetricsTracker.PRICING_PER_MILLION.anthropic;
-        const directSavedCost = (savedTokens / 1_000_000) * rates.standard;
-        // Cache discount savings: cache-aligned tokens are billed at discounted rates by providers
-        // e.g. Anthropic charges 90% less for cached input tokens, OpenAI 50% less
-        const cacheDiscountCost = (breakdown.cacheAligned / 1_000_000) * (rates.standard - rates.cached);
-        // Image rightsizing savings: bytes eliminated from image payloads
-        const imageSavedTokens = breakdown.imageSaved || 0;
-        const imageSavedCost = (imageSavedTokens / 1_000_000) * rates.standard;
-        const estimatedCostSavedUsd = directSavedCost + cacheDiscountCost + imageSavedCost;
+        // Compatibility views use the canonical versioned catalog and count only
+        // removed input tokens. Cache eligibility and image estimates must not be
+        // added again because they overlap the same request-token dimensions.
+        const pricingModel = detectedModelFamily || provider;
+        const projection = CostCalculator.calculateProjectedCost(originalTokens, optimizedTokens, 0, pricingModel);
+        const estimatedCostSavedUsd = projection.pricingAvailable ? projection.savingsUSD : 0;
 
         // Estimated prefill latency reduction (~ 0.18ms per token pruned)
         const latencySavedMs = Math.round(savedTokens * 0.18);

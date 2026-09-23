@@ -43,7 +43,7 @@ const DEFAULT_CONFIG: ImageRightsizeConfig = {
 const BASE64_IMAGE_REGEX = /data:image\/(png|jpeg|jpg|gif|webp|bmp);base64,([A-Za-z0-9+/=]{1000,})/g;
 
 // Regex to find image file references in context
-const IMAGE_FILE_REF_REGEX = /\b([\w\-./\\]+\.(png|jpg|jpeg|gif|webp|bmp|tiff))\b/gi;
+const IMAGE_FILE_REF_REGEX = /(?<![\w\-./\\])\b([\w\-./\\]+\.(png|jpg|jpeg|gif|webp|bmp|tiff))\b/gi;
 
 // Approximate tokens per byte for images (Claude: ~1 token per 1.5 bytes of base64)
 const TOKENS_PER_BYTE = 1 / 1.5;

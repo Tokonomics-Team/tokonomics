@@ -10,7 +10,7 @@
   },
   {
     "subsystem": "ORACLE_02_GRAPH_INCREMENTAL",
-    "implementationUnderTest": "src/graph/workspaceGraph.ts (Dynamic incremental AST mutations)",
+    "implementationUnderTest": "src/workspace/workspaceGraph.ts (Dynamic incremental AST mutations)",
     "oracleImplementation": "tests/validation/phase5-6-graph-consistency.test.ts (Clean Rebuild Runner)",
     "oracleSource": "Fresh Full Repository Rebuild Oracle",
     "independenceType": "INDEPENDENT",
@@ -19,7 +19,7 @@
   },
   {
     "subsystem": "ORACLE_03_TOKENIZER",
-    "implementationUnderTest": "src/tokenizer/tokenizerAdapters.ts",
+    "implementationUnderTest": "src/tokenizer/tokenizerAdapter.ts",
     "oracleImplementation": "tests/validation/phase2-property-based.test.ts (Authoritative BPE reference)",
     "oracleSource": "Authoritative Reference Tokenizer Engine (Claude BPE / OpenAI o200k_base)",
     "independenceType": "INDEPENDENT",
@@ -28,7 +28,7 @@
   },
   {
     "subsystem": "ORACLE_04_COST_RECONCILIATION",
-    "implementationUnderTest": "src/pricing/pricingCalculator.ts",
+    "implementationUnderTest": "src/cost/costCalculator.ts",
     "oracleImplementation": "tests/validation/phase19-20-pricing-reconciliation.test.ts (Published Rate Fixtures)",
     "oracleSource": "Authoritative Cloud Provider Published Rate Cards (Feb 2025/2026)",
     "independenceType": "INDEPENDENT",
@@ -46,7 +46,7 @@
   },
   {
     "subsystem": "ORACLE_06_SDG_SLICING",
-    "implementationUnderTest": "src/sdg/sdgSlicer.ts (Inter-procedural CFG/DDG Slicer)",
+    "implementationUnderTest": "src/ast/systemDependenceGraph.ts (Inter-procedural CFG/DDG Slicer)",
     "oracleImplementation": "src/evaluation/adversarialSdgCorpus.ts (Hand-Annotated Closure)",
     "oracleSource": "Hand-Annotated Ground Truth Dependency Set (15 Adversarial Patterns)",
     "independenceType": "INDEPENDENT",
@@ -55,7 +55,7 @@
   },
   {
     "subsystem": "ORACLE_07_RETRIEVAL",
-    "implementationUnderTest": "src/retrieval/hybridRetriever.ts & src/retrieval/reranker.ts",
+    "implementationUnderTest": "src/search/hybridRetriever.ts & src/search/reranker.ts",
     "oracleImplementation": "tests/validation/phase10-11-hybrid-retrieval.test.ts (Expert Labeled Sets)",
     "oracleSource": "Expert-Labeled Relevant Entity Benchmark Dataset",
     "independenceType": "INDEPENDENT",
@@ -65,7 +65,7 @@
   {
     "subsystem": "ORACLE_08_CODE_CORRECTNESS",
     "implementationUnderTest": "validation/evaluators/codeAccuracyEvaluator.ts",
-    "oracleImplementation": "validation/evaluators/tsCompilerService.ts & realTestHarness.ts",
+    "oracleImplementation": "validation/evaluators/tsCompilerService.ts & validation/evaluators/realTestHarness.ts",
     "oracleSource": "Official TypeScript Compiler API (ts.transpileModule) & Sandboxed Node.js VM Tests",
     "independenceType": "INDEPENDENT",
     "certificationCritical": true,
@@ -73,7 +73,7 @@
   },
   {
     "subsystem": "ORACLE_09_DASHBOARD",
-    "implementationUnderTest": "src/dashboard/dashboardAggregator.ts",
+    "implementationUnderTest": "src/ui/dashboardController.ts",
     "oracleImplementation": "tests/validation/phase30-dashboard-lifecycle.test.ts (Event Stream Logger)",
     "oracleSource": "Immutable Production Event Bus Stream Records",
     "independenceType": "DERIVED",
@@ -82,7 +82,7 @@
   },
   {
     "subsystem": "ORACLE_10_GOVERNOR_SAFETY",
-    "implementationUnderTest": "src/governor/contextGovernor.ts & evidenceSafetyGate.ts",
+    "implementationUnderTest": "src/governor/contextGovernor.ts & src/governor/evidenceSafetyGate.ts",
     "oracleImplementation": "validation/audit/governorAccuracyAuditor.ts (Set Theory Verifier)",
     "oracleSource": "Mathematical Set Theory Containment Invariant (Required ⊆ Provided)",
     "independenceType": "INDEPENDENT",

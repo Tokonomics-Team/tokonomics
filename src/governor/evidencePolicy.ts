@@ -120,6 +120,7 @@ export class EvidencePolicyMatrix {
      * Retrieves the data-driven policy for a given TaskType
      */
     public static getPolicy(taskType: TaskType): TaskPolicy {
-        return this.POLICIES[taskType] || this.POLICIES.completion;
+        const policy = this.POLICIES[taskType] || this.POLICIES.completion;
+        return { ...policy, requiredEvidence: policy.requiredEvidence.map(requirement => ({ ...requirement })) };
     }
 }

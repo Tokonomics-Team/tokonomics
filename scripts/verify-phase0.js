@@ -7,6 +7,11 @@ const {
     captureRepositoryMetadata,
     validateClaimRegistry
 } = require('./lib/certification-evidence');
+const {
+    BASELINE_CLASSIFICATION,
+    captureBaseline,
+    validateScopeManifest
+} = require('./lib/v7-phase0-baseline');
 
 const rootDir = path.resolve(__dirname, '..');
 
@@ -27,10 +32,37 @@ function verify() {
         }
     };
 
-    check('roadmap exists and requires approval between phases', () => {
-        const roadmap = read('MODERNIZATION_ROADMAP.md');
-        assert.match(roadmap, /explicit owner approval/i);
-        assert.match(roadmap, /Phase 10 - Evaluated state-of-the-art experiments/);
+    check('v7.0.1 final plan is authoritative and phase-gated', () => {
+        const roadmap = read('PHASE_V7.0.1_FINAL_IMPLEMENTATION_PLAN.md');
+        assert.match(roadmap, /final master development plan/i);
+        assert.match(roadmap, /supersedes all\s+earlier modernization roadmaps/i);
+        assert.match(roadmap, /wait for explicit repository-owner approval/i);
+        assert.match(roadmap, /## Phase 11 - Production hardening and v7\.0\.1 release certification/);
+    });
+
+    check('v7.0.1 fixture, metric, reachability, and finding scope is complete', () => {
+        const scope = JSON.parse(read('validation/baselines/v7.0.1/phase0-scope.json'));
+        const result = validateScopeManifest(rootDir, scope);
+        assert.strictEqual(result.valid, true, result.errors.join('; '));
+        assert.strictEqual(scope.classification, BASELINE_CLASSIFICATION);
+        assert.ok(scope.fixtureSets.length >= 5);
+        assert.ok(scope.auditFindings.length >= 29);
+        assert.deepStrictEqual(new Set(scope.auditFindings.map(item => item.id)).size, scope.auditFindings.length);
+        assert.ok(scope.reachabilityProbes.some(probe => probe.entryPoint === 'chat-participant'));
+        assert.ok(scope.reachabilityProbes.some(probe => probe.entryPoint === 'language-model-provider'));
+        assert.ok(scope.reachabilityProbes.some(probe => probe.entryPoint === 'installed-vsix'));
+    });
+
+    check('v7.0.1 structural baseline is deterministic within one source state', () => {
+        const first = captureBaseline(rootDir);
+        const second = captureBaseline(rootDir);
+        assert.strictEqual(first.stableFingerprint, second.stableFingerprint);
+        assert.match(first.stableFingerprint, /^[0-9a-f]{64}$/);
+        assert.strictEqual(first.classification, BASELINE_CLASSIFICATION);
+        assert.strictEqual(first.releaseCertified, false);
+        assert.ok(first.inventory.entryPoints.commands.length > 0);
+        assert.ok(first.inventory.components.length > 0);
+        assert.ok(first.inventory.resources.outboundModelCalls.length > 0);
     });
 
     check('package and lockfile root metadata agree', () => {
@@ -83,6 +115,7 @@ function verify() {
         assert.match(status, /historical\s+development artifacts/i);
         assert.match(status, /not release certificates/i);
         assert.match(status, /predetermined corpus fixtures/i);
+        assert.match(status, /v7\.0\.1 Phase 0 baseline/i);
     });
 
     check('reproducibility recorder does not contain a fixed commit SHA', () => {

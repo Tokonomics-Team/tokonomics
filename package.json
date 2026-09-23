@@ -1,8 +1,8 @@
 {
   "name": "tokonomics",
-  "displayName": "Tokonomics 6.0 — AI Context Efficiency for VS Code",
+  "displayName": "Tokonomics 8.0.0 — AI Context Efficiency for VS Code",
   "description": "A local context-compilation and token-analysis extension for VS Code. Optimization results vary by task, model, and workspace.",
-  "version": "6.0.0",
+  "version": "8.0.0",
   "publisher": "tokonomics",
   "license": "SEE LICENSE IN LICENSE.txt",
   "icon": "assets/icon.png",
@@ -14,6 +14,9 @@
     "Programming Languages",
     "Machine Learning",
     "Other"
+  ],
+  "extensionKind": [
+    "workspace"
   ],
   "keywords": [
     "token optimizer",
@@ -68,16 +71,16 @@
       "supported": "limited",
       "description": "Tokonomics remains available for explicit prompt text, but workspace indexing, file reads, and automatic context attachment are disabled in Restricted Mode.",
       "restrictedConfigurations": [
-        "tokenOptimizer.workspaceContextMode",
-        "tokenOptimizer.enableBackgroundRamWarming",
-        "tokenOptimizer.enableRamSemanticIndex"
+        "tokenOptimizer.workspaceContext",
+        "tokenOptimizer.includeUnsavedChanges"
       ]
     },
     "virtualWorkspaces": false
   },
   "main": "./dist/extension.js",
   "activationEvents": [
-    "onStartupFinished"
+    "onStartupFinished",
+    "onWebviewPanel:tokonomics.chatEditor"
   ],
   "contributes": {
     "languageModelChatProviders": [
@@ -91,12 +94,12 @@
         "id": "token-optimizer-participant",
         "name": "tokonomics",
         "fullName": "Tokonomics",
-        "description": "Tokonomics 6.0: AI context efficiency and usage visibility for VS Code",
+        "description": "Tokonomics 8.0.0: AI context efficiency and usage visibility for VS Code",
         "isSticky": true,
         "commands": [
           {
             "name": "dashboard",
-            "description": "Open the interactive real-time visualizer dashboard with dual waterfalls and live charts"
+            "description": "Open usage, context efficiency and request diagnostics"
           },
           {
             "name": "live",
@@ -133,11 +136,51 @@
           {
             "name": "compact",
             "description": "Compact code or prompt context"
+          },
+          {
+            "name": "codex",
+            "description": "Answer with compiled context using your Codex CLI subscription login"
+          },
+          {
+            "name": "claude",
+            "description": "Answer with compiled context using your Claude Code CLI subscription login"
           }
         ]
       }
     ],
+    "viewsContainers": {
+      "secondarySidebar": [
+        {
+          "id": "tokonomicsChat",
+          "title": "Tokonomics",
+          "icon": "assets/icon-128.png"
+        }
+      ]
+    },
+    "views": {
+      "tokonomicsChat": [
+        {
+          "id": "tokenOptimizer.chatView",
+          "name": "Chat",
+          "type": "webview",
+          "contextualTitle": "Tokonomics Chat",
+          "when": "tokonomics.chatSurfaceEnabled"
+        }
+      ]
+    },
     "commands": [
+      {
+        "command": "tokenOptimizer.openChat",
+        "title": "Tokonomics: Open Chat",
+        "category": "Tokonomics",
+        "enablement": "tokonomics.chatSurfaceEnabled"
+      },
+      {
+        "command": "tokenOptimizer.openChatInEditor",
+        "title": "Tokonomics: Open Chat in Editor",
+        "category": "Tokonomics",
+        "enablement": "tokonomics.chatSurfaceEnabled"
+      },
       {
         "command": "tokenOptimizer.showDashboard",
         "title": "Tokonomics: Show Savings Dashboard",
@@ -187,6 +230,70 @@
         "command": "tokenOptimizer.explainTrace",
         "title": "Tokonomics: Inspect Compiler Decision Trace",
         "category": "Tokonomics"
+      },
+      {
+        "command": "tokenOptimizer.manageProjectMemory",
+        "title": "Tokonomics: Manage Project Memory",
+        "category": "Tokonomics"
+      },
+      {
+        "command": "tokenOptimizer.startTask",
+        "title": "Tokonomics: Start Spend Task",
+        "category": "Tokonomics"
+      },
+      {
+        "command": "tokenOptimizer.endTask",
+        "title": "Tokonomics: End Spend Task",
+        "category": "Tokonomics"
+      },
+      {
+        "command": "tokenOptimizer.setSpendBudget",
+        "title": "Tokonomics: Set Spend Budget",
+        "category": "Tokonomics"
+      },
+      {
+        "command": "tokenOptimizer.recordTaskOutcome",
+        "title": "Tokonomics: Rate Task Outcome",
+        "category": "Tokonomics"
+      },
+      {
+        "command": "tokenOptimizer.importClaudeUsage",
+        "title": "Tokonomics: Import Claude Usage",
+        "category": "Tokonomics"
+      },
+      {
+        "command": "tokenOptimizer.watchClaudeUsage",
+        "title": "Tokonomics: Watch Claude Usage Log",
+        "category": "Tokonomics"
+      },
+      {
+        "command": "tokenOptimizer.stopUsageWatcher",
+        "title": "Tokonomics: Stop Usage Watcher",
+        "category": "Tokonomics"
+      },
+      {
+        "command": "tokenOptimizer.exportUsage",
+        "title": "Tokonomics: Export Usage History",
+        "category": "Tokonomics"
+      },
+      {
+        "command": "tokenOptimizer.importPricing",
+        "title": "Tokonomics: Import Pricing Snapshots",
+        "category": "Tokonomics"
+      },
+      {
+        "command": "tokenOptimizer.recommendModel",
+        "title": "Tokonomics: Compare Available Model Costs",
+        "category": "Tokonomics"
+      },
+      {
+        "command": "tokenOptimizer.clearUsageHistory",
+        "title": "Tokonomics: Clear Spend History",
+        "category": "Tokonomics"
+      },
+      {
+        "command": "tokenOptimizer.configureSubscriptionCli",
+        "title": "Tokonomics: Configure subscription CLI"
       }
     ],
     "menus": {
@@ -220,6 +327,9 @@
         },
         {
           "command": "tokenOptimizer.explainTrace"
+        },
+        {
+          "command": "tokenOptimizer.manageProjectMemory"
         }
       ],
       "editor/context": [
@@ -241,302 +351,47 @@
       ]
     },
     "configuration": {
-      "title": "Enterprise AI Token Optimizer",
+      "title": "Tokonomics",
       "properties": {
-        "tokenOptimizer.workspaceContextMode": {
+        "tokenOptimizer.optimizationMode": {
           "type": "string",
           "enum": [
             "off",
+            "balanced",
+            "maximum"
+          ],
+          "enumDescriptions": [
+            "Send the request without Tokonomics optimization.",
+            "Use safe, quality-preserving optimization for everyday work.",
+            "Use the strongest tested optimization while preserving required context."
+          ],
+          "default": "balanced",
+          "description": "Choose how strongly Tokonomics optimizes AI context. Balanced is recommended."
+        },
+        "tokenOptimizer.workspaceContext": {
+          "type": "string",
+          "enum": [
+            "none",
             "selection",
-            "referenced",
             "automatic"
           ],
           "enumDescriptions": [
-            "Never attach workspace-derived context.",
-            "Attach only an explicit editor selection (default).",
-            "Attach selections and files explicitly named in the prompt.",
-            "Allow active-file and RAM-index context discovery."
+            "Never add workspace-derived context.",
+            "Use only text you explicitly select.",
+            "Find relevant workspace context automatically in trusted workspaces."
           ],
           "default": "selection",
-          "description": "Controls which workspace content Tokonomics may add to cloud model requests. Workspace trust is always required."
+          "description": "Control whether Tokonomics may add workspace context. Workspace trust is always required."
         },
-        "tokenOptimizer.includeUnsavedBuffers": {
+        "tokenOptimizer.includeUnsavedChanges": {
           "type": "boolean",
           "default": false,
-          "description": "Allow explicitly selected unsaved editor text to be attached. Disabled by default to avoid sending unreviewed buffer contents."
+          "description": "Allow explicitly selected unsaved editor text. Keep this off to avoid using unreviewed changes."
         },
-        "tokenOptimizer.enableContextGovernor": {
+        "tokenOptimizer.responseReuse": {
           "type": "boolean",
           "default": true,
-          "description": "Enable deterministic task intent classification, risk-aware context optimization, and safety overrides."
-        },
-        "tokenOptimizer.governorAggressiveness": {
-          "type": "string",
-          "enum": [
-            "conservative",
-            "balanced",
-            "aggressive"
-          ],
-          "default": "balanced",
-          "description": "Default optimization aggressiveness before risk-level override."
-        },
-        "tokenOptimizer.enforceEvidenceSafetyGate": {
-          "type": "boolean",
-          "default": true,
-          "description": "Validate required context and use conservative fallback when it is incomplete."
-        },
-        "tokenOptimizer.enableAstPruning": {
-          "type": "boolean",
-          "default": true,
-          "description": "Enable structured code context preparation."
-        },
-        "tokenOptimizer.enableCacheAlignment": {
-          "type": "boolean",
-          "default": true,
-          "description": "Enable provider-aware context preparation."
-        },
-        "tokenOptimizer.enableTextCompression": {
-          "type": "boolean",
-          "default": true,
-          "description": "Enable context compaction for eligible text."
-        },
-        "tokenOptimizer.compressionRatio": {
-          "type": "number",
-          "default": 0.4,
-          "minimum": 0.1,
-          "maximum": 0.9,
-          "description": "Target retention ratio for natural language prompt compression (0.1 to 0.9)."
-        },
-        "tokenOptimizer.targetProvider": {
-          "type": "string",
-          "enum": [
-            "auto",
-            "anthropic",
-            "openai",
-            "gemini",
-            "deepseek",
-            "generic"
-          ],
-          "default": "auto",
-          "description": "Target cloud provider for prompt caching (default: 'auto' dynamically infers provider from the active model in the window)."
-        },
-        "tokenOptimizer.maxHistoryTurns": {
-          "type": "number",
-          "default": 8,
-          "minimum": 2,
-          "maximum": 50,
-          "description": "Maximum number of conversation history message turns to retain in active payload."
-        },
-        "tokenOptimizer.stripDiffsAndLogs": {
-          "type": "boolean",
-          "default": true,
-          "description": "Automatically compact verbose terminal logs, error traces, and git diffs in conversation history."
-        },
-        "tokenOptimizer.targetUpstreamModelFamily": {
-          "type": "string",
-          "default": "auto",
-          "description": "The upstream VS Code language model family (default: 'auto' dynamically detects the active model in the current window)."
-        },
-        "tokenOptimizer.enableDailyBudgetGuardrail": {
-          "type": "boolean",
-          "default": false,
-          "description": "Optional: Enable daily token spend alert warnings when your daily spend approaches the budget ceiling."
-        },
-        "tokenOptimizer.dailyBudgetUsd": {
-          "type": "number",
-          "default": 5,
-          "minimum": 0.5,
-          "maximum": 500,
-          "description": "Optional: Daily spend budget threshold in USD (active when enableDailyBudgetGuardrail is true)."
-        },
-        "tokenOptimizer.mcpSchemaCompression": {
-          "type": "string",
-          "enum": [
-            "off",
-            "low",
-            "medium",
-            "high"
-          ],
-          "default": "medium",
-          "description": "Context-efficiency level for eligible tool definitions."
-        },
-        "tokenOptimizer.enableDiffOutputOptimization": {
-          "type": "boolean",
-          "default": true,
-          "description": "Detect code edit/refactor intent and request unified diff patches instead of complete files; realized output-token changes depend on the model and task."
-        },
-        "tokenOptimizer.enableModelRouting": {
-          "type": "boolean",
-          "default": true,
-          "description": "Analyze task complexity and suggest optimal model tiers (Flash vs Standard vs Reasoning)."
-        },
-        "tokenOptimizer.enableResponseCache": {
-          "type": "boolean",
-          "default": true,
-          "description": "Enable eligible exact-match response reuse for read-only questions."
-        },
-        "tokenOptimizer.tabRelevanceThreshold": {
-          "type": "number",
-          "default": 20,
-          "minimum": 0,
-          "maximum": 100,
-          "description": "Minimum relevance score (0-100) for including open editor tabs into context packs."
-        },
-        "tokenOptimizer.maxIndexFileSizeKB": {
-          "type": "number",
-          "default": 300,
-          "minimum": 50,
-          "maximum": 5000,
-          "description": "Maximum file size (in KB) for workspace indexing. Files larger than this are skipped during repo mapping to preserve memory. Increase this if your project has large auto-generated files (e.g. protobuf, GraphQL schemas) that you want indexed."
-        },
-        "tokenOptimizer.responseCacheMaxSize": {
-          "type": "number",
-          "default": 100,
-          "minimum": 10,
-          "maximum": 500,
-          "description": "Maximum number of cached AI responses held in memory. Lower this on machines with limited RAM."
-        },
-        "tokenOptimizer.modelAllowList": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "default": [],
-          "description": "Enterprise governance: restrict which model IDs or families are allowed. Leave empty to allow all models. Example: ['claude-3.5-sonnet', 'gpt-4o']. Blocked models will show a policy warning instead of sending the request."
-        },
-        "tokenOptimizer.enableImageRightsizing": {
-          "type": "boolean",
-          "default": true,
-          "description": "Apply bounded local rightsizing to eligible inline images and workspace-contained screenshot references before model submission."
-        },
-        "tokenOptimizer.imageMaxDimension": {
-          "type": "number",
-          "default": 512,
-          "minimum": 128,
-          "maximum": 2048,
-          "description": "Maximum dimension in pixels for eligible rightsized images. Lower values reduce image detail."
-        },
-        "tokenOptimizer.ramBudgetMB": {
-          "type": "number",
-          "default": 64,
-          "minimum": 16,
-          "maximum": 1024,
-          "description": "Maximum local memory in MB available to Tokonomics workspace features."
-        },
-        "tokenOptimizer.enableBackgroundRamWarming": {
-          "type": "boolean",
-          "default": true,
-          "description": "Asynchronously pre-warms the codebase in RAM on startup in idle micro-batches for 0ms first-prompt latency."
-        },
-        "tokenOptimizer.enableRamSemanticIndex": {
-          "type": "boolean",
-          "default": true,
-          "description": "Maintains a high-speed in-memory symbol search index in RAM to surgically retrieve referenced signatures without dumping full files."
-        },
-        "tokenOptimizer.pipelineMode": {
-          "type": "string",
-          "enum": [
-            "compiler",
-            "hybrid",
-            "legacy"
-          ],
-          "default": "compiler",
-          "description": "Context preparation mode. Compiler is recommended; hybrid and legacy are compatibility options."
-        },
-        "tokenOptimizer.releaseChannel": {
-          "type": "string",
-          "enum": [
-            "stable",
-            "canary",
-            "disabled"
-          ],
-          "default": "stable",
-          "description": "Local release channel control. Canary uses deterministic staged enrollment; disabled preserves requests verbatim."
-        },
-        "tokenOptimizer.stagedRolloutPercent": {
-          "type": "number",
-          "default": 100,
-          "minimum": 0,
-          "maximum": 100,
-          "description": "Percentage of installations enrolled when releaseChannel is canary. Assignment is deterministic and remains local."
-        },
-        "tokenOptimizer.emergencyDisableOptimization": {
-          "type": "boolean",
-          "default": false,
-          "description": "Emergency local kill switch. When enabled, model requests retain their canonical payload without optimization."
-        },
-        "tokenOptimizer.disabledCapabilities": {
-          "type": "array",
-          "uniqueItems": true,
-          "items": {
-            "type": "string",
-            "enum": [
-              "compiler",
-              "workspaceIndex",
-              "responseCache",
-              "imageRightsizing",
-              "localInference"
-            ]
-          },
-          "default": [],
-          "description": "Granular local kill switches used for staged rollout and incident containment."
-        },
-        "tokenOptimizer.experimentalConsent": {
-          "type": "boolean",
-          "default": false,
-          "description": "Explicitly consent to selected Phase 10 experiments running locally in shadow mode. Shadow results do not change model-bound output."
-        },
-        "tokenOptimizer.experimentalFeatures": {
-          "type": "array",
-          "uniqueItems": true,
-          "items": {
-            "type": "string",
-            "enum": [
-              "evidence-aware-learned-ranking",
-              "snapshot-safe-delta-context",
-              "provider-specific-cache-layout",
-              "confidence-progressive-compilation",
-              "bounded-local-semantic-retrieval",
-              "inspectable-project-memory",
-              "readability-guarded-vision",
-              "adaptive-utility-budgeting"
-            ]
-          },
-          "default": [],
-          "description": "Opt-in Phase 10 shadow experiments. Selection also requires experimentalConsent."
-        },
-        "tokenOptimizer.disabledExperiments": {
-          "type": "array",
-          "uniqueItems": true,
-          "items": {
-            "type": "string",
-            "enum": [
-              "evidence-aware-learned-ranking",
-              "snapshot-safe-delta-context",
-              "provider-specific-cache-layout",
-              "confidence-progressive-compilation",
-              "bounded-local-semantic-retrieval",
-              "inspectable-project-memory",
-              "readability-guarded-vision",
-              "adaptive-utility-budgeting"
-            ]
-          },
-          "default": [],
-          "description": "Independent local kill switches for Phase 10 experiments; disabled entries override consent and selection."
-        },
-        "tokenOptimizer.experimentalMaxLatencyMs": {
-          "type": "number",
-          "default": 25,
-          "minimum": 1,
-          "maximum": 250,
-          "description": "Per-candidate shadow-computation latency ceiling. Over-budget results are discarded."
-        },
-        "tokenOptimizer.experimentalMaxMemoryMB": {
-          "type": "number",
-          "default": 32,
-          "minimum": 1,
-          "maximum": 256,
-          "description": "Declared per-candidate memory ceiling; candidates exceeding it remain disabled."
+          "description": "Reuse only exact, safe, completed responses for matching read-only requests."
         }
       }
     }
@@ -554,24 +409,33 @@
     "certify:release": "node scripts/certify-release.js",
     "evaluate:phase10": "node scripts/evaluate-phase10.js",
     "verify:phase0": "node scripts/verify-phase0.js",
+    "baseline:v7.0.1": "node scripts/generate-v7-phase0-baseline.js",
     "verify:vsix": "node scripts/verify-vsix.js",
+    "qa:chat-panel": "node scripts/qa-chat-panel.js",
+    "qa:chat-panel:installed": "node scripts/qa-installed-chat-panel.js",
     "verify:host:local": "node scripts/run-extension-host-matrix.js --local",
     "verify:host:all": "node scripts/run-extension-host-matrix.js --all",
     "generate:supply-chain": "node scripts/generate-supply-chain.js",
     "validate": "node scripts/validate.js",
     "validate:all": "node scripts/validate-all.js",
     "audit:clean-room": "node scripts/clean-room-audit.js",
+    "measure:savings": "node scripts/measure-savings.js",
     "download-parsers": "node scripts/download-parsers.js",
-    "vsce:package": "npx @vscode/vsce package --no-dependencies --out tokonomics-6.0.0.vsix",
+    "vsce:package": "npx @vscode/vsce package --no-dependencies --out tokonomics-8.0.0.vsix",
     "publish:vsce": "npx @vscode/vsce publish --no-dependencies",
-    "publish:ovsx": "npx ovsx publish tokonomics-6.0.0.vsix",
+    "publish:ovsx": "npx ovsx publish tokonomics-8.0.0.vsix",
     "publish:all": "npm run publish:vsce && npm run publish:ovsx",
-    "sync:public": "powershell -ExecutionPolicy Bypass -File ./scripts/sync-public-repo.ps1"
+    "sync:public": "powershell -ExecutionPolicy Bypass -File ./scripts/sync-public-repo.ps1",
+    "measure:ablation": "node scripts/measure-ablation.js",
+    "evaluate:tasks": "node scripts/evaluate-tasks.js",
+    "test:finops": "node scripts/test-finops.js"
   },
   "dependencies": {
-    "@vscode/tree-sitter-wasm": "0.3.1"
+    "@vscode/tree-sitter-wasm": "0.3.1",
+    "markdown-it": "14.3.1"
   },
   "devDependencies": {
+    "@types/markdown-it": "14.2.0",
     "@types/node": "^20.14.0",
     "@types/vscode": "1.106.0",
     "@vscode/test-electron": "3.1.0",

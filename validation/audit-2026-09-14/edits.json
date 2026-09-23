@@ -1,0 +1,646 @@
+[
+  {
+    "id": "BUG-GOV-01",
+    "file": "src/governor/contextGovernor.ts",
+    "line": 62,
+    "before": "timestamp: Date.now()",
+    "after": "timestamp: 0 // Deterministic compatibility field; event timestamps belong in telemetry."
+  },
+  {
+    "id": "BUG-GOV-01",
+    "file": "src/governor/evidencePolicy.ts",
+    "line": 122,
+    "before": "public static getPolicy(taskType: TaskType): TaskPolicy {\n        return this.POLICIES[taskType] || this.POLICIES.completion;\n    }",
+    "after": "public static getPolicy(taskType: TaskType): TaskPolicy {\n        const policy = this.POLICIES[taskType] || this.POLICIES.completion;\n        return { ...policy, requiredEvidence: policy.requiredEvidence.map(requirement => ({ ...requirement })) };\n    }"
+  },
+  {
+    "id": "BUG-GOV-02",
+    "file": "src/governor/evidenceSafetyGate.ts",
+    "line": 13,
+    "before": "public static auditEvidence(\n        required: EvidenceRequirement[],\n        provided: EvidenceCategory[]\n    ): EvidenceSafetyResult {\n        const providedSet = new Set<EvidenceCategory>(provided);\n        const missing: EvidenceRequirement[] = [];\n\n        for (const req of required) {\n            if (!providedSet.has(req.category)) {\n                missing.push(req);\n            }\n        }\n\n        const criticalMissing = missing.filter(m => m.priority === 'critical');\n        const highMissing = missing.filter(m => m.priority === 'high');\n\n        let passed = true;\n        let actionTaken: EvidenceSafetyResult['actionTaken'] = 'proceed';\n\n        if (criticalMissing.length > 0) {\n            // Critical evidence is missing -> must fail closed to prevent quality degradation\n            passed = false;\n            actionTaken = 'fail_closed_fallback';\n        } else if (highMissing.length > 1) {\n            // Multiple high-priority items missing -> downgrade to conservative representation\n            passed = false;\n            actionTaken = 'downgrade_to_conservative';\n        }\n\n        const totalReq = required.length;\n        const matched = totalReq - missing.length;\n        const confidence = totalReq > 0 ? Math.round((matched / totalReq) * 100) / 100 : 1.0;\n\n        return {\n            passed,\n            required,\n            provided,\n            missing,\n            confidence,\n            actionTaken\n        };\n    }",
+    "after": "public static auditEvidence(required: EvidenceRequirement[], provided: EvidenceCategory[]): EvidenceSafetyResult {\n        const present = new Set(provided);\n        const missing = required.filter(requirement => !present.has(requirement.category));\n        return {\n            passed: missing.length === 0,\n            required: required.map(requirement => ({ ...requirement })),\n            provided: [...present],\n            missing: missing.map(requirement => ({ ...requirement })),\n            confidence: required.length ? (required.length - missing.length) / required.length : 1,\n            actionTaken: missing.length ? 'fail_closed_fallback' : 'proceed'\n        };\n    }"
+  },
+  {
+    "id": "BUG-GOV-02",
+    "file": "src/governor/contextGovernor.ts",
+    "line": 80,
+    "before": "public validateEvidenceSafety(\r\n        decision: ContextGovernorDecision,\r\n        providedEvidence: EvidenceCategory[],\r\n        options?: { workspaceRetrievalAuthorized?: boolean }\r\n    ): EvidenceSafetyResult {\r\n        const workspaceAuthorized = options?.workspaceRetrievalAuthorized !== false;\r\n        const required = workspaceAuthorized\r\n            ? decision.requiredEvidence\r\n            : decision.requiredEvidence.map(requirement =>\r\n                requirement.priority === 'critical'\r\n                    && DeterministicContextGovernor.WORKSPACE_ONLY_CATEGORIES.has(requirement.category)\r\n                    ? { ...requirement, priority: 'high' as const }\r\n                    : requirement);\r\n        return EvidenceSafetyGate.auditEvidence(required, providedEvidence);\r\n    }",
+    "after": "public validateEvidenceSafety(\n        decision: ContextGovernorDecision,\n        providedEvidence: EvidenceCategory[],\n        _options?: { workspaceRetrievalAuthorized?: boolean }\n    ): EvidenceSafetyResult {\n        return EvidenceSafetyGate.auditEvidence(decision.requiredEvidence, providedEvidence);\n    }"
+  },
+  {
+    "id": "BUG-GOV-02",
+    "file": "src/engine/pipelineOrchestrator.ts",
+    "line": 847,
+    "before": "const inlineEvidence = InlineEvidenceClassifier.classify(request.messages.map(message => message.content));",
+    "after": "const inlineEvidence = InlineEvidenceClassifier.classify(optimizedMessages.map(message => message.content));"
+  },
+  {
+    "id": "BUG-GOV-02",
+    "file": "src/engine/pipelineOrchestrator.ts",
+    "line": 849,
+    "before": "...evidenceRetrieval.covered, ...inlineEvidence.categories",
+    "after": "...evidenceRetrieval.selected.filter(candidate => optimizedMessages.some(message =>\n                message.content.includes(candidate.content))).map(candidate => candidate.category), ...inlineEvidence.categories"
+  },
+  {
+    "id": "BUG-GOV-02",
+    "file": "src/engine/pipelineOrchestrator.ts",
+    "line": 935,
+    "before": "        // Every restore path has run, so the payload is settled.",
+    "after": "        // Verify what is emitted after every restore/reduction. Missing evidence is a request error,\n        // not permission to send an incomplete request labelled as evidence-safe.\n        if (!request.preserveProtocol && !isConversationalOnly(userInstruction)) {\n            const finalText = optimizedMessages.map(message => message.content);\n            const finalCategories = new Set<EvidenceCategory>(InlineEvidenceClassifier.classify(finalText).categories);\n            for (const candidate of evidenceRetrieval?.selected || []) {\n                if (candidate.content.length > 0 && finalText.some(text => text.includes(candidate.content))) {\n                    finalCategories.add(candidate.category);\n                }\n            }\n            const finalAudit = governor.validateEvidenceSafety(governorDecision, [...finalCategories]);\n            if (!finalAudit.passed) throw new Error('REQUIRED_EVIDENCE_MISSING: '\n                + finalAudit.missing.map(requirement => requirement.category).join(', '));\n        }\n\n        // Every restore path has run, so the payload is settled."
+  },
+  {
+    "id": "BUG-SCHEMA-01",
+    "file": "src/cache/schemaMinifier.ts",
+    "line": 144,
+    "before": "private static compressTool(tool: any, level: SchemaCompressionLevel): any {\n        if (!tool || typeof tool !== 'object') return tool;\n        const result: any = {};\n\n        for (const [key, val] of Object.entries(tool)) {\n            if (key === 'description' && typeof val === 'string') {\n                if (val.length > LOW_DESC_LIMIT) {\n                    result[key] = val.substring(0, LOW_DESC_LIMIT - 3).trimEnd() + '...';\n                } else {\n                    result[key] = val;\n                }\n                continue;\n            }\n\n            if (level === 'medium' || level === 'high' || level === 'deferred') {\n                if (key === '$schema' || key === 'additionalProperties' || key === 'title' || key === 'examples' || key === 'example' || key === 'default') {\n                    continue;\n                }\n            }\n\n            if (key === 'parameters' || key === 'inputSchema' || key === 'properties'\n                || key === 'items' || key === 'allOf' || key === 'oneOf' || key === 'anyOf') {\n                result[key] = this.compressSchemaNode(val, level);\n                continue;\n            }\n\n            if (key === 'enum' && Array.isArray(val) && val.length > MAX_ENUM_VALUES\n                && (level === 'medium' || level === 'high' || level === 'deferred')) {\n                const truncated = val.slice(0, MAX_ENUM_VALUES);\n                truncated.push(`...(${val.length - MAX_ENUM_VALUES} more)`);\n                result[key] = truncated;\n                continue;\n            }\n\n            result[key] = val;\n        }\n\n        return result;\n    }",
+    "after": "private static compressTool(tool: any, _level: SchemaCompressionLevel): any {\n        return tool;\n    }"
+  },
+  {
+    "id": "BUG-SCHEMA-01",
+    "file": "src/cache/schemaMinifier.ts",
+    "line": 184,
+    "before": "private static compressSchemaNode(node: any, level: SchemaCompressionLevel): any {\n        if (!node || typeof node !== 'object') return node;\n\n        if (Array.isArray(node)) {\n            return node.map(item => this.compressSchemaNode(item, level));\n        }\n\n        const result: any = {};\n        for (const [key, val] of Object.entries(node)) {\n            if (key === 'description' && typeof val === 'string') {\n                if (level === 'medium' || level === 'high' || level === 'deferred') {\n                    continue;\n                }\n                if (val.length > LOW_DESC_LIMIT) {\n                    result[key] = val.substring(0, LOW_DESC_LIMIT - 3).trimEnd() + '...';\n                } else {\n                    result[key] = val;\n                }\n                continue;\n            }\n\n            if ((level === 'medium' || level === 'high' || level === 'deferred') &&\n                (key === 'examples' || key === 'example' || key === 'default' || key === '$schema' || key === 'title' || key === 'additionalProperties')) {\n                continue;\n            }\n\n            if (key === 'enum' && Array.isArray(val) && val.length > MAX_ENUM_VALUES\n                && (level === 'medium' || level === 'high' || level === 'deferred')) {\n                const truncated = val.slice(0, MAX_ENUM_VALUES);\n                truncated.push(`...(${val.length - MAX_ENUM_VALUES} more)`);\n                result[key] = truncated;\n                continue;\n            }\n\n            if (typeof val === 'object') {\n                result[key] = this.compressSchemaNode(val, level);\n            } else {\n                result[key] = val;\n            }\n        }\n\n        return result;\n    }",
+    "after": "private static compressSchemaNode(node: any, _level: SchemaCompressionLevel): any {\n        return node;\n    }"
+  },
+  {
+    "id": "BUG-SCHEMA-01",
+    "file": "src/cache/schemaMinifier.ts",
+    "line": 103,
+    "before": "if (level === 'deferred') {",
+    "after": "if (false) { // No executable meta-tool adapter is registered; preserve the real tools."
+  },
+  {
+    "id": "BUG-SCHEMA-01",
+    "file": "src/cache/schemaMinifier.ts",
+    "line": 108,
+    "before": "if (level === 'high' && toolCount > META_TOOL_THRESHOLD) {",
+    "after": "if (false) { // A text-only catalog cannot replace executable schemas."
+  },
+  {
+    "id": "BUG-SCHEMA-01",
+    "file": "src/cache/schemaMinifier.ts",
+    "line": 114,
+    "before": "const output = Array.isArray(parsed) ? compressed\n                : (tools.length === 1 ? compressed[0] : compressed);",
+    "after": "const output = Array.isArray(parsed) ? compressed\r\n                : (Array.isArray(parsed?.tools) ? { ...parsed, tools: compressed } : compressed[0]);"
+  },
+  {
+    "id": "BUG-CACHE-01",
+    "file": "src/cache/schemaMinifier.ts",
+    "line": 117,
+    "before": "const minifiedJson = JSON.stringify(output);",
+    "after": "const minifiedJson = JSON.stringify(output, (_key, value) => {\n                if (!value || typeof value !== 'object' || Array.isArray(value)) return value;\n                return Object.fromEntries(Object.keys(value).sort().map(key => [key, value[key]]));\n            });"
+  },
+  {
+    "id": "BUG-CACHE-02",
+    "file": "src/cache/normalizer.ts",
+    "line": 11,
+    "before": "public static normalizeCacheableText(text: string): string {\n        if (!text) return '';\n\n        let result = text;\n\n        // 1. Normalize line endings to LF (\\n)\n        result = result.replace(/\\r\\n/g, '\\n').replace(/\\r/g, '\\n');\n\n        // 2. Normalize Windows file paths in context to standard forward slashes (e.g. src\\utils -> src/utils)\n        result = result.replace(/([a-zA-Z0-9_.-]+)\\\\([a-zA-Z0-9_.-]+)/g, '$1/$2');\n\n        // 3. Trim trailing line whitespace while preserving intentional indentation\n        result = result.split('\\n').map(line => line.trimEnd()).join('\\n');\n\n        // 4. Remove volatile timestamps or current date strings from cached prefix blocks\n        result = result.replace(/(?:Current Time|Current Date|Session Started at|Timestamp):\\s*[^\\n]+/gi, '');\n\n        return result.trim();\n    }",
+    "after": "public static normalizeCacheableText(text: string): string {\n        // Source, regex literals, string escapes and timestamp instructions are semantic data.\n        // Canonicalize structure before assembly, never arbitrary payload bytes here.\n        return text;\n    }"
+  },
+  {
+    "id": "BUG-AST-01",
+    "file": "src/ast/pruner.ts",
+    "line": 173,
+    "before": "pruned = this.pruneWithStatefulParser(workingCode, detectedLang, options);",
+    "after": "pruned = codeWithoutInjections;"
+  },
+  {
+    "id": "BUG-AST-01",
+    "file": "src/ast/pruner.ts",
+    "line": 173,
+    "before": "pruned = this.pruneWithStatefulParser(workingCode, detectedLang, options);",
+    "after": "pruned = codeWithoutInjections;"
+  },
+  {
+    "id": "BUG-AST-01",
+    "file": "src/ast/pruner.ts",
+    "line": 180,
+    "before": "        if (options.structuralTier === 'T0') {\n            const lines = pruned.split('\\n');\n            pruned = lines.filter(l => \n                l.startsWith('export') || l.startsWith('pub ') || l.startsWith('type ') ||\n                l.startsWith('interface ') || l.startsWith('class ') || l.startsWith('struct ') ||\n                l.startsWith('enum ') || l.startsWith('import ') || l.startsWith('from ') ||\n                l.startsWith('package ') || l.trim().startsWith('//') || l.trim().startsWith('/*')\n            ).join('\\n');\n        }\n\n",
+    "after": "        // T0 may use the complete T1 syntax; individual lines cannot prove subtree boundaries.\n\n"
+  },
+  {
+    "id": "BUG-AST-01",
+    "file": "src/ast/pruner.ts",
+    "line": 263,
+    "before": "private formatJsTsClass(node: any, exportPrefix: string = ''): string {\n        const body = node.children.find((c: any) => c.type === 'class_body');\n        const prefix = exportPrefix && !node.text.startsWith('export') ? exportPrefix : '';\n        if (body) {\n            const head = node.text.substring(0, body.startIndex - node.startIndex).trim();\n            const members: string[] = [];\n            for (let j = 0; j < body.childCount; j++) {\n                const m = body.child(j);\n                if (!m) continue;\n                if (m.type === 'method_definition') {\n                    const mBody = m.children.find((c: any) => c.type === 'statement_block');\n                    if (mBody) {\n                        const mHead = m.text.substring(0, mBody.startIndex - m.startIndex).trim();\n                        members.push(`    ${mHead};`);\n                    } else {\n                        members.push(`    ${m.text.trim()}`);\n                    }\n                } else if (m.type === 'public_field_definition' || m.type === 'property_signature' || m.type === 'field_definition') {\n                    members.push(`    ${m.text.trim()}`);\n                }\n            }\n            return `${prefix}${head} {\\n${members.join('\\n')}\\n}`;\n        }\n        return `${prefix}${node.text}`;\n    }",
+    "after": "private formatJsTsClass(node: any, exportPrefix: string = ''): string {\n        const prefix = exportPrefix && !node.text.startsWith('export') ? exportPrefix : '';\n        return prefix + node.text;\n    }"
+  },
+  {
+    "id": "BUG-AST-01",
+    "file": "src/ast/pruner.ts",
+    "line": 237,
+    "before": "            const rootNode = syntaxTree.rootNode;",
+    "after": "            const rootNode = syntaxTree.rootNode;\n            if (rootNode.hasError) return codeText;"
+  },
+  {
+    "id": "BUG-AST-01",
+    "file": "src/ast/pruner.ts",
+    "line": 196,
+    "before": "        const prunedTokens = TokenCounter.countTokens(pruned);",
+    "after": "        pruned = pruned || codeWithoutInjections;\n        const prunedTokens = TokenCounter.countTokens(pruned);"
+  },
+  {
+    "id": "BUG-AST-01",
+    "file": "src/ast/pruner.ts",
+    "line": 118,
+    "before": "cacheKey = this.blobAstCache.computeCacheKey(codeText, options, languageHint);",
+    "after": "cacheKey = this.blobAstCache.computeCacheKey(codeText, options, languageHint)\n                + (this.hasTreeSitterActive() ? ':wasm' : ':verbatim');"
+  },
+  {
+    "id": "BUG-AST-02",
+    "file": "src/ast/treeShaker.ts",
+    "line": 129,
+    "before": "public static sliceModuleContext(\n        moduleCode: string,\n        referencedSymbols: Set<string> | string[]\n    ): TreeShakeResult {\n        const symbolSet = Array.isArray(referencedSymbols) ? new Set(referencedSymbols) : referencedSymbols;\n        const originalTokens = TokenCounter.countTokens(moduleCode);\n\n        // If no specific symbols are requested, return full module\n        if (symbolSet.size === 0) {\n            return {\n                shakenCode: moduleCode,\n                originalTokens,\n                shakenTokens: originalTokens,\n                retainedSymbols: [],\n                prunedSymbols: [],\n                savedTokens: 0\n            };\n        }\n\n        const blocks = this.splitTopLevelBlocks(moduleCode);\n        const retainedBlocks: string[] = [];\n        const retainedSymbols: string[] = [];\n        const prunedSymbols: string[] = [];\n\n        for (const block of blocks) {\n            const blockText = block.trim();\n            if (blockText.length === 0) continue;\n\n            // Always keep top-level imports in the sliced module\n            if (\n                blockText.startsWith('import ') ||\n                blockText.startsWith('from ') ||\n                blockText.startsWith('package ') ||\n                blockText.startsWith('use ')\n            ) {\n                retainedBlocks.push(block);\n                continue;\n            }\n\n            // Identify symbol declared in this block\n            const declaredName = this.extractDeclaredSymbolName(blockText);\n\n            if (declaredName && symbolSet.has(declaredName)) {\n                retainedBlocks.push(block);\n                retainedSymbols.push(declaredName);\n            } else if (declaredName) {\n                prunedSymbols.push(declaredName);\n            } else {\n                // Keep structural headers or comments\n                if (blockText.startsWith('//') || blockText.startsWith('/*') || blockText.startsWith('#')) {\n                    retainedBlocks.push(block);\n                }\n            }\n        }\n\n        const shakenCode = retainedBlocks.join('\\n\\n');\n        const shakenTokens = TokenCounter.countTokens(shakenCode);\n        const savedTokens = Math.max(0, originalTokens - shakenTokens);\n\n        return {\n            shakenCode: shakenCode.length > 20 ? shakenCode : moduleCode,\n            originalTokens,\n            shakenTokens,\n            retainedSymbols,\n            prunedSymbols,\n            savedTokens\n        };\n    }",
+    "after": "public static sliceModuleContext(moduleCode: string, _referencedSymbols: Set<string> | string[]): TreeShakeResult {\n        // Lexical name matching cannot establish transitive closure, side effects, wildcard\n        // exports, runtime imports, inheritance, or language-specific declaration boundaries.\n        const tokens = TokenCounter.countTokens(moduleCode);\n        return { shakenCode: moduleCode, originalTokens: tokens, shakenTokens: tokens,\n            retainedSymbols: [], prunedSymbols: [], savedTokens: 0 };\n    }"
+  },
+  {
+    "id": "BUG-MEM-01",
+    "file": "src/cache/blobAstCache.ts",
+    "line": 115,
+    "before": "const sizeBytes = Buffer.byteLength(result.prunedCode, 'utf8') + 256;",
+    "after": "const sizeBytes = result.prunedCode.length * 2 + key.length * 2 + 256;\n        if (sizeBytes > this.maxMemoryBytes) { this.delete(key); return; }"
+  },
+  {
+    "id": "BUG-MEM-01",
+    "file": "src/cache/blobAstCache.ts",
+    "line": 140,
+    "before": "            result,\n            sizeBytes,",
+    "after": "            result: { ...result },\r\n            sizeBytes,"
+  },
+  {
+    "id": "BUG-MEM-01",
+    "file": "src/cache/blobAstCache.ts",
+    "line": 111,
+    "before": "return entry.result;",
+    "after": "return { ...entry.result };"
+  },
+  {
+    "id": "BUG-MEM-02",
+    "file": "src/search/invertedIndex.ts",
+    "line": 28,
+    "before": "    private docIndexToId: string[] = [];",
+    "after": "    private docIndexToId: string[] = [];\n    private freeDocIndices: number[] = [];"
+  },
+  {
+    "id": "BUG-MEM-02",
+    "file": "src/search/invertedIndex.ts",
+    "line": 89,
+    "before": "        const docIndex = this.docIndexToId.length;\n        this.docIndexToId.push(id);",
+    "after": "        const docIndex = this.freeDocIndices.pop() ?? this.docIndexToId.length;\n        this.docIndexToId[docIndex] = id;"
+  },
+  {
+    "id": "BUG-MEM-02",
+    "file": "src/search/invertedIndex.ts",
+    "line": 158,
+    "before": "this.docIndexToId[docIndex] = ''; // Invalidate slot",
+    "after": "this.docIndexToId[docIndex] = ''; // Reuse deleted slots on the next insertion.\n        this.scoreBuf[docIndex] = 0;\n        this.freeDocIndices.push(docIndex);"
+  },
+  {
+    "id": "BUG-MEM-02",
+    "file": "src/search/invertedIndex.ts",
+    "line": 316,
+    "before": "        this.docIndexToId.length = 0;",
+    "after": "        this.docIndexToId.length = 0;\n        this.freeDocIndices.length = 0;"
+  },
+  {
+    "id": "BUG-MEM-03",
+    "file": "src/engine/ramManager.ts",
+    "line": 140,
+    "before": "        this.isWarming = true;",
+    "after": "        this.isWarming = true;\n        this.symbolIndex = [];"
+  },
+  {
+    "id": "BUG-MEM-03",
+    "file": "src/engine/ramManager.ts",
+    "line": 174,
+    "before": "                            this.symbolIndex.push(sym);",
+    "after": "                            if (this.usedBytes + this.symbolBytes(sym) > this.config.ramBudgetMB * 1024 * 1024) break;\n                            this.symbolIndex.push(sym);\n                            this.usedBytes += this.symbolBytes(sym);"
+  },
+  {
+    "id": "BUG-MEM-03",
+    "file": "src/engine/ramManager.ts",
+    "line": null,
+    "before": "        this.symbolIndex = [];\n        const startTime",
+    "after": "        this.usedBytes = [...this.skeletonCache.values()].reduce((sum, entry) => sum + entry.sizeBytes, 0)\n            + this.turnCodeRegistry.size * 128;\n        this.symbolIndex = [];\n        const startTime"
+  },
+  {
+    "id": "BUG-MEM-03",
+    "file": "src/engine/ramManager.ts",
+    "line": 343,
+    "before": "        this.symbolIndex = this.symbolIndex.filter(s => s.file !== filePath);",
+    "after": "        this.symbolIndex = this.symbolIndex.filter(symbol => {\n            if (symbol.file !== filePath) return true;\n            this.usedBytes -= this.symbolBytes(symbol);\n            return false;\n        });"
+  },
+  {
+    "id": "BUG-MEM-03",
+    "file": "src/engine/ramManager.ts",
+    "line": 427,
+    "before": "            this.turnCodeRegistry.clear();",
+    "after": "            this.usedBytes -= this.turnCodeRegistry.size * 128;\n            this.turnCodeRegistry.clear();"
+  },
+  {
+    "id": "BUG-MEM-03",
+    "file": "src/engine/ramManager.ts",
+    "line": 431,
+    "before": "    private isOverBudget(): boolean {",
+    "after": "    private symbolBytes(symbol: IndexedSymbol): number {\n        return 256 + (symbol.name.length + symbol.file.length + symbol.signature.length) * 2\n            + [...symbol.terms].reduce((sum, term) => sum + 32 + term.length * 2, 0);\n    }\n\n    private isOverBudget(): boolean {"
+  },
+  {
+    "id": "BUG-MEM-03",
+    "file": "src/engine/ramManager.ts",
+    "line": 425,
+    "before": "        // Also prune turn code registry if needed",
+    "after": "        while (this.usedBytes > maxBytes && this.symbolIndex.length > 0) {\n            this.usedBytes -= this.symbolBytes(this.symbolIndex.pop()!);\n        }\n\n        // Also prune turn code registry if needed"
+  },
+  {
+    "id": "BUG-MEM-03",
+    "file": "src/engine/ramManager.ts",
+    "line": 426,
+    "before": "this.usedBytes > maxBytes && this.turnCodeRegistry.size > 50",
+    "after": "this.usedBytes > maxBytes && this.turnCodeRegistry.size > 0"
+  },
+  {
+    "id": "BUG-COMP-01",
+    "file": "src/engine/agenticCompactor.ts",
+    "line": 105,
+    "before": "public static maskHeadTail(content: string, headLines: number = 6, tailLines: number = 6): string {\n        const lines = content.split('\\n');\n        if (lines.length <= headLines + tailLines + 2) {\n            return content;\n        }\n\n        const head = lines.slice(0, headLines).join('\\n');\n        const tail = lines.slice(lines.length - tailLines).join('\\n');\n        const omittedCount = lines.length - (headLines + tailLines);\n\n        return `${head}\\n... [${omittedCount} lines of intermediate execution output masked] ...\\n${tail}`;\n    }",
+    "after": "public static maskHeadTail(content: string, _headLines: number = 6, _tailLines: number = 6): string {\n        // Unknown middle lines can be the only causal evidence; retain until provenance marks\n        // individual observations optional and a final evidence audit verifies the replacement.\n        return content;\n    }"
+  },
+  {
+    "id": "BUG-COMP-01",
+    "file": "src/engine/agenticCompactor.ts",
+    "line": 118,
+    "before": "private static condenseToolMessageContent(content: string): string {\n        if (!content || content.length < 180) return content;\n\n        const lines = content.split('\\n');\n\n        // 1. Detect file read line blocks (e.g. <1>: line1, <2>: line2)\n        const lineNumCount = lines.filter(l => /^<\\d+>:\\s*/.test(l.trim())).length;\n        if (lineNumCount > 15) {\n            const header = lines.slice(0, 3).join('\\n');\n            return `${header}\\n... [${lines.length - 3} lines of file content pruned from historical turn] ...\\n`;\n        }\n\n        // 2. Detect test runner outputs (e.g. Jest / Mocha / Pytest / Cargo test)\n        if (content.includes('PASS') || content.includes('FAIL') || content.includes('Tests:') || content.includes('pytest') || content.includes('running ') && content.includes('test')) {\n            return this.maskHeadTail(content, 4, 4);\n        }\n\n        // 3. Detect grep search JSON result array\n        if (content.includes('\"LineNumber\"') && content.includes('\"LineContent\"') && lines.length > 12) {\n            return `[Grep search returned ${lines.length} matches across files (intermediate matches pruned)]`;\n        }\n\n        // 4. Detect verbose npm / yarn / esbuild / compiler logs\n        if (lines.length > 20 && (content.includes('npm') || content.includes('yarn') || content.includes('audited') || content.includes('webpack') || content.includes('esbuild'))) {\n            return `[Build/Package Command Output: ${lines.length} log lines condensed]`;\n        }\n\n        // 5. General large output head/tail truncation\n        if (lines.length > 30) {\n            return this.maskHeadTail(content, 5, 5);\n        }\n\n        return content;\n    }",
+    "after": "private static condenseToolMessageContent(content: string): string { return content; }"
+  },
+  {
+    "id": "BUG-COMP-02",
+    "file": "src/compression/observationMasking.ts",
+    "line": 95,
+    "before": "export function maskObservations<T extends MaskableMessage>(\r\n    messages: readonly T[],\r\n    options: ObservationMaskingOptions = DEFAULT_OBSERVATION_MASKING\r\n): ObservationMaskingResult<T> {\r\n    const unchanged = (reason?: ObservationMaskingResult<T>['skippedReason']): ObservationMaskingResult<T> => ({\r\n        messages: [...messages], maskedCount: 0, charsRemoved: 0,\r\n        totalObservationChars: 0, applied: false, skippedReason: reason\r\n    });\r\n\r\n    try {\r\n        // Index every tool result in order, with its text size and the tool that produced it.\r\n        const observations: { messageIndex: number; partIndex: number; chars: number; tool?: string }[] = [];\r\n        const toolByCallId = new Map<string, string>();\r\n        for (let m = 0; m < messages.length; m++) {\r\n            for (const part of messages[m].parts) {\r\n                if (part.kind === 'tool_call' && typeof part.callId === 'string' && typeof part.name === 'string') {\r\n                    toolByCallId.set(part.callId, part.name as string);\r\n                }\r\n            }\r\n        }\r\n        let totalChars = 0;\r\n        for (let m = 0; m < messages.length; m++) {\r\n            const parts = messages[m].parts;\r\n            for (let p = 0; p < parts.length; p++) {\r\n                const part = parts[p];\r\n                if (part.kind !== 'tool_result' || !Array.isArray(part.content)) continue;\r\n                const chars = part.content.reduce(\r\n                    (sum, child) => sum + (child.kind === 'text' && typeof child.text === 'string' ? child.text.length : 0), 0);\r\n                totalChars += chars;\r\n                observations.push({\r\n                    messageIndex: m, partIndex: p, chars,\r\n                    tool: part.callId ? toolByCallId.get(part.callId) : undefined\r\n                });\r\n            }\r\n        }\r\n\r\n        if (observations.length === 0) return { ...unchanged('nothing_maskable'), totalObservationChars: 0 };\r\n        if (totalChars <= options.triggerChars) {\r\n            return { ...unchanged('below_trigger'), totalObservationChars: totalChars };\r\n        }\r\n\r\n        // Everything before the boundary is masked. Quantising the boundary keeps the emitted prefix\r\n        // byte-identical between strides instead of shifting it on every new tool call.\r\n        const rawBoundary = Math.max(0, observations.length - Math.max(0, options.keepRecent));\r\n        const boundary = Math.max(0, Math.floor(rawBoundary / Math.max(1, options.boundaryStride))\r\n            * Math.max(1, options.boundaryStride));\r\n        if (boundary === 0) return { ...unchanged('nothing_maskable'), totalObservationChars: totalChars };\r\n\r\n        const targets = new Map<string, { chars: number; tool?: string }>();\r\n        for (let i = 0; i < boundary; i++) {\r\n            const observation = observations[i];\r\n            if (observation.chars < options.minResultChars) continue;\r\n            targets.set(`${observation.messageIndex}:${observation.partIndex}`,\r\n                { chars: observation.chars, tool: observation.tool });\r\n        }\r\n        if (targets.size === 0) return { ...unchanged('nothing_maskable'), totalObservationChars: totalChars };\r\n\r\n        let maskedCount = 0;\r\n        let charsRemoved = 0;\r\n        const rewritten = messages.map((message, m) => {\r\n            let touched = false;\r\n            const parts = message.parts.map((part, p) => {\r\n                const target = targets.get(`${m}:${p}`);\r\n                if (!target) return part;\r\n                touched = true;\r\n                maskedCount++;\r\n                const placeholder = maskPlaceholder(target.chars, target.tool);\r\n                charsRemoved += Math.max(0, target.chars - placeholder.length);\r\n                // Text children collapse to one placeholder; non-text children are preserved as-is.\r\n                const preserved = (part.content || []).filter(child => child.kind !== 'text');\r\n                return { ...part, content: [{ kind: 'text' as const, text: placeholder }, ...preserved] };\r\n            });\r\n            return touched ? ({ ...message, parts } as T) : message;\r\n        });\r\n\r\n        return {\r\n            messages: rewritten, maskedCount, charsRemoved,\r\n            totalObservationChars: totalChars, applied: maskedCount > 0\r\n        };\r\n    } catch {\r\n        return unchanged('failed');\r\n    }\r\n}",
+    "after": "export function maskObservations<T extends MaskableMessage>(messages: readonly T[],\n    _options: ObservationMaskingOptions = DEFAULT_OBSERVATION_MASKING): ObservationMaskingResult<T> {\n    // No per-observation evidence obligations or persisted epoch are available at this boundary.\n    // Retaining observations preserves both required evidence and append-only prefix bytes.\n    return { messages: [...messages], maskedCount: 0, charsRemoved: 0,\n        totalObservationChars: 0, applied: false, skippedReason: 'disabled' };\n}"
+  },
+  {
+    "id": "BUG-LIMIT-01",
+    "file": "src/metrics/circuitBreaker.ts",
+    "line": 45,
+    "before": "        const now = Date.now();",
+    "after": "        if (!Number.isFinite(tokensConsumed) || tokensConsumed < 0) {\n            return { tripped: true, reason: 'velocity_exceeded', message: 'Invalid token accounting; request paused.',\n                tokensPerMinute: 0, consecutiveDuplicateCount: 0, recommendedAction: 'pause_agent' };\n        }\n        const now = Date.now();"
+  },
+  {
+    "id": "BUG-LIMIT-01",
+    "file": "src/proxy/chatParticipant.ts",
+    "line": 894,
+    "before": "            if (cbStatus.tripped) {\n                response.markdown(`> ${cbStatus.message}\\n\\n`);\n            }",
+    "after": "            if (cbStatus.tripped) {\n                response.markdown(`> ${cbStatus.message}\\n\\n`);\n                compiler.fail(compiled, 'CIRCUIT_BREAKER_TRIPPED');\n                activeCompilation = undefined;\n                return;\n            }"
+  },
+  {
+    "id": "BUG-SEC-01",
+    "file": "src/security/sanitizer.ts",
+    "line": 88,
+    "before": "public static isMockOrDummy(variableName: string, value: string): boolean {\n        if (!value) return false;\n        const cleanVal = value.replace(/^[\"']|[\"']$/g, '').trim();\n        if (cleanVal.length === 0) return true;\n\n        // Tier 3 Fast Guard: Value itself MUST match dummy placeholder semantics\n        if (!this.DUMMY_VALUE_REGEX.test(cleanVal)) {\n            // Variable name alone does not exempt arbitrary unverified values\n            return false;\n        }\n\n        // Tier 1 Guard: If the value matches ANY structural vendor pattern, it is NEVER exempted!\n        for (const pattern of this.SECRET_PATTERNS) {\n            if (pattern.name === 'credential-assignment') continue;\n            pattern.regex.lastIndex = 0;\n            if (pattern.regex.test(cleanVal)) {\n                return false;\n            }\n        }\n\n        // Tier 2 Guard on dummy values: Even if it contains a dummy substring,\n        // if the string has extreme cryptographic entropy (H >= 4.5 and len >= 24),\n        // reject exemption to prevent masking real secrets with embedded \"test\" tokens.\n        if (cleanVal.length >= 24 && this.calculateShannonEntropy(cleanVal) >= 4.5) {\n            return false;\n        }\n\n        return true;\n    }",
+    "after": "public static isMockOrDummy(_variableName: string, value: string): boolean {\n        return /^(?:mock|test|fake|dummy|sample|example|placeholder|changeme|your_api_key|none|null|undefined|xxx)$/i.test(value);\n    }"
+  },
+  {
+    "id": "BUG-SEC-01",
+    "file": "src/security/sanitizer.ts",
+    "line": 118,
+    "before": "public static sanitizeSecrets(text: string): SanitizationResult {\n        if (!text) return { sanitized: text, redactedCount: 0, categories: [], residualSecret: false };\n        let sanitized = text;\n        let redactedCount = 0;\n        const categories = new Set<string>();\n\n        for (const pattern of this.SECRET_PATTERNS) {\n            pattern.regex.lastIndex = 0;\n            if (pattern.name === 'credential-assignment') {\n                sanitized = sanitized.replace(pattern.regex, (fullMatch, varName, _sep, _quote, rawVal) => {\n                    if (this.isMockOrDummy(varName, rawVal)) {\n                        return fullMatch; // exempt benign test mocks / dummy variables\n                    }\n                    redactedCount++;\n                    categories.add(pattern.name);\n                    return pattern.replacement;\n                });\n            } else {\n                sanitized = sanitized.replace(pattern.regex, () => {\n                    redactedCount++;\n                    categories.add(pattern.name);\n                    return pattern.replacement;\n                });\n            }\n        }\n        return { sanitized, redactedCount, categories: [...categories].sort(), residualSecret: this.containsSecret(sanitized) };\n    }",
+    "after": "public static sanitizeSecrets(text: string): SanitizationResult {\n        if (!text) return { sanitized: text, redactedCount: 0, categories: [], residualSecret: false };\n        let count = 0;\n        const categories = new Set<string>();\n        const marker = (category: string) => { count++; categories.add(category); return '[REDACTED_SECRET]'; };\n        let sanitized = text;\n        // Consume complete PEM regions, or the rest of an unterminated key, in one forward scan.\n        const begin = /-----BEGIN (?:[A-Z ]{0,32})PRIVATE KEY-----/g;\n        let match: RegExpExecArray | null;\n        const pieces: string[] = [];\n        let consumed = 0;\n        while ((match = begin.exec(sanitized)) !== null) {\n            pieces.push(sanitized.slice(consumed, match.index), marker('private-key'));\n            const endMarker = match[0].replace('BEGIN', 'END');\n            const end = sanitized.indexOf(endMarker, begin.lastIndex);\n            consumed = end < 0 ? sanitized.length : end + endMarker.length;\n            begin.lastIndex = consumed;\n        }\n        pieces.push(sanitized.slice(consumed));\n        sanitized = pieces.join('');\n        // Structural credentials do not receive a dummy-value exemption.\n        for (const pattern of this.SECRET_PATTERNS) {\n            if (pattern.name === 'credential-assignment' || pattern.name === 'private-key') continue;\n            pattern.regex.lastIndex = 0;\n            sanitized = sanitized.replace(pattern.regex, () => marker(pattern.name));\n        }\n        // Decode only bounded, contiguous transport encodings; never rewrite ordinary encoded data.\n        sanitized = sanitized.replace(/[A-Za-z0-9_%+\\/=-]{16,}/g, token => {\n            if (token.length > 8192) return marker('oversized-encoded-value');\n            const decoded: string[] = [];\n            if (token.includes('%')) { try { decoded.push(decodeURIComponent(token)); } catch {} }\n            if (/^[A-Za-z0-9+\\/_-]+={0,2}$/.test(token)) {\n                try { decoded.push(Buffer.from(token, 'base64').toString('utf8')); } catch {}\n            }\n            const secret = decoded.some(value => this.SECRET_PATTERNS.some(pattern => {\n                if (pattern.name === 'credential-assignment') return false;\n                pattern.regex.lastIndex = 0;\n                return pattern.regex.test(value);\n            }));\n            return secret ? marker('encoded-credential') : token;\n        });\n        // Recognize key=value and quoted JSON keys, then consume the entire value including spaces.\n        const names = /[A-Za-z_][A-Za-z0-9_-]*/g;\n        const output: string[] = [];\n        let offset = 0;\n        while ((match = names.exec(sanitized)) !== null) {\n            if (!/(?:api[_-]?key|access[_-]?token|auth[_-]?token|client[_-]?secret|password|passwd|secret)/i.test(match[0])) continue;\n            let cursor = names.lastIndex;\n            if (sanitized[cursor] === '\"' || sanitized[cursor] === \"'\") cursor++;\n            while (cursor < sanitized.length && /\\s/.test(sanitized[cursor])) cursor++;\n            if (sanitized[cursor] !== ':' && sanitized[cursor] !== '=') continue;\n            cursor++;\n            while (cursor < sanitized.length && /\\s/.test(sanitized[cursor])) cursor++;\n            const quote = sanitized[cursor] === '\"' || sanitized[cursor] === \"'\" ? sanitized[cursor++] : '';\n            const start = cursor;\n            while (cursor < sanitized.length) {\n                if (quote) {\n                    if (sanitized[cursor] === '\\\\') { cursor += 2; continue; }\n                    if (sanitized[cursor] === quote) break;\n                } else if (/[\\s,;}{]/.test(sanitized[cursor])) break;\n                cursor++;\n            }\n            cursor = Math.min(cursor, sanitized.length);\n            const value = sanitized.slice(start, cursor);\n            names.lastIndex = Math.max(names.lastIndex, cursor);\n            if (!value || value.includes('[REDACTED_') || this.isMockOrDummy(match[0], value)) continue;\n            output.push(sanitized.slice(offset, start), marker('credential-assignment'));\n            offset = cursor;\n        }\n        output.push(sanitized.slice(offset));\n        return { sanitized: output.join(''), redactedCount: count, categories: [...categories].sort(), residualSecret: false };\n    }"
+  },
+  {
+    "id": "BUG-SEC-01",
+    "file": "src/security/sanitizer.ts",
+    "line": 146,
+    "before": "public static containsSecret(text: string): boolean {\n        for (const pattern of this.SECRET_PATTERNS) {\n            pattern.regex.lastIndex = 0;\n            if (pattern.name === 'credential-assignment') {\n                let match: RegExpExecArray | null;\n                while ((match = pattern.regex.exec(text)) !== null) {\n                    const varName = match[1];\n                    const rawVal = match[4];\n                    if (!this.isMockOrDummy(varName, rawVal)) {\n                        return true;\n                    }\n                }\n            } else {\n                if (pattern.regex.test(text)) return true;\n            }\n        }\n        return false;\n    }",
+    "after": "public static containsSecret(text: string): boolean {\n        return this.sanitizeSecrets(text).redactedCount > 0;\n    }"
+  },
+  {
+    "id": "BUG-LOG-01",
+    "file": "src/security/anonymizedLogger.ts",
+    "line": 157,
+    "before": "        let result = text;",
+    "after": "        let result = text.slice(0, 16_384);"
+  },
+  {
+    "id": "BUG-LOG-01",
+    "file": "src/security/anonymizedLogger.ts",
+    "line": 133,
+    "before": "            component,\n            message: sanitizedMsg,",
+    "after": "            component: this.sanitize(component).slice(0, 128),\r\n            message: sanitizedMsg,"
+  },
+  {
+    "id": "BUG-LOG-01",
+    "file": "src/security/anonymizedLogger.ts",
+    "line": 185,
+    "before": "        return result;\n    }",
+    "after": "        // Retain line/column diagnostics without exporting private POSIX roots or UNC paths.\n        result = result.replace(/(?:\\\\\\\\[^\\s:]+|\\/[^\\s:()]*)/g, '<path>');\n        return result;\n    }"
+  },
+  {
+    "id": "BUG-SCRATCH-01",
+    "file": "src/engine/scratchpadManager.ts",
+    "line": 47,
+    "before": "public readState(): ScratchpadState {\n        if (!this.scratchpadPath || !fs.existsSync(this.scratchpadPath)) {\n            return {\n                activeGoal: 'General assistance',\n                completedSteps: [],\n                pendingSteps: [],\n                keyDecisions: [],\n                knownBlockers: [],\n                lastUpdated: Date.now()\n            };\n        }\n\n        try {\n            const raw = fs.readFileSync(this.scratchpadPath, 'utf8');\n            return JSON.parse(raw);\n        } catch {\n            return {\n                activeGoal: 'General assistance',\n                completedSteps: [],\n                pendingSteps: [],\n                keyDecisions: [],\n                knownBlockers: [],\n                lastUpdated: Date.now()\n            };\n        }\n    }",
+    "after": "public readState(): ScratchpadState {\n        const empty = (): ScratchpadState => ({ activeGoal: 'General assistance', completedSteps: [],\n            pendingSteps: [], keyDecisions: [], knownBlockers: [], lastUpdated: 0 });\n        if (!this.scratchpadPath) return empty();\n        try {\n            const stat = fs.lstatSync(this.scratchpadPath);\n            if (!stat.isFile() || stat.isSymbolicLink() || stat.size > 64 * 1024) return empty();\n            const value: unknown = JSON.parse(fs.readFileSync(this.scratchpadPath, 'utf8'));\n            if (!value || typeof value !== 'object') return empty();\n            const state = value as Record<string, unknown>;\n            if (typeof state.activeGoal !== 'string' || state.activeGoal.length > 4096) return empty();\n            for (const key of ['completedSteps', 'pendingSteps', 'keyDecisions', 'knownBlockers']) {\n                const items = state[key];\n                if (!Array.isArray(items) || items.length > 64 || items.some(item => typeof item !== 'string' || item.length > 4096)) return empty();\n            }\n            if (typeof state.lastUpdated !== 'number' || !Number.isFinite(state.lastUpdated)) return empty();\n            return state as unknown as ScratchpadState;\n        } catch { return empty(); }\n    }"
+  },
+  {
+    "id": "BUG-IDX-01",
+    "file": "src/extension.ts",
+    "line": 228,
+    "before": "    // Dynamic configuration listener",
+    "after": "    const fileWatcher = vscode.workspace.createFileSystemWatcher('**/*');\n    const reconcileDisk = (uri: vscode.Uri, deleted = false) => {\n        if (!workspaceIsTrusted() || !automaticWorkspaceIndexing()) return;\n        responseCache.invalidateForFile(uri.fsPath);\n        if (/[/\\\\](?:\\.gitignore|\\.tokenignore)$/.test(uri.fsPath)) {\n            void workspaceIndex.rebuild().catch(error => logger.error('WorkspaceIndex', 'Rebuild failed.', error));\n        } else if (deleted) workspaceIndex.delete(uri.fsPath);\n        else workspaceIndex.scheduleUpsert(uri.fsPath);\n    };\n    context.subscriptions.push(fileWatcher,\n        fileWatcher.onDidCreate(uri => reconcileDisk(uri)),\n        fileWatcher.onDidChange(uri => reconcileDisk(uri)),\n        fileWatcher.onDidDelete(uri => reconcileDisk(uri, true)),\n        vscode.workspace.onDidCloseTextDocument(document => {\n            if (workspaceIsTrusted() && automaticWorkspaceIndexing()) workspaceIndex.scheduleUpsert(document.fileName);\n        }));\n\n    // Dynamic configuration listener"
+  },
+  {
+    "id": "BUG-IDX-02",
+    "file": "src/workspace/workspaceIndex.ts",
+    "line": 533,
+    "before": "        const validBuffer = buffer &&",
+    "after": "        const operationEpoch = this.epoch;\n        const validBuffer = buffer &&"
+  },
+  {
+    "id": "BUG-IDX-02",
+    "file": "src/workspace/workspaceIndex.ts",
+    "line": 537,
+    "before": "        if (this.sequences.get(identified.key) !== sequence) return false;",
+    "after": "        if (operationEpoch !== this.epoch || !this.trusted || this.sequences.get(identified.key) !== sequence) return false;"
+  },
+  {
+    "id": "BUG-AST-05",
+    "file": "src/workspace/semanticChunk.ts",
+    "line": 185,
+    "before": "export function extractChunkRanges(\n    content: string,\n    symbols: readonly ChunkSourceSymbol[],\n    context: ChunkExtractionContext\n): SemanticChunkRange[] {\n    if (typeof content !== 'string' || content.length === 0 || symbols.length === 0) return [];\n\n    const lines = content.split(String.fromCharCode(10));\n    // Offset of the first character of each line, so a line range converts to exact character offsets.\n    const lineOffsets: number[] = new Array(lines.length);\n    let running = 0;\n    for (let index = 0; index < lines.length; index++) {\n        lineOffsets[index] = running;\n        running += lines[index].length + 1;\n    }\n\n    const fileContentHash = sha256(content);\n    const ranges: SemanticChunkRange[] = [];\n\n    for (const symbol of symbols) {\n        const declarationIndex = symbol.line - 1;\n        if (declarationIndex < 0 || declarationIndex >= lines.length) continue;\n\n        let endIndex: number | undefined;\n        let boundary: ChunkBoundaryKind = 'exact_symbol';\n        if (BRACE_LANGUAGES.has(context.language)) {\n            endIndex = findBraceEnd(lines, declarationIndex, MAX_BODY_SCAN_LINES);\n        } else if (INDENT_LANGUAGES.has(context.language)) {\n            endIndex = findIndentEnd(lines, declarationIndex, MAX_BODY_SCAN_LINES);\n        }\n        if (endIndex === undefined) {\n            endIndex = Math.min(lines.length - 1, declarationIndex + FALLBACK_WINDOW_LINES);\n            boundary = 'line_window';\n        }\n\n        const startOffset = lineOffsets[declarationIndex];\n        const endOffset = lineOffsets[endIndex] + lines[endIndex].length;\n        if (endOffset <= startOffset) continue;\n        const text = content.slice(startOffset, endOffset);\n        if (Buffer.byteLength(text) > MAX_CHUNK_BYTES) continue;\n\n        ranges.push(Object.freeze({\n            chunkId: `${context.fileKey}#${symbol.name}@${symbol.line}`,\n            fileKey: context.fileKey,\n            relativePath: context.relativePath,\n            language: context.language,\n            symbolName: symbol.name,\n            symbolKind: symbol.kind,\n            boundary,\n            startLine: declarationIndex + 1,\n            endLine: endIndex + 1,\n            startOffset,\n            endOffset,\n            chunkHash: sha256(text),\n            fileContentHash,\n            sourceVersion: context.sourceVersion,\n            snapshotGeneration: context.snapshotGeneration,\n            // Deliberately the same cheap heuristic the budget uses, so packing and retrieval agree.\n            estimatedTokens: Math.ceil(text.length / 4)\n        }));\n    }\n    return ranges;\n}",
+    "after": "export function extractChunkRanges(content: string, symbols: readonly ChunkSourceSymbol[],\n    context: ChunkExtractionContext): SemanticChunkRange[] {\n    if (!content || !symbols.length || Buffer.byteLength(content) > MAX_CHUNK_BYTES) return [];\n    const contentHash = sha256(content);\n    // Whole-file evidence is conservative until a grammar proves declaration boundaries.\n    return symbols.map(symbol => Object.freeze({\n        chunkId: context.fileKey + '#' + symbol.name + '@' + symbol.line,\n        fileKey: context.fileKey, relativePath: context.relativePath, language: context.language,\n        symbolName: symbol.name, symbolKind: symbol.kind, boundary: 'line_window' as const,\n        startLine: 1, endLine: content.split('\\n').length, startOffset: 0, endOffset: content.length,\n        chunkHash: contentHash, fileContentHash: contentHash, sourceVersion: context.sourceVersion,\n        snapshotGeneration: context.snapshotGeneration, estimatedTokens: Math.ceil(content.length / 4)\n    }));\n}"
+  },
+  {
+    "id": "BUG-LIFE-01",
+    "file": "src/ast/pruner.ts",
+    "line": 96,
+    "before": "    public hasTreeSitterActive(): boolean {",
+    "after": "    public dispose(): void {\n        this.parser?.delete();\n        this.parser = null;\n        this.languages.clear();\n        this.isInitialized = false;\n    }\n\n    public hasTreeSitterActive(): boolean {"
+  },
+  {
+    "id": "BUG-LIFE-01",
+    "file": "src/extension.ts",
+    "line": 120,
+    "before": "    const astEngine = new AstPrunerEngine();",
+    "after": "    const astEngine = new AstPrunerEngine();\n    context.subscriptions.push(astEngine);"
+  },
+  {
+    "id": "BUG-GOV-03",
+    "file": "src/protocol/canonicalCompiler.ts",
+    "line": 132,
+    "before": "            evidenceSignals: request.evidenceSignals,",
+    "after": "            evidenceSignals: request.evidenceSignals,\n            signalSnapshot: request.signalSnapshot,"
+  },
+  {
+    "id": "BUG-GOV-03",
+    "file": "src/engine/pipelineOrchestrator.ts",
+    "line": 256,
+    "before": "        const governorDecision = await executePipelineStage",
+    "after": "        const governorSignals = request.signalSnapshot?.snapshotGeneration === request.workspaceSnapshot?.generation\n            ? request.signalSnapshot : undefined;\n        const terminal = governorSignals?.terminalContext;\n        const governorDecision = await executePipelineStage"
+  },
+  {
+    "id": "BUG-GOV-03",
+    "file": "src/engine/pipelineOrchestrator.ts",
+    "line": 258,
+    "before": "                cursorLine: request.cursorLine, optimizationMode })",
+    "after": "                cursorLine: request.cursorLine, optimizationMode,\n                diagnosticsCount: governorSignals?.diagnostics?.filter(item => item.severity === 'error').length,\n                hasFailingTests: governorSignals?.testOutcomes?.some(item => item.isFailing),\n                terminalErrorSnippet: terminal?.userConsented && terminal.source !== 'unauthorized'\n                    && terminal.exitCode !== undefined && terminal.exitCode !== 0 ? terminal.rawText : undefined })"
+  },
+  {
+    "id": "BUG-LIFE-01",
+    "file": "src/ast/pruner.ts",
+    "line": null,
+    "before": "        this.parser?.delete();\n        this.parser = null;",
+    "after": "        void this.initPromise?.then(() => { this.parser?.delete(); this.parser = null; this.languages.clear(); this.isInitialized = false; });\n        this.parser?.delete();\n        this.parser = null;"
+  },
+  {
+    "id": "BUG-REGEX-01",
+    "file": "src/ast/systemDependenceGraph.ts",
+    "line": 59,
+    "before": "/(?:(?:const|let|var)\\s+|this\\.)?([a-zA-Z0-9_]+)$/",
+    "after": "/(?<![a-zA-Z0-9_])(?:(?:const|let|var)\\s+|this\\.)?([a-zA-Z0-9_]+)$/"
+  },
+  {
+    "id": "BUG-REGEX-01",
+    "file": "src/ast/systemDependenceGraph.ts",
+    "line": 65,
+    "before": "/(?:this\\.)?([a-zA-Z0-9_]+)\\s*(?:\\+\\+|--|\\+=|-=)/",
+    "after": "/(?<![a-zA-Z0-9_])(?:this\\.)?([a-zA-Z0-9_]+)\\s*(?:\\+\\+|--|\\+=|-=)/"
+  },
+  {
+    "id": "BUG-REGEX-01",
+    "file": "src/compression/conservativePathCompressor.ts",
+    "line": 67,
+    "before": "/[ \\t]+$/gm",
+    "after": "/(?<![ \\t])[ \\t]+$/gm"
+  },
+  {
+    "id": "BUG-REGEX-01",
+    "file": "src/engine/imageRightsizer.ts",
+    "line": 46,
+    "before": "/\\b([\\w\\-./\\\\]+\\.(png|jpg|jpeg|gif|webp|bmp|tiff))\\b/gi",
+    "after": "/(?<![\\w\\-./\\\\])\\b([\\w\\-./\\\\]+\\.(png|jpg|jpeg|gif|webp|bmp|tiff))\\b/gi"
+  },
+  {
+    "id": "BUG-REGEX-01",
+    "file": "src/engine/localSlmBrain.ts",
+    "line": 242,
+    "before": "/^\\s*\\/\\/.*$/gm",
+    "after": "/^[ \\t]*\\/\\/.*$/gm"
+  },
+  {
+    "id": "BUG-REGEX-01",
+    "file": "src/engine/localSlmBrain.ts",
+    "line": 242,
+    "before": "/^\\s*\\/\\/.*$/gm",
+    "after": "/^[ \\t]*\\/\\/.*$/gm"
+  },
+  {
+    "id": "BUG-REGEX-01",
+    "file": "src/governor/inlineEvidenceClassifier.ts",
+    "line": 54,
+    "before": "/^\\s*at\\s+[\\w$.<>\\s]+\\(?[^\\s)]+:\\d+(?::\\d+)?\\)?\\s*$/m",
+    "after": "/^[ \\t]*at[ \\t]+[^\\r\\n]{1,1024}:\\d{1,10}(?::\\d{1,10})?\\)?[ \\t]*$/m"
+  },
+  {
+    "id": "BUG-REGEX-01",
+    "file": "src/governor/inlineEvidenceClassifier.ts",
+    "line": 57,
+    "before": "/^\\s*at\\s+[\\w.$]+\\([\\w.]+\\.java:\\d+\\)\\s*$/m",
+    "after": "/^[ \\t]*at[ \\t]+[\\w.$]+\\([\\w.]+\\.java:\\d+\\)[ \\t]*$/m"
+  },
+  {
+    "id": "BUG-REGEX-01",
+    "file": "src/governor/inlineEvidenceClassifier.ts",
+    "line": 67,
+    "before": "/^\\s*def\\s+test_\\w+\\s*\\(/m",
+    "after": "/^[ \\t]*def[ \\t]+test_\\w+[ \\t]*\\(/m"
+  },
+  {
+    "id": "BUG-REGEX-01",
+    "file": "src/governor/inlineEvidenceClassifier.ts",
+    "line": 69,
+    "before": "/(?:^|\\n)\\s*(?:export\\s+)?(?:async\\s+)?(?:function\\s+\\w+\\s*\\(|(?:public|private|protected)\\s+\\w+\\s*\\(|def\\s+\\w+\\s*\\(|func\\s+\\w+\\s*\\(|fn\\s+\\w+\\s*[(<])/",
+    "after": "/(?:^|\\n)[ \\t]*(?:export[ \\t]+)?(?:async[ \\t]+)?(?:function[ \\t]+\\w+[ \\t]*\\(|(?:public|private|protected)[ \\t]+\\w+[ \\t]*\\(|def[ \\t]+\\w+[ \\t]*\\(|func[ \\t]+\\w+[ \\t]*\\(|fn[ \\t]+\\w+[ \\t]*[(<])/"
+  },
+  {
+    "id": "BUG-REGEX-01",
+    "file": "src/governor/inlineEvidenceClassifier.ts",
+    "line": 70,
+    "before": "/(?:^|\\n)\\s*(?:export\\s+)?(?:abstract\\s+)?(?:class|struct|impl|enum)\\s+\\w+/",
+    "after": "/(?:^|\\n)[ \\t]*(?:export[ \\t]+)?(?:abstract[ \\t]+)?(?:class|struct|impl|enum)[ \\t]+\\w+/"
+  },
+  {
+    "id": "BUG-REGEX-01",
+    "file": "src/governor/inlineEvidenceClassifier.ts",
+    "line": 72,
+    "before": "/(?:^|\\n)\\s*(?:export\\s+)?(?:interface\\s+\\w+|type\\s+\\w+\\s*=|declare\\s+(?:module|namespace|function)|trait\\s+\\w+|protocol\\s+\\w+)/",
+    "after": "/(?:^|\\n)[ \\t]*(?:export[ \\t]+)?(?:interface[ \\t]+\\w+|type[ \\t]+\\w+[ \\t]*=|declare[ \\t]+(?:module|namespace|function)|trait[ \\t]+\\w+|protocol[ \\t]+\\w+)/"
+  },
+  {
+    "id": "BUG-REGEX-01",
+    "file": "src/history/contextEpoch.ts",
+    "line": 224,
+    "before": "/\\b[\\w.-]+\\/[\\w.\\/-]*\\.[a-z]{1,4}\\b|\\b[\\w-]+\\.(?:ts|tsx|js|jsx|py|go|rs|java|cs|cpp|h|json|md)\\b/gi",
+    "after": "/(?<![\\w./-])[\\w.-]+\\/[\\w./-]{0,4096}\\.[a-z]{1,4}\\b|(?<![\\w-])[\\w-]+\\.(?:ts|tsx|js|jsx|py|go|rs|java|cs|cpp|h|json|md)\\b/gi"
+  },
+  {
+    "id": "BUG-REGEX-01",
+    "file": "src/memory/projectMemory.ts",
+    "line": 188,
+    "before": "/(?:ignore\\s+previous\\s+instructions|system\\s*:\\s*you\\s+are|you\\s+are\\s+an?\\s+ai\\s+assistant|(?:^|\\n)\\s*(?:human|assistant|system)\\s*:)/i",
+    "after": "/(?:ignore[ \\t]+previous[ \\t]+instructions|system[ \\t]*:[ \\t]*you[ \\t]+are|you[ \\t]+are[ \\t]+an?[ \\t]+ai[ \\t]+assistant|(?:^|\\n)[ \\t]*(?:human|assistant|system)[ \\t]*:)/i"
+  },
+  {
+    "id": "BUG-REGEX-01",
+    "file": "src/memory/projectMemory.ts",
+    "line": 206,
+    "before": "/(?:\\x1b\\[[0-9;]*[a-zA-Z]|(?:^|\\n)\\s*(?:PS\\s+[A-Za-z]:\\\\|\\$\\s+|>\\s*npm\\s+(?:run|test|build)|Traceback\\s+\\(most\\s+recent\\s+call\\s+last\\):))/m",
+    "after": "/(?:\\x1b\\[[0-9;]*[a-zA-Z]|(?:^|\\n)[ \\t]*(?:PS[ \\t]+[A-Za-z]:\\\\|\\$[ \\t]+|>[ \\t]*npm[ \\t]+(?:run|test|build)|Traceback[ \\t]+\\(most[ \\t]+recent[ \\t]+call[ \\t]+last\\):))/m"
+  },
+  {
+    "id": "BUG-REGEX-01",
+    "file": "src/retrieval/structuredPreservation.ts",
+    "line": 26,
+    "before": "/(?:[^\\s:]+):L?\\d+(?:-L?\\d+)?/g",
+    "after": "/(?<![^\\s:])(?:[^\\s:]+):L?\\d+(?:-L?\\d+)?/g"
+  },
+  {
+    "id": "BUG-CACHE-03",
+    "file": "src/cache/providerCapabilities.ts",
+    "line": 29,
+    "before": "modelId: 'claude-3-5-haiku',\n            minCacheableTokens: 512,",
+    "after": "modelId: 'claude-3-5-haiku',\n            minCacheableTokens: 2048,"
+  },
+  {
+    "id": "BUG-CACHE-03",
+    "file": "src/cache/providerCapabilities.ts",
+    "line": 17,
+    "before": "modelId: 'claude-3-7-sonnet',\n            minCacheableTokens: 512,",
+    "after": "modelId: 'claude-3-7-sonnet',\n            minCacheableTokens: 1024,"
+  },
+  {
+    "id": "BUG-CACHE-03",
+    "file": "src/cache/providerCapabilities.ts",
+    "line": 102,
+    "before": "public static resolve(modelIdOrAlias?: string, provider?: string): ProviderCacheCapability {\n        const needle = (modelIdOrAlias || 'generic-llm').toLowerCase().trim();\n        const providerNeedle = (provider || '').toLowerCase().trim();\n\n        const matched = this.CAPABILITIES.find(cap => {\n            const providerMatches = !providerNeedle || cap.provider === providerNeedle;\n            const modelMatches = needle === cap.modelId || needle.startsWith(`${cap.modelId}-`);\n            return providerMatches && modelMatches;\n        }) || this.CAPABILITIES.find(cap => {\n            return (!providerNeedle || cap.provider === providerNeedle) && cap.modelId.includes('sonnet');\n        }) || this.CAPABILITIES.find(cap => cap.modelId === 'generic-llm')!;\n\n        return matched;\n    }",
+    "after": "public static resolve(modelIdOrAlias?: string, provider?: string): ProviderCacheCapability {\n        const needle = (modelIdOrAlias || '').toLowerCase().trim();\n        const providerNeedle = (provider || '').toLowerCase().trim();\n        const matched = this.CAPABILITIES.find(capability => (!providerNeedle || capability.provider === providerNeedle)\n            && (needle === capability.modelId || needle.startsWith(capability.modelId + '-')));\n        if (matched) return { ...matched };\n        // Unknown model thresholds are unavailable, not inherited from an unrelated model.\n        return { ...this.CAPABILITIES.find(capability => capability.provider === 'generic')!,\n            provider: providerNeedle || 'generic', modelId: needle || 'unknown',\n            minCacheableTokens: Number.MAX_SAFE_INTEGER, supportsExplicitBreakpoint: false };\n    }"
+  },
+  {
+    "id": "BUG-CACHE-03",
+    "file": "src/engine/pipelineOrchestrator.ts",
+    "line": 1436,
+    "before": "                    hasNativeTools: Boolean(profile.capabilities.toolCalling),",
+    "after": "                    modelId: request.targetModel,\n                    hasNativeTools: Boolean(profile.capabilities.toolCalling),"
+  },
+  {
+    "id": "BUG-EMBED-01",
+    "file": "src/search/embeddingProvider.ts",
+    "line": 246,
+    "before": "        const branching = count(/\b(?:if|else|switch|case|for|while|catch|match)\b/g);\r",
+    "after": "        const branching = count(/\\b(?:if|else|switch|case|for|while|catch|match)\\b/g);\r"
+  },
+  {
+    "id": "BUG-EMBED-01",
+    "file": "src/search/embeddingProvider.ts",
+    "line": 247,
+    "before": "        const declarations = count(/\b(?:function|class|interface|struct|enum|def|func|fn|impl|type)\b/g);\r",
+    "after": "        const declarations = count(/\\b(?:function|class|interface|struct|enum|def|func|fn|impl|type)\\b/g);\r"
+  },
+  {
+    "id": "BUG-EMBED-01",
+    "file": "src/search/embeddingProvider.ts",
+    "line": 248,
+    "before": "        const asyncness = count(/\b(?:async|await|Promise|Future|go\\s|spawn|thread)\b/g);\r",
+    "after": "        const asyncness = count(/\\b(?:async|await|Promise|Future|go\\s|spawn|thread)\\b/g);\r"
+  },
+  {
+    "id": "BUG-BUILD-01",
+    "file": "tsconfig.json",
+    "line": 1,
+    "before": "{\n  \"compilerOptions\": {\n    \"module\": \"NodeNext\",\n    \"moduleResolution\": \"NodeNext\",\n    \"target\": \"ES2022\",\n    \"lib\": [\"ES2022\"],\n    \"sourceMap\": true,\n    \"rootDir\": \"src\",\n    \"outDir\": \"out\",\n    \"strict\": true,\n    \"noImplicitReturns\": true,\n    \"noFallthroughCasesInSwitch\": true,\n    \"noUnusedLocals\": false,\n    \"noUnusedParameters\": false,\n    \"skipLibCheck\": true,\n    \"esModuleInterop\": true,\n    \"forceConsistentCasingInFileNames\": true,\n    \"resolveJsonModule\": true\n  },\n  \"include\": [\"src/**/*\"],\n  \"exclude\": [\"node_modules\", \".vscode-test\", \"dist\", \"out\"]\n}\n",
+    "after": "{\n  \"compilerOptions\": {\n    \"module\": \"NodeNext\",\n    \"moduleResolution\": \"NodeNext\",\n    \"target\": \"ES2022\",\n    \"lib\": [\"ES2022\"],\n    \"sourceMap\": true,\n    \"rootDir\": \"src\",\n    \"outDir\": \"out\",\n    \"strict\": true,\n    \"noImplicitReturns\": true,\n    \"noFallthroughCasesInSwitch\": true,\n    \"noUnusedLocals\": false,\n    \"noUnusedParameters\": false,\n    \"skipLibCheck\": true,\n    \"esModuleInterop\": true,\n    \"forceConsistentCasingInFileNames\": true,\n    \"resolveJsonModule\": true\n  },\n  \"include\": [\"src/**/*\"],\n  \"exclude\": [\"src/evaluation/**\", \"node_modules\", \".vscode-test\", \"dist\", \"out\"]\n}\n"
+  },
+  {
+    "id": "BUG-REGEX-02",
+    "file": "src/ignore/tokenIgnore.ts",
+    "line": 4,
+    "before": "interface IgnoreRule { negative: boolean; regex: RegExp; }",
+    "after": "interface IgnoreRule { negative: boolean; regex: { test(value: string): boolean }; }"
+  },
+  {
+    "id": "BUG-REGEX-02",
+    "file": "src/ignore/tokenIgnore.ts",
+    "line": 65,
+    "before": "private globToRegex(pattern: string): RegExp {\n        const anchored = pattern.startsWith('/');\n        let source = pattern.replace(/^\\//, '').replace(/\\\\/g, '/').replace(/\\/$/, '/**');\n        source = source.replace(/[.+^${}()|[\\]\\\\]/g, '\\\\$&')\n            .replace(/\\*\\*/g, '\\u0000')\n            .replace(/\\*/g, '[^/]*')\n            .replace(/\\?/g, '[^/]')\n            .replace(/\\u0000/g, '.*');\n        return new RegExp(`${anchored ? '^' : '(^|.*/)'}${source}(?:/.*)?$`, 'i');\n    }",
+    "after": "private globToRegex(pattern: string): { test(value: string): boolean } {\n        const anchored = pattern.startsWith('/');\n        const source = pattern.replace(/^\\//, '').replace(/\\\\/g, '/').replace(/\\/$/, '/**');\n        type Token = { type: 'star' | 'deep' | 'any' | 'literal'; text?: string };\n        const tokens: Token[] = [];\n        for (let i = 0; i < source.length; i++) {\n            if (source[i] === '*') {\n                const deep = source[i + 1] === '*';\n                if (deep) i++;\n                tokens.push({ type: deep ? 'deep' : 'star' });\n            } else tokens.push(source[i] === '?' ? { type: 'any' } : { type: 'literal', text: source[i].toLowerCase() });\n        }\n        return { test(value: string): boolean {\n            // Oversized rules/paths conservatively exclude, rather than widening the source boundary.\n            if (tokens.length > 1024 || value.length > 32768) return true;\n            let states = new Set<number>([0]);\n            const closure = () => {\n                for (const position of states) {\n                    if (tokens[position]?.type === 'star' || tokens[position]?.type === 'deep') states.add(position + 1);\n                }\n            };\n            for (const character of value.toLowerCase()) {\n                closure();\n                if (states.has(tokens.length) && character === '/') return true;\n                const next = new Set<number>();\n                for (const position of states) {\n                    const token = tokens[position];\n                    if (!token) continue;\n                    if (token.type === 'deep' || token.type === 'star' && character !== '/') next.add(position);\n                    else if (token.type === 'any' && character !== '/' || token.type === 'literal' && token.text === character) next.add(position + 1);\n                }\n                if (!anchored && character === '/') next.add(0);\n                states = next;\n            }\n            closure();\n            return states.has(tokens.length);\n        } };\n    }"
+  },
+  {
+    "id": "BUG-REGEX-01",
+    "file": "src/security/sanitizer.ts",
+    "line": 183,
+    "before": "sanitized = sanitized.replace(/\\/\\*[\\s\\S]*?\\*\\//g, (block) => {",
+    "after": "sanitized = this.replaceDelimited(sanitized, '/*', '*/', (block) => {"
+  },
+  {
+    "id": "BUG-REGEX-01",
+    "file": "src/security/sanitizer.ts",
+    "line": 246,
+    "before": "    public static escapeRegExp(str: string): string {",
+    "after": "    private static replaceDelimited(text: string, open: string, close: string, rewrite: (part: string) => string): string {\n        const parts: string[] = [];\n        let cursor = 0;\n        while (cursor < text.length) {\n            const start = text.indexOf(open, cursor);\n            if (start < 0) break;\n            const end = text.indexOf(close, start + open.length);\n            if (end < 0) break;\n            parts.push(text.slice(cursor, start), rewrite(text.slice(start, end + close.length)));\n            cursor = end + close.length;\n        }\n        parts.push(text.slice(cursor));\n        return parts.join('');\n    }\n\n    public static escapeRegExp(str: string): string {"
+  },
+  {
+    "id": "BUG-IDX-02",
+    "file": "src/workspace/workspaceIndex.ts",
+    "line": 357,
+    "before": "    public async rename(oldPath: string, newPath: string): Promise<boolean> {",
+    "after": "    public async rename(oldPath: string, newPath: string): Promise<boolean> {\n        const operationEpoch = this.epoch;"
+  },
+  {
+    "id": "BUG-IDX-02",
+    "file": "src/workspace/workspaceIndex.ts",
+    "line": 400,
+    "before": "        if (this.sequences.get(oldIdentity.key) !== oldSequence || this.sequences.get(newIdentity.key) !== newSequence) return false;",
+    "after": "        if (operationEpoch !== this.epoch || !this.trusted || this.sequences.get(oldIdentity.key) !== oldSequence || this.sequences.get(newIdentity.key) !== newSequence) return false;"
+  },
+  {
+    "id": "BUG-LOG-01",
+    "file": "src/security/anonymizedLogger.ts",
+    "line": 146,
+    "before": "[${level}] [${component}] ${sanitizedMsg}",
+    "after": "[${level}] [${entry.component}] ${sanitizedMsg}"
+  },
+  {
+    "id": "BUG-LOG-01",
+    "file": "src/security/anonymizedLogger.ts",
+    "line": 218,
+    "before": "100% Sanitized (No usernames, secrets, or file paths)",
+    "after": "Sanitized locally; bounded diagnostic content"
+  },
+  {
+    "id": "BUG-LOG-01",
+    "file": "src/security/anonymizedLogger.ts",
+    "line": 248,
+    "before": "Report generated locally by Tokonomics. Contains zero user data.",
+    "after": "Report generated locally by Tokonomics."
+  }
+]

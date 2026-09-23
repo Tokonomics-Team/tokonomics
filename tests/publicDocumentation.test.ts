@@ -14,8 +14,8 @@ export function runPublicDocumentationTests(): void {
         /System Dependence Graph/i, /Reciprocal Rank/i, /T0\s*\/\s*T1\s*\/\s*T2/i
     ];
     for (const pattern of forbidden) assert.doesNotMatch(publicText, pattern, `Public documentation exposes internal detail: ${pattern}`);
-    assert.match(readme, /^# Tokonomics 6\.0/m);
-    assert.match(changelog, /^## 6\.0\.0\b/m);
+    assert.match(readme, /^# Tokonomics 8\.0\.0/m);
+    assert.match(changelog, /^## 8\.0\.0\b/m);
     assert.ok(readme.length < 8_000, 'Public README should remain concise.');
     assert.ok(changelog.length < 5_000, 'Public changelog should remain concise.');
 

@@ -1,0 +1,297 @@
+{
+  "score": 58,
+  "counts": {
+    "CRITICAL": 5,
+    "HIGH": 14,
+    "MEDIUM": 6,
+    "LOW": 1
+  },
+  "findings": [
+    {
+      "id": "BUG-GOV-02",
+      "severity": "CRITICAL",
+      "title": "Evidence safety succeeds without required evidence and permits dispatch after failure",
+      "locations": "src/governor/evidenceSafetyGate.ts:13-54; src/governor/contextGovernor.ts:80-94; src/engine/pipelineOrchestrator.ts:847-847; src/engine/pipelineOrchestrator.ts:849-849; src/engine/pipelineOrchestrator.ts:935-935",
+      "cause": "The gate only fails for critical omissions or more than one high omission. Workspace authorization can demote critical requirements. The pipeline classifies original messages and uses retrieval.covered before final packing, does not enact downgrade_to_conservative, retains retrieval-only output after critical failure, and performs more reductions afterward without another evidence audit. These are control-flow/contract defects, not an unawaited promise.",
+      "trigger": "auditEvidence([{category:\"tests\",priority:\"high\",reason:\"regression\"}],[]) returns passed:true and confidence:0. compileContext({messages:[{role:\"user\",content:\"Debug this failure\"}]}) returns a payload despite absent implementation and trace.",
+      "impact": "A request can be marked evidence-safe even when RequiredEvidence is not a subset of emitted evidence. Categories describe a candidate pool rather than the final payload.",
+      "remediation": "Make missing requirements fail the gate, preserve requirement priority, count only emitted candidates, and re-audit after all transformations. The strict proposed patch stops dispatch when requirements remain unmet. This is a deliberate behavior change and currently fails a subscription integration expectation; see compatibility notes.",
+      "validation": "Unit and pipeline reproduction; both resolved by overlay."
+    },
+    {
+      "id": "BUG-SEC-01",
+      "severity": "CRITICAL",
+      "title": "Credential exemptions and encoding gaps survive the final-hop sanitizer",
+      "locations": "src/security/sanitizer.ts:88-116; src/security/sanitizer.ts:118-144; src/security/sanitizer.ts:146-163",
+      "cause": "Dummy matching accepts substrings such as default rather than an exact placeholder. Assignment matching misses quoted JSON keys and short/space-containing values. Vendor expressions see only decoded cleartext. PEM matching omits ENCRYPTED PRIVATE KEY. The residual scan repeats the same blind spots.",
+      "trigger": "password=defaultProd2026!, {\"password\":\"short\"}, a fully percent-encoded synthetic sk-proj credential, its Base64 representation, and an encrypted PEM block all survive unchanged with residualSecret:false.",
+      "impact": "Source or prompt credentials can be sent to the selected upstream provider or appear in exported logs despite a successful sanitation result. The probes use synthetic tokens only.",
+      "remediation": "Replace assignment backtracking with a forward scanner, narrow placeholder exemptions, consume complete/unterminated PEM regions, and inspect bounded transport encodings. The patch covers the reproduced encodings, not arbitrary encryption or secret steganography.",
+      "validation": "Six representative payloads; resolved by overlay."
+    },
+    {
+      "id": "BUG-COMP-02",
+      "severity": "CRITICAL",
+      "title": "Observation masking runs after safety checks and rewrites prior prompt bytes",
+      "locations": "src/compression/observationMasking.ts:95-177",
+      "cause": "Structured tool results bypass the text evidence plane. A later protocol-layer pass masks their text based only on age/size. It has no required-evidence or risk input. Quantizing the boundary postpones prefix rewriting; it does not make the prefix append-only.",
+      "trigger": "Six tool results of about 4,950 characters are retained; append a seventh and the first four become placeholders, including a panic in result zero.",
+      "impact": "The only causal error or implementation evidence can disappear after the gates have completed. Existing cached-prefix bytes change at every stride.",
+      "remediation": "Disable this transform at its implementation boundary until per-observation evidence obligations and a persisted cache epoch exist. The patch preserves every observation; token reduction is intentionally lower.",
+      "validation": "Six-to-seven-result boundary reproduction resolved."
+    },
+    {
+      "id": "BUG-AST-05",
+      "severity": "CRITICAL",
+      "title": "Byte-exact chunk hashes certify incomplete function evidence",
+      "locations": "src/workspace/semanticChunk.ts:185-247",
+      "cause": "structuralOnly resets quote/comment state each line and does not track block comments. A closing brace in a multiline comment ends findBraceEnd early. Rehydration proves the chosen substring matches its hash, then the retriever labels it exactSource:true; that does not prove the function body is complete. Unproven line windows can also be admitted as exact source.",
+      "trigger": "export function save() {\n /* multiline comment\n }\n */\n criticalWrite();\n}\n is chunked before criticalWrite(), yet rehydrateExact returns status:\"exact\".",
+      "impact": "Required implementation evidence can omit the decisive operation while carrying valid provenance and exact-source claims.",
+      "remediation": "Use whole-file evidence within the existing 64 KiB chunk bound until language-aware boundaries are proven. Larger files return no claimed exact range and trigger a declared shortfall. This conservative patch trades retrieval granularity for completeness.",
+      "validation": "Hash-valid incomplete-function reproduction resolved; LF/CRLF offsets are separately assessed below."
+    },
+    {
+      "id": "BUG-REGEX-02",
+      "severity": "CRITICAL",
+      "title": "Repository ignore globs compile into exponential backtracking",
+      "locations": "src/ignore/tokenIgnore.ts:4-4; src/ignore/tokenIgnore.ts:65-74",
+      "cause": "Each * is translated into an independent [^/]*, allowing combinatorially many partitions of a nonmatching filename. The regex executes synchronously during workspace enumeration.",
+      "trigger": "An ignore rule a*a*a*a*a*a*a*a*a*b applied to \"a\".repeat(100)+\".ts\" exceeds a 1,500 ms isolated-process deadline.",
+      "impact": "A small checked-out ignore file can stall the extension host before indexing finishes; file-size budgets do not prevent it.",
+      "remediation": "Replace regex generation with a bounded state-machine glob matcher. Matching cost is proportional to pattern states times path length, rather than exponential partitions.",
+      "validation": "Isolated-process timeout on baseline; patched matcher returns promptly."
+    },
+    {
+      "id": "BUG-GOV-03",
+      "severity": "HIGH",
+      "title": "Captured diagnostics and failing-test signals never reach risk evaluation",
+      "locations": "src/protocol/canonicalCompiler.ts:132-132; src/engine/pipelineOrchestrator.ts:256-256; src/engine/pipelineOrchestrator.ts:258-258",
+      "cause": "CanonicalCompileRequest includes signalSnapshot but compileNow omits it when building the orchestrator request. Even direct orchestrator callers only pass prompt, file path, cursor and mode to the governor, leaving risk-engine diagnostics/tests/terminal inputs unused.",
+      "trigger": "Compile a canonical request with a versioned diagnostic snapshot; the injected orchestrator receives signalSnapshot:undefined. Explain-oriented prompts with failing tests retain a low lexical risk.",
+      "impact": "High-risk editor state cannot force the intended conservative override.",
+      "remediation": "Forward the snapshot and pass matching-generation error, test and consented nonzero-exit signals into governor evaluation. Public-API/dynamic/unresolved-symbol signals still need trusted extraction before they can be used.",
+      "validation": "Snapshot-forwarding reproduction resolved; signal projection type-checks."
+    },
+    {
+      "id": "BUG-SCHEMA-01",
+      "severity": "HIGH",
+      "title": "Schema compression changes enums, object constraints and property names",
+      "locations": "src/cache/schemaMinifier.ts:144-182; src/cache/schemaMinifier.ts:184-226; src/cache/schemaMinifier.ts:103-103; src/cache/schemaMinifier.ts:108-108; src/cache/schemaMinifier.ts:114-115",
+      "cause": "Medium/high/deferred remove additionalProperties and insert a synthetic value into truncated enums. Recursive traversal treats a properties map as a schema object, deleting legitimate properties called default or title. High/deferred advertise synthetic tools without an execution adapter. A {tools:[...]} wrapper is also discarded.",
+      "trigger": "Compress a schema whose enum is [\"a\",\"b\",\"c\",\"d\"], additionalProperties:false and required properties include default/title: d disappears, \"...(1 more)\" appears, constraints disappear, and required names no longer have definitions.",
+      "impact": "The model receives a different accepted-argument language and may call nonexistent meta-tools.",
+      "remediation": "Minify serialization only: preserve all schema values, keywords, named properties, wrappers and real tools. Defer richer compression until schema-aware transformations and a real adapter are implemented.",
+      "validation": "Schema equality probe resolved by overlay (ignoring object insertion order)."
+    },
+    {
+      "id": "BUG-CACHE-01",
+      "severity": "HIGH",
+      "title": "Equivalent schemas serialize into different static prefixes",
+      "locations": "src/cache/schemaMinifier.ts:117-117",
+      "cause": "Object.entries traversal and JSON.stringify preserve input insertion order; nested schema keys are never canonicalized.",
+      "trigger": "Swap the insertion order of name/inputSchema and type/format. minifyToolSchemas emits different bytes for equivalent objects.",
+      "impact": "An unchanged tool contract causes avoidable prefix-cache invalidation.",
+      "remediation": "Recursively sort object keys during serialization while preserving all arrays and scalar values. Actual additions or changes to schemas still require a cache epoch; sorting cannot make changed content append-only.",
+      "validation": "Nested-key order reproduction resolved."
+    },
+    {
+      "id": "BUG-CACHE-02",
+      "severity": "HIGH",
+      "title": "Cache normalization corrupts code escapes and semantic instructions",
+      "locations": "src/cache/normalizer.ts:11-29",
+      "cause": "A path regex is applied to arbitrary source and prompt text. It rewrites backslashes inside regex/string literals. A second regex removes any line beginning with a timestamp-like label regardless of its meaning.",
+      "trigger": "const pattern = /foo\\s+bar/ becomes /foo/s+bar/; \"hello\\nworld\" becomes \"hello/nworld\"; Timestamp: retain this required event is removed.",
+      "impact": "Broken syntax and changed instructions are introduced solely to improve cache stability.",
+      "remediation": "Preserve arbitrary cacheable payload bytes. Normalize actual path fields and volatile metadata before assembly, where their types are known.",
+      "validation": "Literal and instruction preservation reproduction resolved."
+    },
+    {
+      "id": "BUG-AST-01",
+      "severity": "HIGH",
+      "title": "T0 filtering and grammar fallbacks emit malformed source",
+      "locations": "src/ast/pruner.ts:173-173; src/ast/pruner.ts:180-190; src/ast/pruner.ts:263-287; src/ast/pruner.ts:237-237; src/ast/pruner.ts:196-196; src/ast/pruner.ts:118-118",
+      "cause": "T0 selects individual declaration-start lines and loses closing braces/members. Tree-sitter JavaScript class methods are replaced by bodyless semicolon declarations. The Go fallback chooses the first brace, including a generic constraint brace. No output parse check protects these paths. Empty-output fallback also reports token counts for the empty candidate, and cache keys do not distinguish initialized grammar mode.",
+      "trigger": "T0 on a multiline interface/class yields \"export interface User {\nexport class Account {\". JavaScript Account methods become constructor(); deposit(amount);. Go func foo[T interface { Name() string }](x T) string is cut at the constraint brace.",
+      "impact": "Malformed context can reach /pack, diff previews and downstream compiler consumers. Metrics can report savings for text that was actually restored.",
+      "remediation": "Use complete T1 syntax for T0, retain complete class declarations, reject erroneous grammar roots, preserve source when no validated grammar is available, recount fallback text, and separate grammar/fallback cache keys. The patch deliberately reduces pruning for unsupported grammars.",
+      "validation": "BUG-AST-01/03/04 probes: TypeScript parse diagnostics, Go truncation and vm.Script JavaScript parsing all resolved."
+    },
+    {
+      "id": "BUG-AST-02",
+      "severity": "HIGH",
+      "title": "Tree shaker removes reachable helpers, re-exports and dynamic initialization",
+      "locations": "src/ast/treeShaker.ts:129-196",
+      "cause": "The shaker splits on blank lines, extracts one declaration name per block, and tests only the caller-provided root set. There is no transitive dependency closure or side-effect analysis. Unknown non-comment blocks are dropped.",
+      "trigger": "Keep target() calling helper(); a separately declared helper(), export * from \"./contracts\", and const sideEffect=import(\"./register\") are all removed.",
+      "impact": "The retained module references absent dependencies and loses registration side effects or API exports. Multiple declarations in one blank-line block and inheritance have the same underlying problem.",
+      "remediation": "Return the complete module until an actual language-aware symbol graph establishes safe closure. This patch also ensures token counts describe the returned text.",
+      "validation": "Helper/re-export/dynamic-import reproduction resolved."
+    },
+    {
+      "id": "BUG-MEM-01",
+      "severity": "HIGH",
+      "title": "AST cache admits over-budget entries and exposes mutable retained values",
+      "locations": "src/cache/blobAstCache.ts:115-115; src/cache/blobAstCache.ts:140-141; src/cache/blobAstCache.ts:111-111",
+      "cause": "Eviction stops when the cache is empty even if the incoming entry itself exceeds the byte limit. UTF-8 payload length underestimates UTF-16 string storage; stored/returned result objects can be mutated outside the cache.",
+      "trigger": "A cache configured for 1,024 bytes accepts a 4,000-character skeleton and reports 4,256 used bytes.",
+      "impact": "The advertised cache ceiling fails for a single entry; caller mutation can make accounting and cached content diverge.",
+      "remediation": "Reject oversized entries before insertion, conservatively account strings and keys, and copy result objects on insert/read. The figure remains an estimate of retained data, not a hard V8 RSS guarantee.",
+      "validation": "Oversized-entry reproduction resolved."
+    },
+    {
+      "id": "BUG-MEM-02",
+      "severity": "HIGH",
+      "title": "Inverted index leaks document slots on replacement",
+      "locations": "src/search/invertedIndex.ts:28-28; src/search/invertedIndex.ts:89-90; src/search/invertedIndex.ts:158-158; src/search/invertedIndex.ts:316-316",
+      "cause": "removeDocument blanks a slot but addDocument always appends a new slot. Typed-array capacity grows with lifetime update count rather than active document count.",
+      "trigger": "Replace the same document 40,000 times: one live document retains 40,000 ID slots and a score buffer exceeding 512 KiB.",
+      "impact": "Long editing sessions retain ever-growing arrays despite a stable repository size.",
+      "remediation": "Maintain and reuse a free-slot list; clear old scores and reset free slots on clear().",
+      "validation": "40,000 replacements retain one slot in the overlay."
+    },
+    {
+      "id": "BUG-MEM-03",
+      "severity": "HIGH",
+      "title": "Legacy RAM warming duplicates unaccounted symbol records",
+      "locations": "src/engine/ramManager.ts:140-140; src/engine/ramManager.ts:174-174; src/engine/ramManager.ts:343-343; src/engine/ramManager.ts:427-427; src/engine/ramManager.ts:431-431; src/engine/ramManager.ts:425-425; src/engine/ramManager.ts:426-426",
+      "cause": "Warming appends symbols every time without replacing the per-file records and without charging their strings/sets to usedBytes. Eviction ignores symbols. Clearing the turn registry under pressure does not subtract its bytes.",
+      "trigger": "Warm one file twice: symbolsIndexed doubles from 2 to 4 while usedBytes stays at 390. Repeated warming can grow well beyond the stated budget.",
+      "impact": "The component violates its memory ceiling and returns duplicate search results. Production uses the newer workspace index for warming; this older component remains reachable for turn-cache functions, so the warming leak is a component-level exposure.",
+      "remediation": "Reset/re-account symbols for a warm pass, bound admissions, charge symbol strings/terms, evict symbols when necessary, and subtract turn-registry allocations when cleared.",
+      "validation": "Repeated-warm reproduction resolved."
+    },
+    {
+      "id": "BUG-COMP-01",
+      "severity": "HIGH",
+      "title": "Head/tail masking drops failures in the middle of output",
+      "locations": "src/engine/agenticCompactor.ts:105-116; src/engine/agenticCompactor.ts:118-151",
+      "cause": "maskHeadTail retains only positional windows. Test-output detection uses that function, and build-output detection replaces the entire output without extracting failures.",
+      "trigger": "Twenty ok lines, followed by panic: database corruption, an app stack frame and exit code: 1, then twenty more ok lines lose all three failure lines.",
+      "impact": "An LLM can see apparent successful output and lose the actual error needed for diagnosis.",
+      "remediation": "Preserve these observations in full until a provenance/evidence policy establishes which lines are optional. Selecting only regex-matched error lines cannot prove all causal context is kept.",
+      "validation": "Middle-of-output panic/exit reproduction resolved."
+    },
+    {
+      "id": "BUG-IDX-01",
+      "severity": "HIGH",
+      "title": "External filesystem edits and closed buffers are not reconciled",
+      "locations": "src/extension.ts:228-228",
+      "cause": "Only editor/FileOperation events are registered. There is no createFileSystemWatcher or onDidCloseTextDocument reconciliation. ensureInitialized returns any nonempty snapshot without checking disk changes.",
+      "trigger": "Index a.ts, modify it with fs.writeFileSync or git checkout, then ensureInitialized: generation stays unchanged. New files remain undiscovered; a closed discarded buffer can remain indexed.",
+      "impact": "Search/maps become stale. Exact rehydration rejects stale hashes, which prevents one form of wrong-text emission but causes persistent retrieval gaps rather than rebuilding the index.",
+      "remediation": "Register owned filesystem create/change/delete listeners and close-document reconciliation, invalidate response entries, and rebuild ignore policy when its files change.",
+      "validation": "Baseline disk-edit reproduction; overlay probe simulates the newly registered filesystem callback. Native VS Code event delivery was not exercised."
+    },
+    {
+      "id": "BUG-IDX-02",
+      "severity": "HIGH",
+      "title": "An in-flight read publishes after disposal",
+      "locations": "src/workspace/workspaceIndex.ts:533-533; src/workspace/workspaceIndex.ts:537-537; src/workspace/workspaceIndex.ts:357-357; src/workspace/workspaceIndex.ts:400-400",
+      "cause": "dispose increments the epoch, but upsertIdentified checks only the per-file sequence after awaiting disk I/O. Its publication is not guarded by the captured epoch/trust.",
+      "trigger": "Suspend fs.promises.readFile during upsert, dispose the index, then release the read: snapshot generation still advances.",
+      "impact": "Disposed/root-replaced request work can publish retained state after its owner has ended.",
+      "remediation": "Capture the operation epoch before reading and require the same epoch and current trust before publication.",
+      "validation": "Deterministically suspended I/O reproduction resolved."
+    },
+    {
+      "id": "BUG-LIFE-01",
+      "severity": "HIGH",
+      "title": "Tree-sitter parser allocation has no owner disposal",
+      "locations": "src/ast/pruner.ts:96-96; src/extension.ts:120-120",
+      "cause": "Individual syntax trees are deleted in finally, but the persistent Parser instance is never deleted and the engine is not registered as a disposable. Failed initialization can also retain a parser.",
+      "trigger": "Initialize an engine against packaged grammars and deactivate/recreate its owner: syntax-tree cleanup runs per parse, but no parser.delete exists in the original lifecycle.",
+      "impact": "WASM parser allocations remain unmanaged during repeated owner lifecycles and initialization failures.",
+      "remediation": "Add engine disposal, register it with context.subscriptions and also clean up any allocation that finishes initialization after disposal.",
+      "validation": "Source-level lifecycle finding; proposed code type-checks. Repeated real extension-host heap profiling remains outstanding."
+    },
+    {
+      "id": "BUG-REGEX-01",
+      "severity": "HIGH",
+      "title": "Multiple synchronous regex scans show quadratic retry behavior",
+      "locations": "src/ast/systemDependenceGraph.ts:59-59; src/ast/systemDependenceGraph.ts:65-65; src/compression/conservativePathCompressor.ts:67-67; src/engine/imageRightsizer.ts:46-46; src/engine/localSlmBrain.ts:242-242; src/governor/inlineEvidenceClassifier.ts:54-54; src/governor/inlineEvidenceClassifier.ts:57-57; src/governor/inlineEvidenceClassifier.ts:67-67; src/governor/inlineEvidenceClassifier.ts:69-69; src/governor/inlineEvidenceClassifier.ts:70-70; src/governor/inlineEvidenceClassifier.ts:72-72; src/history/contextEpoch.ts:224-224; src/memory/projectMemory.ts:188-188; src/memory/projectMemory.ts:206-206; src/retrieval/structuredPreservation.ts:26-26; src/security/sanitizer.ts:183-183; src/security/sanitizer.ts:246-246",
+      "cause": "Unanchored greedy path/identifier spans retry from each character; multiline ^/newline alternatives combined with \\s* repeatedly consume remaining blank lines. This is polynomial ReDoS even without a textbook nested (a+)+.",
+      "trigger": "Test each recorded pattern on the corresponding seed repeated to 4,096 and 16,384 characters plus !. The suspected sites exceed 30 ms at the larger size and grow by more than 8x for 4x input. For example the SDG suffix matcher grows from roughly 5.8 ms to 87.6 ms.",
+      "impact": "These operations run synchronously, so large prompts, path-like text and whitespace can delay the extension host. Request payload validation occurs after several scans.",
+      "remediation": "Use non-retrying token starts, horizontal whitespace for line-oriented recognizers, bounded ambiguous fields, and remove the unsafe normalizer. Exact replacement patterns are included. Time measurements are evidence for these payload families, not a formal all-regex proof.",
+      "validation": "Isolated worker sweep; all 950 regex sites inventoried, 933 literals exercised before deduplication."
+    },
+    {
+      "id": "BUG-GOV-01",
+      "severity": "MEDIUM",
+      "title": "Governor decisions depend on time and share mutable policy arrays",
+      "locations": "src/governor/contextGovernor.ts:62-62; src/governor/evidencePolicy.ts:122-124",
+      "cause": "Date.now appears in a supposedly deterministic decision. requiredEvidence is the policy singleton array, so mutations of one decision affect later calls.",
+      "trigger": "Evaluate identical input with clocks 100 and 200: decisions differ. Set first.requiredEvidence.length=0: the next decision has no requirements.",
+      "impact": "Deep equality/replay/cache keys are unstable, and callers can contaminate subsequent policy state.",
+      "remediation": "Keep telemetry time outside the decision (the compatibility field becomes constant zero) and return independently copied requirement records.",
+      "validation": "Clock and cross-call mutation probes resolved."
+    },
+    {
+      "id": "BUG-LIMIT-01",
+      "severity": "MEDIUM",
+      "title": "Circuit-breaker trip is advisory and NaN poisons velocity history",
+      "locations": "src/metrics/circuitBreaker.ts:45-45; src/proxy/chatParticipant.ts:894-896",
+      "cause": "evaluateTurn is synchronous and records before testing, so no asynchronous counter race exists in this method. The defect is lack of numeric validation and a caller that displays a trip warning but continues dispatch.",
+      "trigger": "evaluateTurn(NaN,\"a\"), then evaluateTurn(100000,\"b\") on a 50-token limiter returns tripped:false. A normal velocity trip also does not return from the chat handler.",
+      "impact": "The claimed hard pause can be bypassed or never enacted.",
+      "remediation": "Reject nonfinite/negative accounting and stop the handler with a failed compilation on any trip. This limits that chat participant; it is not a global limiter for every provider surface.",
+      "validation": "NaN reproduction resolved; caller return audited statically."
+    },
+    {
+      "id": "BUG-LOG-01",
+      "severity": "MEDIUM",
+      "title": "Diagnostic exports retain POSIX paths and unsanitized component labels",
+      "locations": "src/security/anonymizedLogger.ts:157-157; src/security/anonymizedLogger.ts:133-134; src/security/anonymizedLogger.ts:185-186; src/security/anonymizedLogger.ts:146-146; src/security/anonymizedLogger.ts:218-218; src/security/anonymizedLogger.ts:248-248",
+      "cause": "Path redaction handles home paths and selected Windows roots but misses /srv and other POSIX roots. component is stored and rendered verbatim. Entry count is bounded but message size is not.",
+      "trigger": "sanitize(\"at load (/srv/private-customer/service.ts:42:1)\") returns the private path unchanged.",
+      "impact": "Local exports can disclose project/customer identifiers despite the printed claim of no file paths; large messages also defeat the spirit of a bounded log.",
+      "remediation": "Bound strings, sanitize component labels, and scrub POSIX/UNC paths. Absolute privacy guarantees should be removed; the supplied patch covers demonstrated paths but does not prove universal PII detection.",
+      "validation": "POSIX-path reproduction resolved."
+    },
+    {
+      "id": "BUG-SCRATCH-01",
+      "severity": "MEDIUM",
+      "title": "Valid JSON with an invalid scratchpad shape crashes compaction",
+      "locations": "src/engine/scratchpadManager.ts:47-72",
+      "cause": "JSON.parse output is returned as ScratchpadState without structural validation. Consumers dereference arrays and activeGoal. There is no input-size bound.",
+      "trigger": "Write null to .tokenopt/scratchpad.json, then call generatePromptDigest(readState()). It throws a TypeError.",
+      "impact": "The component fails instead of recovering from a damaged/user-edited state file. ScratchpadManager is not an active production-bundle import in this snapshot.",
+      "remediation": "Bound the read and validate every field/list, returning a deterministic empty state on malformed data. Atomic writes, explicit durability/error reporting and parent-directory symlink policy are further hardening work, not covered by this patch.",
+      "validation": "Malformed-shape reproduction resolved."
+    },
+    {
+      "id": "BUG-CACHE-03",
+      "severity": "MEDIUM",
+      "title": "Cache eligibility uses wrong model thresholds and drops model identity",
+      "locations": "src/cache/providerCapabilities.ts:29-30; src/cache/providerCapabilities.ts:17-18; src/cache/providerCapabilities.ts:102-115; src/engine/pipelineOrchestrator.ts:1436-1436",
+      "cause": "Both Sonnet 3.7 and Haiku 3.5 are configured at 512 tokens. Unknown Anthropic models inherit Sonnet. The orchestrator constructs a model profile from the provider name and omits targetModel from aligner options.",
+      "trigger": "resolve(\"claude-3-5-haiku\",\"anthropic\") returns minCacheableTokens:512; a 600-token prefix is treated as eligible even though the documented Haiku minimum is 2,048.",
+      "impact": "Eligibility/economics diagnostics overstate cache usefulness. Local token estimates are not authoritative provider counts, and no rounding helper can guarantee a hit.",
+      "remediation": "Correct the known thresholds, propagate model identity, and treat unknown thresholds as unavailable. Provider cache usage must remain the source of truth for hits.",
+      "validation": "Registry reproduction resolved; external source cited in cache section."
+    },
+    {
+      "id": "BUG-BUILD-01",
+      "severity": "MEDIUM",
+      "title": "tsc emits nonproduction evaluator modules into out/",
+      "locations": "tsconfig.json:1-23",
+      "cause": "The include glob covers every src file, including nonproduction corpora, mutation/network auditors and profilers, even when they are unreachable from extension.ts.",
+      "trigger": "npm run compile produces eleven out/evaluation/*.js files, ten of which are evaluation tooling rather than the production preservation gate.",
+      "impact": "The stated clean out/ build isolation invariant fails. This is not a VSIX leak: out/ is excluded and only the preservation gate is reachable in the bundle.",
+      "remediation": "Exclude evaluator root files from the production TS program; imported preservationGate remains included. Use a clean output directory when checking this change, because tsc does not delete old outputs. The patch does not relocate historical evaluation sources out of src/.",
+      "validation": "Fresh out/ inventory and esbuild metafile corroborate the distinction."
+    },
+    {
+      "id": "BUG-EMBED-01",
+      "severity": "LOW",
+      "title": "Structural embedding regexes contain backspace characters instead of word boundaries",
+      "locations": "src/search/embeddingProvider.ts:246-246; src/search/embeddingProvider.ts:247-247; src/search/embeddingProvider.ts:248-248",
+      "cause": "The three literals contain U+0008 characters around keyword groups. They therefore seek actual backspace bytes instead of JavaScript regex word boundaries.",
+      "trigger": "Normal source containing if, function and async has zero matches for the corresponding keyword features.",
+      "impact": "Structural vectors lose branching/declaration/asynchrony features and retrieval quality suffers.",
+      "remediation": "Replace the literal control characters with the source escape \\b in each regex.",
+      "validation": "Byte-level source inspection; patched expressions type-check."
+    }
+  ]
+}

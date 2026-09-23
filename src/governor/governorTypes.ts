@@ -58,6 +58,7 @@ export interface EvidenceRequirement {
 
 export interface ContextGovernorInput {
     userPrompt: string;
+    optimizationMode?: 'off' | 'balanced' | 'maximum';
     activeFilePath?: string;
     cursorLine?: number;
     selectionText?: string;

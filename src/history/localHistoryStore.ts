@@ -3,7 +3,8 @@
  * Persists sanitised prompt metadata without raw source code or secrets.
  */
 
-import { PromptOptimizationEvent, OptimizationEventBus } from '../events/optimizationEvent';
+import { PromptOptimizationEvent } from '../events/optimizationEvent';
+import { RequestLedger } from '../events/requestLedger';
 
 export interface PromptMetadataRecord {
     id: string;
@@ -28,22 +29,9 @@ export interface PromptMetadataRecord {
 
 export class LocalHistoryStore {
     private static instance: LocalHistoryStore;
-    private records: PromptMetadataRecord[] = [];
-    private readonly maxRecords = 1000;
-    private memento?: { get: <T>(k: string, def?: T) => T; update: (k: string, v: any) => Thenable<void> };
-    private storageKey = 'tokonomics_local_history_metadata_v1';
-    private unsubscribeFromBus?: () => void;
+    private readonly ledger = RequestLedger.getInstance();
 
-    constructor(memento?: { get: <T>(k: string, def?: T) => T; update: (k: string, v: any) => Thenable<void> }) {
-        this.memento = memento;
-        if (this.memento) {
-            const saved = this.memento.get<PromptMetadataRecord[]>(this.storageKey, []);
-            if (Array.isArray(saved)) {
-                this.records = saved;
-            }
-        }
-        this.subscribeToEventBus();
-    }
+    constructor(_memento?: { get: <T>(k: string, def?: T) => T; update: (k: string, v: any) => Thenable<void> }) {}
 
     public static getInstance(memento?: any): LocalHistoryStore {
         if (!LocalHistoryStore.instance) {
@@ -52,18 +40,12 @@ export class LocalHistoryStore {
         return LocalHistoryStore.instance;
     }
 
-    private subscribeToEventBus(): void {
-        const bus = OptimizationEventBus.getInstance();
-        this.unsubscribeFromBus = bus.subscribe((event: PromptOptimizationEvent) => {
-            if (event.state === 'OPTIMIZATION_COMPLETED' || event.state === 'COST_RECONCILED' ||
-                event.state === 'PROMPT_COMPLETED' || event.state === 'OPTIMIZATION_FAILED') {
-                this.saveEvent(event);
-            }
-        });
+    public saveEvent(event: PromptOptimizationEvent): void {
+        this.ledger.append(event);
     }
 
-    public saveEvent(event: PromptOptimizationEvent): void {
-        const record: PromptMetadataRecord = {
+    private toRecord(event: Readonly<PromptOptimizationEvent>): PromptMetadataRecord {
+        return {
             id: event.id,
             timestamp: event.timestamp,
             sessionId: event.sessionId,
@@ -86,43 +68,15 @@ export class LocalHistoryStore {
             stageSummary: (event.stageMetrics || []).map(s => ({ name: s.stageName, tokensSaved: s.tokensSaved })),
             traceId: event.traceId
         };
-
-        // If updating an existing record during cost reconciliation
-        const existingIdx = this.records.findIndex(r => r.id === record.id);
-        if (existingIdx >= 0) {
-            this.records[existingIdx] = record;
-        } else {
-            this.records.push(record);
-            if (this.records.length > this.maxRecords) {
-                this.records.shift();
-            }
-        }
-
-        this.persist();
-    }
-
-    private persist(): void {
-        if (this.memento) {
-            try {
-                this.memento.update(this.storageKey, this.records);
-            } catch (err) {
-                console.warn('[LocalHistoryStore] Could not persist history to memento:', err);
-            }
-        }
     }
 
     public getRecords(limit: number = 50): PromptMetadataRecord[] {
-        return this.records.slice(-limit);
+        return this.ledger.getRecentRequestEvents(limit).map(event => this.toRecord(event));
     }
 
     public clear(): void {
-        this.records = [];
-        this.persist();
+        this.ledger.clear();
     }
 
-    public dispose(): void {
-        if (this.unsubscribeFromBus) {
-            this.unsubscribeFromBus();
-        }
-    }
+    public dispose(): void { /* RequestLedger owns persistence and event lifecycle. */ }
 }

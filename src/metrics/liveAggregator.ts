@@ -2,6 +2,7 @@
 
 import { PromptOptimizationEvent } from '../events/optimizationEvent';
 import { RequestLedger } from '../events/requestLedger';
+import { effectiveCostState } from '../cost/accountingTruth';
 
 export type MetricTimeWindow = 'session' | 'today' | '7_days' | 'lifetime';
 
@@ -80,9 +81,9 @@ export class LiveMetricsAggregator {
                 optimizedCostUSD += cost.optimized;
                 savedCostUSD += cost.saved;
                 costedPrompts++;
-                if (event.costStatus === 'reconciled') reconciledPrompts++;
+                if (effectiveCostState(event) === 'reconciled') reconciledPrompts++;
             }
-            if (event.costStatus === 'reconciled' && Number.isFinite(event.cachedTokens) && Number.isFinite(event.optimizedInputTokens)) {
+            if (effectiveCostState(event) === 'reconciled' && Number.isFinite(event.cachedTokens) && Number.isFinite(event.optimizedInputTokens)) {
                 cachedTokens += event.cachedTokens || 0;
                 cacheInputTokens += event.optimizedInputTokens;
             }
@@ -135,11 +136,12 @@ export class LiveMetricsAggregator {
 }
 
 function costTuple(event: Readonly<PromptOptimizationEvent>): { raw: number; optimized: number; saved: number } | undefined {
-    if (event.costStatus === 'reconciled' &&
+    const state = effectiveCostState(event);
+    if (state === 'reconciled' &&
         Number.isFinite(event.actualRawCostUSD) && Number.isFinite(event.actualOptimizedCostUSD) && Number.isFinite(event.actualSavingsUSD)) {
         return { raw: event.actualRawCostUSD!, optimized: event.actualOptimizedCostUSD!, saved: event.actualSavingsUSD! };
     }
-    if (event.costStatus === 'projected' &&
+    if (state === 'projected' &&
         Number.isFinite(event.projectedRawCostUSD) && Number.isFinite(event.projectedOptimizedCostUSD) && Number.isFinite(event.projectedSavingsUSD)) {
         return { raw: event.projectedRawCostUSD, optimized: event.projectedOptimizedCostUSD, saved: event.projectedSavingsUSD };
     }

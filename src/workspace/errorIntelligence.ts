@@ -66,11 +66,23 @@ export class ErrorIntelligence {
     }
 
     /**
-     * Parses runtime or compiler stack traces from terminal text
+     * Strips ANSI escape codes and dangerous control characters
+     */
+    public stripAnsiAndControl(text: string): string {
+        if (!text) return '';
+        // Strip ANSI escape codes
+        const strippedAnsi = text.replace(/\u001b\[[0-9;?]*[ -/]*[@-~]/g, '');
+        // Strip non-printable ASCII control characters except \t, \n, \r
+        return strippedAnsi.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+    }
+
+    /**
+     * Parses runtime or compiler stack traces from terminal text with ANSI/control sanitization
      */
     public parseStackTrace(terminalOutput: string): DiagnosticItem[] {
         const results: DiagnosticItem[] = [];
-        const lines = terminalOutput.split('\n');
+        if (!terminalOutput) return results;
+        const rawLines = terminalOutput.split('\n');
 
         // Regex for Node/TS: at Object.login (D:\project\src\auth.ts:25:12) or at src/auth.ts:25:12
         const nodeStackRegex = /at\s+(?:([a-zA-Z0-9_$.#]+)\s+\()?(?:[a-zA-Z]:)?[\\/]?([^:()]+):([0-9]+):([0-9]+)\)?/;
@@ -78,11 +90,17 @@ export class ErrorIntelligence {
         // Regex for Python: File "auth.py", line 25, in login
         const pythonStackRegex = /File "([^"]+)", line ([0-9]+), in ([a-zA-Z0-9_]+)/;
 
-        for (const line of lines) {
+        for (const rawLine of rawLines) {
+            // Null-byte injection check
+            if (rawLine.includes('\0')) continue;
+
+            const line = this.stripAnsiAndControl(rawLine);
             const nodeMatch = line.match(nodeStackRegex);
             if (nodeMatch) {
                 const funcName = nodeMatch[1];
-                const file = nodeMatch[2];
+                let file = nodeMatch[2].replace(/\\/g, '/');
+                // Path traversal sanitization: disallow null bytes or escaping roots
+                if (file.includes('\0') || file.includes('/../') || file.startsWith('../') || file.includes('..\\')) continue;
                 const lineNum = parseInt(nodeMatch[3], 10);
                 results.push({
                     filePath: file,
@@ -97,7 +115,8 @@ export class ErrorIntelligence {
 
             const pyMatch = line.match(pythonStackRegex);
             if (pyMatch) {
-                const file = pyMatch[1];
+                let file = pyMatch[1].replace(/\\/g, '/');
+                if (file.includes('\0') || file.includes('/../') || file.startsWith('../') || file.includes('..\\')) continue;
                 const lineNum = parseInt(pyMatch[2], 10);
                 const funcName = pyMatch[3];
                 results.push({

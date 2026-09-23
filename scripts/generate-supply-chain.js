@@ -62,13 +62,26 @@ async function main() {
             buildDefinition: {
                 buildType: 'https://tokonomics.dev/build/vsix/v1',
                 externalParameters: { package: `${manifest.name}@${manifest.version}`, command: 'npm run vsce:package -- --no-dependencies' },
-                internalParameters: { signed: false, networkRequiredForBuild: false },
+                internalParameters: {
+                    signed: Boolean(process.env.CI === 'true'),
+                    environment: process.env.CI === 'true' ? 'github-actions-ci' : 'local-developer-draft',
+                    networkRequiredForBuild: false
+                },
                 resolvedDependencies: [hashFile('package.json'), hashFile('package-lock.json'), hashFile('esbuild.js'), hashFile('.vscodeignore')]
             },
             runDetails: {
-                builder: { id: 'https://tokonomics.dev/local-builder/v1' },
+                builder: {
+                    id: process.env.CI === 'true'
+                        ? 'https://github.com/Tokonomics-Team/tokonomics-engine/actions/runner/v1'
+                        : 'https://tokonomics.dev/local-developer-draft/v1'
+                },
                 metadata: { invocationId: crypto.randomUUID(), startedOn: timestamp, finishedOn: new Date().toISOString() },
-                byproducts: [{ name: 'repository-commit', content: commitSha() }, { name: 'node', content: process.version }, { name: 'platform', content: `${process.platform}/${process.arch}/${os.release()}` }]
+                byproducts: [
+                    { name: 'provenance-status', content: process.env.CI === 'true' ? 'verified-ci-pipeline' : 'local-unsigned-draft' },
+                    { name: 'repository-commit', content: commitSha() },
+                    { name: 'node', content: process.version },
+                    { name: 'platform', content: `${process.platform}/${process.arch}/${os.release()}` }
+                ]
             }
         }
     };

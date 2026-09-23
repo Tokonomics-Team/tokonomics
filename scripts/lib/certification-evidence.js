@@ -105,8 +105,16 @@ function captureRepositoryMetadata(rootDir, artifactPath) {
 
 function resolveCommand(command, args, options = {}) {
     const platform = options.platform || process.platform;
-    const npmExecPath = options.npmExecPath || process.env.npm_execpath;
     const nodeExecPath = options.nodeExecPath || process.execPath;
+    const defaultNpmPath = platform === 'win32' && command === 'npm'
+        ? [
+            path.join(path.dirname(nodeExecPath), 'node_modules', 'npm', 'bin', 'npm-cli.js'),
+            path.join(path.dirname(nodeExecPath), '..', 'lib', 'node_modules', 'npm', 'bin', 'npm-cli.js')
+        ].find(candidate => {
+            try { return fs.existsSync(candidate); } catch { return false; }
+        })
+        : undefined;
+    const npmExecPath = options.npmExecPath || process.env.npm_execpath || defaultNpmPath;
 
     if (platform === 'win32' && command === 'npm' && npmExecPath) {
         return {

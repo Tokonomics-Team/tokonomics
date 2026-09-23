@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 2,
+  "recordedAt": "2026-09-07T12:19:14.066Z",
+  "corpusHashes": {
+    "src/history/modelHistory.ts": "e81d417dcbace32bc7e391bf737da07dd9c0f5917198666ba270f7ec61b1fbcc",
+    "src/protocol/providerGateway.ts": "3537280d13fbd9a6afc04f76915bc798a08a92fead16fcdde8f62f04f2f11f4f",
+    "src/ui/chatProtocol.ts": "1c65ef27cf9ce1ed4a138c67a3e12a8331e767020a3d8cb6fa1822f1692b46c2",
+    "src/governor/inlineEvidenceClassifier.ts": "22a85711b5d1335c0db2b9b82aaa2a12c4dfd5a7ffd34cce5691d8b07d291372",
+    "src/compression/conservativePathCompressor.ts": "41f4f33b71aa94b59d4c468e4e73dc7978723b1571e9d5f6c2f885f45a4f1a35",
+    "src/search/embeddingProvider.ts": "0ecaeb9d460fed740e87c855d9bb9315ea94c9d8ee5bd370ddb8a2f80755d6fb",
+    "src/proxy/modelProvider.ts": "c5e994f1be884ee824f886944edcde4c384ca19a8aa458275b994a80ec3357dd",
+    "src/engine/prefixContinuity.ts": "e12c3871f3f0db1a2e03cc15cacc44d12cd83c26d195fca9b43bf0cf32af3e77",
+    "src/engine/safePathPolicy.ts": "a788465b6ad4476c5734311a2c0b5a8b0da2a25cf36ad3f4d401b149fe3e686c",
+    "src/cache/aligner.ts": "30f215fc0ccba7ea6de3e566a7895e4038d6fba51e40707d332815a8b8b7ae4a"
+  },
+  "agentic": {
+    "reductionPct": 61.5,
+    "maskedObservations": 8
+  },
+  "retrieval": {
+    "balanced": {
+      "savingPct": 76.5,
+      "contextFreePayloads": 0,
+      "evidenceRenderedCases": 5,
+      "cases": 5
+    },
+    "maximum": {
+      "savingPct": 83.9,
+      "contextFreePayloads": 0,
+      "evidenceRenderedCases": 5,
+      "cases": 5
+    }
+  },
+  "profiles": {
+    "balanced": {
+      "overallReductionPct": 0.2,
+      "weightedReductionPct": 0.2,
+      "losslessCases": 40,
+      "losslessReductionPct": 0.2,
+      "degradedCases": 0,
+      "degradedReductionPct": 0,
+      "degradedButGatePassedCases": 0,
+      "cases": 40
+    },
+    "maximum": {
+      "overallReductionPct": 0.3,
+      "weightedReductionPct": 0.2,
+      "losslessCases": 40,
+      "losslessReductionPct": 0.3,
+      "degradedCases": 0,
+      "degradedReductionPct": 0,
+      "degradedButGatePassedCases": 0,
+      "cases": 40
+    }
+  },
+  "reason": "A raw NUL byte in src/search/embeddingProvider.ts, written as a bigram separator instead of an escape, made the workspace index classify it as binary and skip it. The retrieval corpus targets that exact file, so retrieval had been selecting other files entirely while every metric stayed green: 5/5 evidence rendered, 0 context-free payloads, focal file recalled in 0/9 ablation cases. With the file indexed, balanced falls 81.7% to 76.5% because it now retrieves the correct focal file rather than smaller irrelevant ones, and maximum rises to 83.9% with 3/3 exact implementation source. Dense signals also failed to match their snapshot record (hybrid index stores relative paths, matching used absolute), so index-derived content rendered without rehydration; fixed.",
+  "acceptedRegressions": [
+    "balanced: retrieval-first saving 81.7% -> 76.5%"
+  ]
+}

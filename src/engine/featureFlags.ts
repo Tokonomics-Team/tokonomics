@@ -7,6 +7,9 @@ export type PipelineMode = 'legacy' | 'hybrid' | 'compiler';
 
 export type CompressionProviderType = 'noop' | 'rule' | 'lingua2' | 'slm' | 'legacy';
 
+import { ComponentRegistry, RequestCapabilitySnapshot } from './componentRegistry';
+import { OPTIMIZATION_PROFILES, RuntimeConfiguration, UserPreferenceRegistry } from '../config/userPreferences';
+
 export interface CompilerFeatureFlags {
     // Emergency release override: preserve canonical request payloads verbatim.
     forcePassThrough: boolean;
@@ -14,6 +17,7 @@ export interface CompilerFeatureFlags {
     pipelineMode: PipelineMode;
 
     // Workspace & Language Intelligence
+    enableWorkspaceIndex: boolean;
     enableLspIntelligence: boolean;
     enableDeltaContext: boolean;
     enableErrorIntelligence: boolean;
@@ -39,42 +43,24 @@ export interface CompilerFeatureFlags {
     enableProjectMemory: boolean;
 
     // Caching, Models & Tools
+    enableResponseCache: boolean;
+    enableImageRightsizing: boolean;
     enableCachePlanner: boolean;
-    enableExactTokenizers: boolean;
-    enableSchemaSynthesis: boolean;
-    enableTaskAwareVision: boolean;
     enableLocalSlm: boolean;
+    enableObservationMasking: boolean;
 }
 
-export const DEFAULT_FEATURE_FLAGS: CompilerFeatureFlags = {
-    forcePassThrough: false,
-    pipelineMode: 'legacy',
-    enableLspIntelligence: false,
-    enableDeltaContext: false,
-    enableErrorIntelligence: false,
-    enableTestGraph: false,
-    enableGitGraph: false,
-    enableTerminalOptimizer: false,
-    enableProvenance: false,
-    enableDenseEmbeddings: false,
-    enableCrossEncoder: false,
-    enableMmrDiversity: true,
-    enableSemanticDedup: true,
-    enableContextSolver: false,
-    enableSdgSlicing: false,
-    enableSufficiencyEngine: false,
-    enablePluggableCompression: false,
-    compressionProvider: 'rule',
-    enableProjectMemory: false,
-    enableCachePlanner: false,
-    enableExactTokenizers: false,
-    enableSchemaSynthesis: false,
-    enableTaskAwareVision: false,
-    enableLocalSlm: false
-};
+export const DEFAULT_FEATURE_FLAGS: CompilerFeatureFlags = Object.freeze({
+    ...OPTIMIZATION_PROFILES.balanced.featureFlags
+});
 
 export class FeatureFlagRegistry {
     private static currentFlags: CompilerFeatureFlags = { ...DEFAULT_FEATURE_FLAGS };
+    private static capabilityContext: {
+        workspaceTrusted: boolean;
+        experimentalConsent: boolean;
+        disabledCapabilities: readonly string[];
+    } = { workspaceTrusted: true, experimentalConsent: false, disabledCapabilities: Object.freeze([]) };
 
     /**
      * Initializes or updates feature flags from VS Code configuration
@@ -87,46 +73,36 @@ export class FeatureFlagRegistry {
                 conf = vscodeModule.workspace?.getConfiguration?.('tokenOptimizer');
             } catch {}
         }
-        if (!conf) {
-            return this.currentFlags;
-        }
-
-        const get = <T>(key: string, def: T): T => (conf && typeof conf.get === 'function' ? conf.get(key, def) : def);
-        const mode = get<PipelineMode>('pipelineMode', 'compiler');
-        
-        this.currentFlags = {
-            ...DEFAULT_FEATURE_FLAGS,
-            forcePassThrough: get<boolean>('emergencyDisableOptimization', false),
-            pipelineMode: mode,
-            enableLspIntelligence: mode !== 'legacy' && get<boolean>('enableLspIntelligence', true),
-            enableDeltaContext: mode !== 'legacy' && get<boolean>('enableDeltaContext', true),
-            enableErrorIntelligence: mode !== 'legacy' && get<boolean>('enableErrorIntelligence', true),
-            enableTestGraph: mode === 'compiler' && get<boolean>('enableTestGraph', true),
-            enableGitGraph: mode === 'compiler' && get<boolean>('enableGitGraph', true),
-            enableTerminalOptimizer: mode !== 'legacy' && get<boolean>('enableTerminalOptimizer', true),
-            enableProvenance: mode !== 'legacy' && get<boolean>('enableProvenance', true),
-            enableDenseEmbeddings: mode === 'compiler' && get<boolean>('enableDenseEmbeddings', false),
-            enableCrossEncoder: mode === 'compiler' && get<boolean>('enableCrossEncoder', false),
-            enableMmrDiversity: get<boolean>('enableMmrDiversity', true),
-            enableSemanticDedup: get<boolean>('enableSemanticDedup', true),
-            enableContextSolver: mode === 'compiler' && get<boolean>('enableContextSolver', true),
-            enableSdgSlicing: mode === 'compiler' && get<boolean>('enableSdgSlicing', false),
-            enableSufficiencyEngine: mode === 'compiler' && get<boolean>('enableSufficiencyEngine', true),
-            enablePluggableCompression: mode === 'compiler' && get<boolean>('enablePluggableCompression', true),
-            compressionProvider: get<CompressionProviderType>('compressionProvider', 'rule'),
-            enableProjectMemory: mode === 'compiler' && get<boolean>('enableProjectMemory', true),
-            enableCachePlanner: mode !== 'legacy' && get<boolean>('enableCachePlanner', true),
-            enableExactTokenizers: mode !== 'legacy' && get<boolean>('enableExactTokenizers', true),
-            enableSchemaSynthesis: mode !== 'legacy' && get<boolean>('enableSchemaSynthesis', true),
-            enableTaskAwareVision: mode !== 'legacy' && get<boolean>('enableTaskAwareVision', true),
-            enableLocalSlm: mode === 'compiler' && get<boolean>('enableLocalSlm', false)
-        };
-
+        const runtime = UserPreferenceRegistry.loadFromConfiguration(conf);
+        this.applyRuntimeConfiguration(runtime);
         return this.currentFlags;
+    }
+
+    public static applyRuntimeConfiguration(runtime: RuntimeConfiguration): CompilerFeatureFlags {
+        UserPreferenceRegistry.apply(runtime);
+        this.currentFlags = { ...runtime.featureFlags };
+        return this.getFlags();
     }
 
     public static getFlags(): CompilerFeatureFlags {
         return { ...this.currentFlags };
+    }
+
+    public static setCapabilityContext(context: {
+        workspaceTrusted: boolean;
+        experimentalConsent: boolean;
+        disabledCapabilities: readonly string[];
+    }): void {
+        this.capabilityContext = {
+            workspaceTrusted: context.workspaceTrusted,
+            experimentalConsent: context.experimentalConsent,
+            disabledCapabilities: Object.freeze([...context.disabledCapabilities])
+        };
+    }
+
+    /** Capture all request-affecting capability decisions once at request entry. */
+    public static captureRequestCapabilities(): RequestCapabilitySnapshot {
+        return ComponentRegistry.capture(this.currentFlags, this.capabilityContext);
     }
 
     public static setFlag<K extends keyof CompilerFeatureFlags>(key: K, value: CompilerFeatureFlags[K]): void {
@@ -143,5 +119,7 @@ export class FeatureFlagRegistry {
 
     public static resetToDefault(): void {
         this.currentFlags = { ...DEFAULT_FEATURE_FLAGS };
+        UserPreferenceRegistry.reset();
+        this.capabilityContext = { workspaceTrusted: true, experimentalConsent: false, disabledCapabilities: Object.freeze([]) };
     }
 }

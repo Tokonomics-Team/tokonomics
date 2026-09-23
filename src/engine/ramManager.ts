@@ -138,6 +138,9 @@ export class RamContextManager {
         }
 
         this.isWarming = true;
+        this.usedBytes = [...this.skeletonCache.values()].reduce((sum, entry) => sum + entry.sizeBytes, 0)
+            + this.turnCodeRegistry.size * 128;
+        this.symbolIndex = [];
         const startTime = Date.now();
         const filesToProcess = this.collectSourceFiles(workspaceRoot);
 
@@ -171,7 +174,9 @@ export class RamContextManager {
                     if (this.config.enableSemanticIndex) {
                         const symbols = this.extractSymbols(content, relPath);
                         for (const sym of symbols) {
+                            if (this.usedBytes + this.symbolBytes(sym) > this.config.ramBudgetMB * 1024 * 1024) break;
                             this.symbolIndex.push(sym);
+                            this.usedBytes += this.symbolBytes(sym);
                             symbolsCreated++;
                         }
                     }
@@ -340,7 +345,11 @@ export class RamContextManager {
             this.skeletonCache.delete(filePath);
         }
         // Invalidate symbols for this file
-        this.symbolIndex = this.symbolIndex.filter(s => s.file !== filePath);
+        this.symbolIndex = this.symbolIndex.filter(symbol => {
+            if (symbol.file !== filePath) return true;
+            this.usedBytes -= this.symbolBytes(symbol);
+            return false;
+        });
     }
 
     public onFileDeleted(filePath: string): void {
@@ -422,10 +431,20 @@ export class RamContextManager {
             this.usedBytes -= evict.sizeBytes;
         }
 
+        while (this.usedBytes > maxBytes && this.symbolIndex.length > 0) {
+            this.usedBytes -= this.symbolBytes(this.symbolIndex.pop()!);
+        }
+
         // Also prune turn code registry if needed
-        if (this.usedBytes > maxBytes && this.turnCodeRegistry.size > 50) {
+        if (this.usedBytes > maxBytes && this.turnCodeRegistry.size > 0) {
+            this.usedBytes -= this.turnCodeRegistry.size * 128;
             this.turnCodeRegistry.clear();
         }
+    }
+
+    private symbolBytes(symbol: IndexedSymbol): number {
+        return 256 + (symbol.name.length + symbol.file.length + symbol.signature.length) * 2
+            + [...symbol.terms].reduce((sum, term) => sum + 32 + term.length * 2, 0);
     }
 
     private isOverBudget(): boolean {

@@ -1,5 +1,5 @@
 /**
- * Tokonomics 6.0 Side-by-Side Visual Diff Provider
+ * Tokonomics 8.0.0 Side-by-Side Visual Diff Provider
  * Renders an interactive side-by-side diff comparing the original source code with its
  * compiled AST structural skeleton and SDG dynamic program slice.
  */
@@ -83,7 +83,7 @@ export class PrunedDiffContentProvider implements vscode.TextDocumentContentProv
 
                 // Add header banner in virtual document
                 const compiledHeader = [
-                    `// TOKONOMICS 6.0 PREPARED CONTEXT`,
+                    `// TOKONOMICS 8.0.0 PREPARED CONTEXT`,
                     `// Original: ${originalTokens.toLocaleString()} tokens ➔ Compiled: ${pruneResult.prunedTokenCount.toLocaleString()} tokens (-${pruneResult.reductionPercentage}%)`,
                     `// Context Quality (CQ): ${cqReport.predictedCQ}% [${cqReport.rating}] | Compile Latency: ${pruneResult.durationMs}ms`,
                     `// ─────────────────────────────────────────────────────────────────────────────`,

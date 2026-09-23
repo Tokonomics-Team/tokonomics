@@ -1,5 +1,5 @@
 {
-  "auditDate": "2026-09-04",
+  "auditDate": "2026-09-07",
   "totalSuitesAudited": 12,
   "independentOracleCount": 10,
   "derivedOracleCount": 2,
@@ -9,6 +9,7 @@
   "independentOracleRatioPct": 100,
   "certificationCriticalSelfValidatingCount": 0,
   "auditPassed": true,
+  "unresolvedDeclarationCount": 0,
   "entries": [
     {
       "subsystem": "ORACLE_01_SOLVER",
@@ -25,7 +26,7 @@
     {
       "subsystem": "ORACLE_02_GRAPH_INCREMENTAL",
       "subsystemName": "Incremental Workspace Graph Indexer",
-      "implementationUnderTest": "src/graph/workspaceGraph.ts (Dynamic incremental AST mutations)",
+      "implementationUnderTest": "src/workspace/workspaceGraph.ts (Dynamic incremental AST mutations)",
       "oracleImplementation": "tests/validation/phase5-6-graph-consistency.test.ts (Clean Rebuild Runner)",
       "oracleSource": "Fresh Full Repository Rebuild Oracle",
       "expectedResultSource": "Clean-room freshly parsed repository AST graph state",
@@ -37,7 +38,7 @@
     {
       "subsystem": "ORACLE_03_TOKENIZER",
       "subsystemName": "Tokenizer & BPE Estimation",
-      "implementationUnderTest": "src/tokenizer/tokenizerAdapters.ts",
+      "implementationUnderTest": "src/tokenizer/tokenizerAdapter.ts",
       "oracleImplementation": "tests/validation/phase2-property-based.test.ts (Authoritative BPE reference)",
       "oracleSource": "Authoritative Reference Tokenizer Engine (Claude BPE / OpenAI o200k_base)",
       "expectedResultSource": "Authoritative external token count ground truth",
@@ -49,7 +50,7 @@
     {
       "subsystem": "ORACLE_04_COST_RECONCILIATION",
       "subsystemName": "Post-Inference Cost Accounting & Reconciliation",
-      "implementationUnderTest": "src/pricing/pricingCalculator.ts",
+      "implementationUnderTest": "src/cost/costCalculator.ts",
       "oracleImplementation": "tests/validation/phase19-20-pricing-reconciliation.test.ts (Published Rate Fixtures)",
       "oracleSource": "Authoritative Cloud Provider Published Rate Cards (Feb 2025/2026)",
       "expectedResultSource": "Post-inference exact token usage multiplied by authoritative rate card",
@@ -73,7 +74,7 @@
     {
       "subsystem": "ORACLE_06_SDG_SLICING",
       "subsystemName": "System Dependence Graph (SDG) Program Slicing",
-      "implementationUnderTest": "src/sdg/sdgSlicer.ts (Inter-procedural CFG/DDG Slicer)",
+      "implementationUnderTest": "src/ast/systemDependenceGraph.ts (Inter-procedural CFG/DDG Slicer)",
       "oracleImplementation": "src/evaluation/adversarialSdgCorpus.ts (Hand-Annotated Closure)",
       "oracleSource": "Hand-Annotated Ground Truth Dependency Set (15 Adversarial Patterns)",
       "expectedResultSource": "Required symbol closure defined independently of compiler AST",
@@ -85,7 +86,7 @@
     {
       "subsystem": "ORACLE_07_RETRIEVAL",
       "subsystemName": "Hybrid Lexical + Dense Retrieval & MMR",
-      "implementationUnderTest": "src/retrieval/hybridRetriever.ts & src/retrieval/reranker.ts",
+      "implementationUnderTest": "src/search/hybridRetriever.ts & src/search/reranker.ts",
       "oracleImplementation": "tests/validation/phase10-11-hybrid-retrieval.test.ts (Expert Labeled Sets)",
       "oracleSource": "Expert-Labeled Relevant Entity Benchmark Dataset",
       "expectedResultSource": "Gold-standard relevant symbol/file references for benchmark queries",
@@ -98,7 +99,7 @@
       "subsystem": "ORACLE_08_CODE_CORRECTNESS",
       "subsystemName": "Downstream Code Accuracy & Patch Evaluator",
       "implementationUnderTest": "validation/evaluators/codeAccuracyEvaluator.ts",
-      "oracleImplementation": "validation/evaluators/tsCompilerService.ts & realTestHarness.ts",
+      "oracleImplementation": "validation/evaluators/tsCompilerService.ts & validation/evaluators/realTestHarness.ts",
       "oracleSource": "Official TypeScript Compiler API (ts.transpileModule) & Sandboxed Node.js VM Tests",
       "expectedResultSource": "Real compiler diagnostic check and physical VM assertion execution",
       "independenceType": "INDEPENDENT",
@@ -109,7 +110,7 @@
     {
       "subsystem": "ORACLE_09_DASHBOARD",
       "subsystemName": "Real-Time Analytics Dashboard State",
-      "implementationUnderTest": "src/dashboard/dashboardAggregator.ts",
+      "implementationUnderTest": "src/ui/dashboardController.ts",
       "oracleImplementation": "tests/validation/phase30-dashboard-lifecycle.test.ts (Event Stream Logger)",
       "oracleSource": "Immutable Production Event Bus Stream Records",
       "expectedResultSource": "Event emission payloads generated directly by compiler runtime",
@@ -121,7 +122,7 @@
     {
       "subsystem": "ORACLE_10_GOVERNOR_SAFETY",
       "subsystemName": "Deterministic Context Governor & Safety Gate",
-      "implementationUnderTest": "src/governor/contextGovernor.ts & evidenceSafetyGate.ts",
+      "implementationUnderTest": "src/governor/contextGovernor.ts & src/governor/evidenceSafetyGate.ts",
       "oracleImplementation": "validation/audit/governorAccuracyAuditor.ts (Set Theory Verifier)",
       "oracleSource": "Mathematical Set Theory Containment Invariant (Required ⊆ Provided)",
       "expectedResultSource": "Formal contract requiring fail-closed fallback on missing critical evidence",

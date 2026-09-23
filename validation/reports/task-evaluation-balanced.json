@@ -1,0 +1,427 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-09-07T14:59:18.303Z",
+  "evidenceClass": "controlled-model-task",
+  "model": "claude-code-cli-default",
+  "profile": "balanced",
+  "toolsDisabled": true,
+  "tasks": 14,
+  "baselineSuccessRate": 1,
+  "optimizedSuccessRate": 0.7857,
+  "baselineContextTokens": 49071,
+  "optimizedContextTokens": 40189,
+  "contextTokenReduction": 0.181,
+  "transportFailures": 0,
+  "qualityDelta": -0.2143,
+  "qualityDeltaWithheldReason": null,
+  "results": [
+    {
+      "id": "masking-below-trigger",
+      "workload": "explain",
+      "arms": {
+        "baseline": {
+          "contextTokens": 3868,
+          "succeeded": true,
+          "declaredInsufficient": false,
+          "missingGroups": [],
+          "elapsedMs": 5042,
+          "transportOk": true,
+          "attempts": 1,
+          "answer": "When `totalChars <= options.triggerChars`, masking does not run: the function returns the messages unchanged (a copy), with `maskedCount: 0`, `charsRemoved: 0`, `applied: false`, and `totalObservationChars` set to the computed total. The exact `skippedReason` value is `'below_trigger'`. Note this branch is reached only if at least one tool result exists — with zero observations the earlier check returns `'nothing_maskable'` instead.",
+          "error": ""
+        },
+        "optimized": {
+          "contextTokens": 3552,
+          "succeeded": true,
+          "declaredInsufficient": false,
+          "missingGroups": [],
+          "elapsedMs": 7073,
+          "transportOk": true,
+          "attempts": 1,
+          "answer": "When the accumulated tool-result text length is `<= options.triggerChars`, `maskObservations` short-circuits and masks nothing: it returns a copy of the original `messages` with `maskedCount: 0`, `charsRemoved: 0`, `applied: false`, and `totalObservationChars` set to the measured `totalChars` (the spread overrides the `0` from the `unchanged` helper). The exact `skippedReason` value is `'below_trigger'`. Note this check runs only after the zero-observation case, which returns `'nothing_maskable'` instead.",
+          "error": ""
+        }
+      }
+    },
+    {
+      "id": "masking-non-text-children",
+      "workload": "explain",
+      "arms": {
+        "baseline": {
+          "contextTokens": 3868,
+          "succeeded": true,
+          "declaredInsufficient": false,
+          "missingGroups": [],
+          "elapsedMs": 3572,
+          "transportOk": true,
+          "attempts": 1,
+          "answer": "Non-text children such as images or binary data are never masked — they are filtered out of the collapse and preserved as-is, appended after the single text placeholder — because their size is not the problem and their loss would be silent.",
+          "error": ""
+        },
+        "optimized": {
+          "contextTokens": 3050,
+          "succeeded": true,
+          "declaredInsufficient": false,
+          "missingGroups": [],
+          "elapsedMs": 4009,
+          "transportOk": true,
+          "attempts": 1,
+          "answer": "Non-text children are preserved as-is: the masking step filters out only the `text` children and rebuilds the tool result's content as a single placeholder text part followed by all the surviving non-text children (images, binary data, etc.) in their original order.",
+          "error": ""
+        }
+      }
+    },
+    {
+      "id": "masking-failure-behaviour",
+      "workload": "debug",
+      "arms": {
+        "baseline": {
+          "contextTokens": 3868,
+          "succeeded": true,
+          "declaredInsufficient": false,
+          "missingGroups": [],
+          "elapsedMs": 5689,
+          "transportOk": true,
+          "attempts": 1,
+          "answer": "If `maskObservations` throws internally, the `catch` returns `unchanged('failed')` — a copy of the input messages untouched, with `maskedCount: 0`, `charsRemoved: 0`, `totalObservationChars: 0`, and `applied: false`. The exact `skippedReason` value is `'failed'`.",
+          "error": ""
+        },
+        "optimized": {
+          "contextTokens": 3701,
+          "succeeded": true,
+          "declaredInsufficient": false,
+          "missingGroups": [],
+          "elapsedMs": 3732,
+          "transportOk": true,
+          "attempts": 1,
+          "answer": "It returns the `unchanged('failed')` result — a shallow copy of the input messages with `maskedCount: 0`, `charsRemoved: 0`, `totalObservationChars: 0`, and `applied: false`. The exact `skippedReason` value is `'failed'`.",
+          "error": ""
+        }
+      }
+    },
+    {
+      "id": "chunk-stale-file",
+      "workload": "debug",
+      "arms": {
+        "baseline": {
+          "contextTokens": 3503,
+          "succeeded": true,
+          "declaredInsufficient": false,
+          "missingGroups": [],
+          "elapsedMs": 4177,
+          "transportOk": true,
+          "attempts": 1,
+          "answer": "`'stale_file'` — when `sha256(content) !== range.fileContentHash`, `rehydrateExact` returns status `'stale_file'` with a reason saying the file changed after the snapshot was captured and its recorded ranges no longer identify the same code. The same `'stale_file'` status is also returned later if the chunk text's own hash doesn't match `range.chunkHash`.",
+          "error": ""
+        },
+        "optimized": {
+          "contextTokens": 2098,
+          "succeeded": true,
+          "declaredInsufficient": false,
+          "missingGroups": [],
+          "elapsedMs": 3793,
+          "transportOk": true,
+          "attempts": 1,
+          "answer": "`'stale_file'` — when `sha256(content) !== range.fileContentHash`, `rehydrateExact` returns status `'stale_file'` with a reason noting the file changed after the snapshot was captured.",
+          "error": ""
+        }
+      }
+    },
+    {
+      "id": "chunk-binary-file",
+      "workload": "debug",
+      "arms": {
+        "baseline": {
+          "contextTokens": 3503,
+          "succeeded": true,
+          "declaredInsufficient": false,
+          "missingGroups": [],
+          "elapsedMs": 3779,
+          "transportOk": true,
+          "attempts": 1,
+          "answer": "`'unavailable'` — when `content.includes('\\0')`, `rehydrateExact` returns `{ status: 'unavailable', reason: 'The source file is binary.' }`.",
+          "error": ""
+        },
+        "optimized": {
+          "contextTokens": 3020,
+          "succeeded": true,
+          "declaredInsufficient": false,
+          "missingGroups": [],
+          "elapsedMs": 3420,
+          "transportOk": true,
+          "attempts": 1,
+          "answer": "`'unavailable'` — with the reason \"The source file is binary.\"",
+          "error": ""
+        }
+      }
+    },
+    {
+      "id": "chunk-exact-task-policy",
+      "workload": "explain",
+      "arms": {
+        "baseline": {
+          "contextTokens": 3503,
+          "succeeded": true,
+          "declaredInsufficient": false,
+          "missingGroups": [],
+          "elapsedMs": 3827,
+          "transportOk": true,
+          "attempts": 1,
+          "answer": "`requiresExactSource` returns false for `explain` and `search` (matched case-insensitively); everything else, including unrecognized or missing task types, returns true.",
+          "error": ""
+        },
+        "optimized": {
+          "contextTokens": 2107,
+          "succeeded": true,
+          "declaredInsufficient": false,
+          "missingGroups": [],
+          "elapsedMs": 3466,
+          "transportOk": true,
+          "attempts": 1,
+          "answer": "`requiresExactSource` returns false for `explain` and `search` (compared after lowercasing the task type).",
+          "error": ""
+        }
+      }
+    },
+    {
+      "id": "chunk-window-boundary",
+      "workload": "explain",
+      "arms": {
+        "baseline": {
+          "contextTokens": 3503,
+          "succeeded": true,
+          "declaredInsufficient": false,
+          "missingGroups": [],
+          "elapsedMs": 4825,
+          "transportOk": true,
+          "attempts": 1,
+          "answer": "`'line_window'` — when neither the brace nor indent scan yields an end index, `extractChunkRanges` falls back to a window of `FALLBACK_WINDOW_LINES` (40) lines and sets `boundary = 'line_window'`.",
+          "error": ""
+        },
+        "optimized": {
+          "contextTokens": 2284,
+          "succeeded": true,
+          "declaredInsufficient": false,
+          "missingGroups": [],
+          "elapsedMs": 4418,
+          "transportOk": true,
+          "attempts": 1,
+          "answer": "`'line_window'` — when neither the brace-language nor indent-language scan yields an end index (`endIndex === undefined`), `extractChunkRanges` falls back to a fixed line window and sets `boundary = 'line_window'` instead of the default `'exact_symbol'`.",
+          "error": ""
+        }
+      }
+    },
+    {
+      "id": "envelope-selection-threshold",
+      "workload": "search",
+      "arms": {
+        "baseline": {
+          "contextTokens": 2719,
+          "succeeded": true,
+          "declaredInsufficient": false,
+          "missingGroups": [],
+          "elapsedMs": 3779,
+          "transportOk": true,
+          "attempts": 1,
+          "answer": "A selection must be strictly longer than **30** characters (after trimming) to count as deliberate evidence, per `MINIMUM_DELIBERATE_SELECTION_CHARS` and the `>` comparison in `isDeliberateSelection`.",
+          "error": ""
+        },
+        "optimized": {
+          "contextTokens": 1060,
+          "succeeded": false,
+          "declaredInsufficient": true,
+          "missingGroups": [
+            "30"
+          ],
+          "elapsedMs": 4253,
+          "transportOk": true,
+          "attempts": 1,
+          "answer": "INSUFFICIENT CONTEXT",
+          "error": ""
+        }
+      }
+    },
+    {
+      "id": "envelope-dirty-buffer",
+      "workload": "explain",
+      "arms": {
+        "baseline": {
+          "contextTokens": 2719,
+          "succeeded": true,
+          "declaredInsufficient": false,
+          "missingGroups": [],
+          "elapsedMs": 4275,
+          "transportOk": true,
+          "attempts": 1,
+          "answer": "No. `mayReadDocument` returns `envelope.unsavedBuffersPermitted || !envelope.documentIsDirty`, so when the document is dirty and unsaved-buffer consent is absent, both operands are false and the document stays unreadable — sending unsaved content is treated as a separate consent from reading the workspace.",
+          "error": ""
+        },
+        "optimized": {
+          "contextTokens": 3794,
+          "succeeded": false,
+          "declaredInsufficient": true,
+          "missingGroups": [
+            "no | cannot | not readable | must not",
+            "unsaved | dirty | consent | permit"
+          ],
+          "elapsedMs": 4532,
+          "transportOk": true,
+          "attempts": 1,
+          "answer": "INSUFFICIENT CONTEXT",
+          "error": ""
+        }
+      }
+    },
+    {
+      "id": "envelope-fallback-condition",
+      "workload": "explain",
+      "arms": {
+        "baseline": {
+          "contextTokens": 2719,
+          "succeeded": true,
+          "declaredInsufficient": false,
+          "missingGroups": [],
+          "elapsedMs": 3656,
+          "transportOk": true,
+          "attempts": 1,
+          "answer": "It returns a full-document fallback only when retrieval was attempted and produced no usable evidence — a `sufficiency` of `unusable` (or a `selectedCount` of 0 for callers predating that field).",
+          "error": ""
+        },
+        "optimized": {
+          "contextTokens": 3346,
+          "succeeded": true,
+          "declaredInsufficient": false,
+          "missingGroups": [],
+          "elapsedMs": 5490,
+          "transportOk": true,
+          "attempts": 1,
+          "answer": "Only when retrieval came back `unusable` — i.e. its three-way sufficiency verdict is `'unusable'`, which the contract documents as the sole state justifying attaching a whole file. An `incomplete_declared` outcome still carries evidence and declares its own gap, so it does not earn the full-document fallback.",
+          "error": ""
+        }
+      }
+    },
+    {
+      "id": "count-failure-degrades",
+      "workload": "debug",
+      "arms": {
+        "baseline": {
+          "contextTokens": 3436,
+          "succeeded": true,
+          "declaredInsufficient": false,
+          "missingGroups": [],
+          "elapsedMs": 3635,
+          "transportOk": true,
+          "attempts": 1,
+          "answer": "`estimate_after_failure`. The catch block returns `method: 'estimate_after_failure'`, reporting the estimated token count with a 5% conservative margin applied only for the budget check, rather than blocking the send.",
+          "error": ""
+        },
+        "optimized": {
+          "contextTokens": 4212,
+          "succeeded": true,
+          "declaredInsufficient": false,
+          "missingGroups": [],
+          "elapsedMs": 4026,
+          "transportOk": true,
+          "attempts": 1,
+          "answer": "`estimate_after_failure` — in the catch branch of `countAuthoritative`, the estimated token count is returned with `method: 'estimate_after_failure'`, a conservative margin applied for the budget check, and a reason noting the estimate is used rather than blocking the request.",
+          "error": ""
+        }
+      }
+    },
+    {
+      "id": "repack-mandatory",
+      "workload": "refactor",
+      "arms": {
+        "baseline": {
+          "contextTokens": 3436,
+          "succeeded": true,
+          "declaredInsufficient": false,
+          "missingGroups": [],
+          "elapsedMs": 4559,
+          "transportOk": true,
+          "attempts": 1,
+          "answer": "No. `planRepack` only ever drops optional items (lowest value first, ties broken by id), keeping all mandatory items and the user's instruction. If mandatory evidence alone still exceeds the budget, the plan returns `fits: false` with the reason that the request fails closed rather than sending a payload missing evidence it declared it needed.",
+          "error": ""
+        },
+        "optimized": {
+          "contextTokens": 3045,
+          "succeeded": true,
+          "declaredInsufficient": false,
+          "missingGroups": [],
+          "elapsedMs": 4156,
+          "transportOk": true,
+          "attempts": 1,
+          "answer": "No. `planRepack` only ever removes optional items — it drops them lowest-value first (ties broken by id) until the total fits; mandatory items are always retained. If mandatory items alone exceed the budget, the plan returns `fits: false` with the reason that the request fails closed rather than sending a payload missing evidence it declared it needed.",
+          "error": ""
+        }
+      }
+    },
+    {
+      "id": "epoch-anchor",
+      "workload": "explain",
+      "arms": {
+        "baseline": {
+          "contextTokens": 4213,
+          "succeeded": true,
+          "declaredInsufficient": false,
+          "missingGroups": [],
+          "elapsedMs": 3817,
+          "transportOk": true,
+          "attempts": 1,
+          "answer": "The retained window is anchored one epoch behind the current boundary — at `(epoch - 1) * epochTokens` — so it always holds between one and two epochs of history.",
+          "error": ""
+        },
+        "optimized": {
+          "contextTokens": 2560,
+          "succeeded": true,
+          "declaredInsufficient": false,
+          "missingGroups": [],
+          "elapsedMs": 3407,
+          "transportOk": true,
+          "attempts": 1,
+          "answer": "The retained window is anchored at the boundary one epoch behind the current epoch (`(epoch - 1) * epochTokens`), so between one and two epochs of history stay retained.",
+          "error": ""
+        }
+      }
+    },
+    {
+      "id": "epoch-prefix-stability",
+      "workload": "explain",
+      "arms": {
+        "baseline": {
+          "contextTokens": 4213,
+          "succeeded": true,
+          "declaredInsufficient": false,
+          "missingGroups": [],
+          "elapsedMs": 4320,
+          "transportOk": true,
+          "attempts": 1,
+          "answer": "Because any expression involving the current length (such as `turns.length - minRetainedTurns`) grows by one on every turn, so an anchor derived from it would shift the retained window on each request and reintroduce the sliding-window defect that makes the byte-identical prefix — and therefore the provider's prefix cache — never reusable.",
+          "error": ""
+        },
+        "optimized": {
+          "contextTokens": 2360,
+          "succeeded": false,
+          "declaredInsufficient": true,
+          "missingGroups": [
+            "shift | move | slid | chang",
+            "prefix | cache"
+          ],
+          "elapsedMs": 3767,
+          "transportOk": true,
+          "attempts": 1,
+          "answer": "INSUFFICIENT CONTEXT",
+          "error": ""
+        }
+      }
+    }
+  ],
+  "limitations": [
+    "Sample size is below the pre-registered minimum of 30 paired samples per workload, so no",
+    "promotion verdict is reported. This is pilot evidence.",
+    "Scoring is exact substring matching, which produces false negatives on unusual phrasing",
+    "and therefore biases against concluding that optimization preserved quality.",
+    "One repository, one model, questions with short factual answers. It does not measure",
+    "multi-turn agentic work, patch application, or test outcomes."
+  ]
+}

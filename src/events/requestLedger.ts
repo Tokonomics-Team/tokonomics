@@ -27,6 +27,13 @@ type LedgerMemento = {
     update: (key: string, value: unknown) => Thenable<void>;
 };
 
+export interface RequestLedgerOptions {
+    maxEntries?: number;
+    maxRequests?: number;
+    maxBytes?: number;
+    persistenceDebounceMs?: number;
+}
+
 const STATE_RANK: Record<OptimizationLifecycleState, number> = {
     PROMPT_RECEIVED: 0,
     OPTIMIZATION_STARTED: 1,
@@ -46,8 +53,23 @@ export class RequestLedger {
     private byRequest = new Map<string, RequestLedgerEntry[]>();
     private deduplicationKeys = new Set<string>();
     private nextSequence = 1;
+    private retainedBytes = 0;
+    private entryBytes = new Map<number, number>();
     private memento?: LedgerMemento;
     private readonly storageKey = 'tokonomics_request_ledger_v1';
+    private persistTimer?: ReturnType<typeof setTimeout>;
+    private persistenceInFlight: Promise<void> = Promise.resolve();
+    private readonly maxEntries: number;
+    private readonly maxRequests: number;
+    private readonly maxBytes: number;
+    private readonly persistenceDebounceMs: number;
+
+    constructor(options: RequestLedgerOptions = {}) {
+        this.maxEntries = Math.max(1, options.maxEntries ?? 5_000);
+        this.maxRequests = Math.max(1, options.maxRequests ?? 1_000);
+        this.maxBytes = Math.max(1_024, options.maxBytes ?? 4 * 1024 * 1024);
+        this.persistenceDebounceMs = Math.max(0, options.persistenceDebounceMs ?? 100);
+    }
 
     public static getInstance(): RequestLedger {
         if (!RequestLedger.instance) RequestLedger.instance = new RequestLedger();
@@ -81,9 +103,13 @@ export class RequestLedger {
             event: immutableEvent
         });
         this.entries.push(entry);
+        const bytes = Buffer.byteLength(JSON.stringify(entry), 'utf8');
+        this.entryBytes.set(entry.sequence, bytes);
+        this.retainedBytes += bytes;
         history.push(entry);
         this.byRequest.set(event.id, history);
         this.deduplicationKeys.add(key);
+        this.enforceBounds();
         this.persist();
         return entry;
     }
@@ -105,6 +131,11 @@ export class RequestLedger {
 
     public getLatestEvent(): Readonly<PromptOptimizationEvent> | undefined {
         return this.entries[this.entries.length - 1]?.event;
+    }
+
+    public getStorageStats(): { entries: number; requests: number; bytes: number; maxEntries: number; maxRequests: number; maxBytes: number } {
+        return Object.freeze({ entries: this.entries.length, requests: this.byRequest.size, bytes: this.retainedBytes,
+            maxEntries: this.maxEntries, maxRequests: this.maxRequests, maxBytes: this.maxBytes });
     }
 
     public getDecisionTrace(requestId: string): PrivacySafeDecisionTrace | undefined {
@@ -137,6 +168,8 @@ export class RequestLedger {
         this.byRequest.clear();
         this.deduplicationKeys.clear();
         this.nextSequence = 1;
+        this.retainedBytes = 0;
+        this.entryBytes.clear();
         this.persist();
     }
 
@@ -153,11 +186,15 @@ export class RequestLedger {
                 event: deepFreeze(cloneEvent(candidate.event))
             });
             this.entries.push(entry);
+            const bytes = Buffer.byteLength(JSON.stringify(entry), 'utf8');
+            this.entryBytes.set(entry.sequence, bytes);
+            this.retainedBytes += bytes;
             const history = this.byRequest.get(entry.requestId) || [];
             history.push(entry);
             this.byRequest.set(entry.requestId, history);
             this.deduplicationKeys.add(key);
             this.nextSequence = Math.max(this.nextSequence, entry.sequence + 1);
+            this.enforceBounds();
         } catch { /* Corrupt persisted entries are ignored. */ }
     }
 
@@ -170,9 +207,44 @@ export class RequestLedger {
 
     private persist(): void {
         if (!this.memento) return;
-        try {
-            Promise.resolve(this.memento.update(this.storageKey, this.entries)).catch(() => undefined);
-        } catch { /* Observability persistence never blocks the request path. */ }
+        if (this.persistTimer) clearTimeout(this.persistTimer);
+        this.persistTimer = setTimeout(() => {
+            this.persistTimer = undefined;
+            void this.flushPersistence();
+        }, this.persistenceDebounceMs);
+    }
+
+    public flushPersistence(): Promise<void> {
+        if (this.persistTimer) clearTimeout(this.persistTimer);
+        this.persistTimer = undefined;
+        if (!this.memento) return this.persistenceInFlight;
+        const checkpoint = this.entries.slice();
+        this.persistenceInFlight = this.persistenceInFlight
+            .then(() => Promise.resolve(this.memento!.update(this.storageKey, checkpoint)))
+            .catch(() => undefined);
+        return this.persistenceInFlight;
+    }
+
+    public dispose(): void {
+        if (this.persistTimer) clearTimeout(this.persistTimer);
+        this.persistTimer = undefined;
+        void this.flushPersistence();
+    }
+
+    private enforceBounds(): void {
+        while (this.entries.length > this.maxEntries || this.byRequest.size > this.maxRequests || this.retainedBytes > this.maxBytes) {
+            const oldestRequest = this.entries[0]?.requestId;
+            if (!oldestRequest) break;
+            const removed = this.byRequest.get(oldestRequest) || [];
+            this.byRequest.delete(oldestRequest);
+            const removedSequences = new Set(removed.map(entry => entry.sequence));
+            this.entries = this.entries.filter(entry => !removedSequences.has(entry.sequence));
+            for (const entry of removed) {
+                this.retainedBytes = Math.max(0, this.retainedBytes - (this.entryBytes.get(entry.sequence) || 0));
+                this.entryBytes.delete(entry.sequence);
+                this.deduplicationKeys.delete(eventKey(entry.event));
+            }
+        }
     }
 }
 

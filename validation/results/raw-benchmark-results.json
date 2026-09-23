@@ -1,8 +1,8 @@
 {
-  "timestamp": "2026-09-04T02:53:09.085Z",
+  "timestamp": "2026-09-07T14:45:48.976Z",
   "metadata": {
-    "repositoryCommitSha": "1fcc71872b4021d59fce80f9b0284119a399040d",
-    "tokonomicsVersion": "6.0.0",
+    "repositoryCommitSha": "72f3da2a935c2556fd3f5af07340bdaca5b59b8b",
+    "tokonomicsVersion": "7.0.1",
     "benchmarkDatasetVersion": "2026-v2.1",
     "modelProvider": "none (controlled synthetic fixture)",
     "modelVersion": "not applicable",
@@ -23,7 +23,7 @@
     "pricingProfileVersion": "synthetic-estimate-only",
     "benchmarkClassification": "Controlled Synthetic Benchmark",
     "datasetMetadataSha256": "0347d021aa250511b865a987c4fdf4dee8586335e5f48fdba4a79efdc6fed1d2",
-    "timestamp": "2026-09-04T02:53:09.085Z"
+    "timestamp": "2026-09-07T14:45:48.975Z"
   },
   "threeRunStudy": {
     "totalTasks": 160,
@@ -39,7 +39,7 @@
     "behavioralDeltaPct": 20,
     "regressionRatePct": 0,
     "averageTokenReductionPct": 99.1,
-    "averageCostReductionPct": 104.1,
+    "averageCostReductionPct": 100,
     "splits": {
       "training": {
         "splitName": "train",
@@ -54,7 +54,7 @@
         "unitTestDeltaPct": 0,
         "behavioralDeltaPct": 25,
         "tokenReductionPct": 98.9,
-        "costReductionPct": 103.9
+        "costReductionPct": 100
       },
       "validation": {
         "splitName": "validation",
@@ -70,7 +70,7 @@
         "unitTestDeltaPct": 0,
         "behavioralDeltaPct": 16.7,
         "tokenReductionPct": 99.1,
-        "costReductionPct": 104.1
+        "costReductionPct": 100
       },
       "holdout": {
         "splitName": "holdout",
@@ -86,7 +86,7 @@
         "unitTestDeltaPct": 0,
         "behavioralDeltaPct": 16.7,
         "tokenReductionPct": 99.3,
-        "costReductionPct": 104.3
+        "costReductionPct": 100
       }
     }
   },
@@ -104,7 +104,7 @@
       "unitTestDeltaPct": 0,
       "behavioralDeltaPct": 25,
       "tokenReductionPct": 98.9,
-      "costReductionPct": 103.9
+      "costReductionPct": 100
     },
     "validation": {
       "splitName": "validation",
@@ -120,7 +120,7 @@
       "unitTestDeltaPct": 0,
       "behavioralDeltaPct": 16.7,
       "tokenReductionPct": 99.1,
-      "costReductionPct": 104.1
+      "costReductionPct": 100
     },
     "holdout": {
       "splitName": "holdout",
@@ -136,7 +136,7 @@
       "unitTestDeltaPct": 0,
       "behavioralDeltaPct": 16.7,
       "tokenReductionPct": 99.3,
-      "costReductionPct": 104.3
+      "costReductionPct": 100
     }
   },
   "governorMetrics": {
@@ -262,7 +262,7 @@
     }
   ],
   "redTeamAudit": {
-    "auditDate": "2026-09-04",
+    "auditDate": "2026-09-07",
     "totalChallenges": 12,
     "challengesPassed": 12,
     "criticalVulnerabilitiesFound": 0,

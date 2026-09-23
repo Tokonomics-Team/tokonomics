@@ -20,7 +20,7 @@ export function runDashboardAggregatorTests(): boolean {
     console.log(`[Cost Calculator] Projected: Raw $${projected.rawCostUSD} ➔ Opt $${projected.optimizedCostUSD} (Saved ${projected.savingsPercentage}%)`);
 
     const reconciled = CostCalculator.calculateReconciledCost(1876, 1024, 250, 18400, CLAUDE_SONNET_PROFILE);
-    if (reconciled.isEstimate || reconciled.cacheDiscountUSD <= 0) {
+    if (!reconciled.isEstimate || reconciled.savingsBasis !== 'hypothetical-uncached-input-baseline' || reconciled.cacheDiscountUSD <= 0) {
         throw new Error(`CostCalculator reconciled cost error (Got: ${JSON.stringify(reconciled)})`);
     }
     console.log(`[Cost Calculator] Reconciled: Actual Opt $${reconciled.actualOptimizedCostUSD} (Cache Discount: $${reconciled.cacheDiscountUSD})`);

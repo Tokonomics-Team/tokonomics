@@ -123,9 +123,10 @@ export async function runPhase10ExperimentTests(): Promise<void> {
 
     const manifest = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'package.json'), 'utf8'));
     const properties = manifest.contributes.configuration.properties;
-    assert.strictEqual(properties['tokenOptimizer.experimentalConsent'].default, false);
-    assert.deepStrictEqual(properties['tokenOptimizer.experimentalFeatures'].default, []);
-    assert.deepStrictEqual(properties['tokenOptimizer.disabledExperiments'].items.enum, [...EXPERIMENT_IDS]);
+    assert.strictEqual(properties['tokenOptimizer.experimentalConsent'], undefined);
+    assert.strictEqual(properties['tokenOptimizer.experimentalFeatures'], undefined);
+    assert.strictEqual(properties['tokenOptimizer.disabledExperiments'], undefined,
+        'Preview experiment controls must remain internal and default-off.');
     ExperimentRuntime.reset();
     FeatureFlagRegistry.resetToDefault();
     console.log('Phase 10 consent, trust, resource, fallback, shadow isolation, and statistical promotion contracts passed.');

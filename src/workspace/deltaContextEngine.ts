@@ -7,7 +7,9 @@ export interface FocalAttentionMetrics {
     cursorGravityScore: number;
     isSelected: boolean;
     isModifiedInGitDiff: boolean;
+    diffProximityScore?: number;
     compositeAttentionWeight: number;
+    staleDiscarded?: boolean;
 }
 
 export class DeltaContextEngine {
@@ -20,6 +22,22 @@ export class DeltaContextEngine {
     public calculateCursorGravity(symbolLine: number, cursorLine: number, sigma: number = this.defaultSigma): number {
         const distance = Math.abs(symbolLine - cursorLine);
         const weight = Math.exp(-distance / sigma);
+        return Math.round(weight * 1000) / 1000;
+    }
+
+    /**
+     * Calculates diff-hunk proximity decay to nearby modified lines
+     */
+    public calculateDiffProximity(symbolLine: number, modifiedLines: Set<number>, sigma: number = this.defaultSigma): number {
+        if (!modifiedLines || modifiedLines.size === 0) return 0.0;
+        let minDistance = Infinity;
+        for (const line of modifiedLines) {
+            const dist = Math.abs(symbolLine - line);
+            if (dist < minDistance) minDistance = dist;
+            if (minDistance === 0) break;
+        }
+        if (minDistance === Infinity) return 0.0;
+        const weight = Math.exp(-minDistance / sigma);
         return Math.round(weight * 1000) / 1000;
     }
 
@@ -81,7 +99,26 @@ export class DeltaContextEngine {
         cursorLine?: number;
         selection?: { start: number; end: number };
         gitDiffModifiedLines?: Map<string, Set<number>>;
+        expectedDocumentVersion?: number;
+        actualDocumentVersion?: number;
     }): FocalAttentionMetrics {
+        // Step 2 & 8: Version freshness check
+        if (
+            typeof params.expectedDocumentVersion === 'number' &&
+            typeof params.actualDocumentVersion === 'number' &&
+            params.expectedDocumentVersion !== params.actualDocumentVersion
+        ) {
+            // Document version diverged from snapshot! Discard stale editor cursor/selection
+            return {
+                cursorGravityScore: 0.0,
+                isSelected: false,
+                isModifiedInGitDiff: false,
+                diffProximityScore: 0.0,
+                compositeAttentionWeight: 0.2, // Base baseline only
+                staleDiscarded: true
+            };
+        }
+
         const isSameFile = params.activeFilePath && params.filePath.endsWith(params.activeFilePath);
         
         let cursorGravity = 0.0;
@@ -97,6 +134,7 @@ export class DeltaContextEngine {
         }
 
         let isModified = false;
+        let diffProximity = 0.0;
         if (params.gitDiffModifiedLines && params.gitDiffModifiedLines.has(params.filePath)) {
             const modifiedSet = params.gitDiffModifiedLines.get(params.filePath)!;
             const endLine = params.symbolEndLine ?? params.symbolLine;
@@ -106,19 +144,23 @@ export class DeltaContextEngine {
                     break;
                 }
             }
+            diffProximity = this.calculateDiffProximity(params.symbolLine, modifiedSet);
         }
 
-        // Composite weight formula: base(0.2) + selection(0.8) + cursor(0.5) + gitDiff(0.5)
+        // Composite weight formula: base(0.2) + selection(0.8) + cursor(0.5) + gitDiff(0.5) + diffProximity(0.3)
         let weight = 0.2;
         if (isSelected) weight += 0.8;
         weight += cursorGravity * 0.5;
         if (isModified) weight += 0.5;
+        weight += diffProximity * 0.3;
 
         return {
             cursorGravityScore: cursorGravity,
             isSelected,
             isModifiedInGitDiff: isModified,
-            compositeAttentionWeight: Math.min(2.0, Math.round(weight * 100) / 100)
+            diffProximityScore: diffProximity,
+            compositeAttentionWeight: Math.min(2.0, Math.round(weight * 100) / 100),
+            staleDiscarded: false
         };
     }
 }

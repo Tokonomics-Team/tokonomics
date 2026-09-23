@@ -84,8 +84,8 @@ function buildGates() {
         {
             id: 'dependency-audit',
             description: 'Registry-backed dependency vulnerability audit',
-            command: 'npm',
-            args: ['audit', '--audit-level=moderate'],
+            command: process.execPath,
+            args: ['scripts/audit-dependencies.js'],
             required: true,
             inheritOutput: true
         }

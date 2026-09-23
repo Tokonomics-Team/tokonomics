@@ -14,41 +14,21 @@ export class EvidenceSafetyGate {
         required: EvidenceRequirement[],
         provided: EvidenceCategory[]
     ): EvidenceSafetyResult {
-        const providedSet = new Set<EvidenceCategory>(provided);
-        const missing: EvidenceRequirement[] = [];
-
-        for (const req of required) {
-            if (!providedSet.has(req.category)) {
-                missing.push(req);
-            }
-        }
-
+        const present = new Set<EvidenceCategory>(provided);
+        const missing = required.filter(requirement => !present.has(requirement.category));
         const criticalMissing = missing.filter(m => m.priority === 'critical');
-        const highMissing = missing.filter(m => m.priority === 'high');
-
-        let passed = true;
-        let actionTaken: EvidenceSafetyResult['actionTaken'] = 'proceed';
-
-        if (criticalMissing.length > 0) {
-            // Critical evidence is missing -> must fail closed to prevent quality degradation
-            passed = false;
-            actionTaken = 'fail_closed_fallback';
-        } else if (highMissing.length > 1) {
-            // Multiple high-priority items missing -> downgrade to conservative representation
-            passed = false;
-            actionTaken = 'downgrade_to_conservative';
-        }
-
-        const totalReq = required.length;
-        const matched = totalReq - missing.length;
-        const confidence = totalReq > 0 ? Math.round((matched / totalReq) * 100) / 100 : 1.0;
+        const actionTaken: EvidenceSafetyResult['actionTaken'] = criticalMissing.length > 0
+            ? 'fail_closed_fallback'
+            : missing.length > 0
+                ? 'downgrade_to_conservative'
+                : 'proceed';
 
         return {
-            passed,
-            required,
-            provided,
-            missing,
-            confidence,
+            passed: missing.length === 0,
+            required: required.map(requirement => ({ ...requirement })),
+            provided: [...present],
+            missing: missing.map(requirement => ({ ...requirement })),
+            confidence: required.length ? (required.length - missing.length) / required.length : 1,
             actionTaken
         };
     }

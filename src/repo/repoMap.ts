@@ -8,6 +8,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { TokenCounter } from '../engine/tokenizer';
 import { TokenIgnoreFilter } from '../ignore/tokenIgnore';
+import { UserPreferenceRegistry } from '../config/userPreferences';
 
 export interface SymbolTag {
     name: string;
@@ -46,14 +47,7 @@ export class RepoMapEngine {
 
         const filesToScan = this.collectSourceFiles(root);
 
-        // Configurable file size threshold (defaults to 300KB if vscode API unavailable)
-        let maxFileSizeBytes = 300 * 1024;
-        try {
-            const vscodeModule = require('vscode');
-            const conf = vscodeModule.workspace?.getConfiguration?.('tokenOptimizer');
-            const maxKB = conf?.get?.('maxIndexFileSizeKB', 300) ?? 300;
-            maxFileSizeBytes = maxKB * 1024;
-        } catch {}
+        const maxFileSizeBytes = UserPreferenceRegistry.get().workspace.maxIndexFileSizeKB * 1024;
 
         for (const file of filesToScan) {
             try {

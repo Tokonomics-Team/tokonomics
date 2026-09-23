@@ -4,6 +4,7 @@ export type WorkPriority = 'foreground' | 'index' | 'warming' | 'experiment';
 
 export interface WorkCancellation {
     readonly isCancellationRequested: boolean;
+    readonly onCancellationRequested?: (listener: () => void) => { dispose(): void };
 }
 
 export interface WorkSpec {
@@ -11,6 +12,7 @@ export interface WorkSpec {
     priority: WorkPriority;
     cancellation?: WorkCancellation;
     deadlineMs?: number;
+    estimatedBytes?: number;
 }
 
 export interface WorkContext {
@@ -29,6 +31,8 @@ export interface SchedulerStats {
     superseded: number;
     rejected: number;
     peakQueued: number;
+    queuedBytes: number;
+    byteCapacity: number;
 }
 
 export class WorkCancelledError extends Error {
@@ -49,6 +53,7 @@ type Job<T> = {
     task: (context: WorkContext) => Promise<T> | T;
     resolve: (value: T | PromiseLike<T>) => void;
     reject: (reason?: unknown) => void;
+    estimatedBytes: number;
 };
 
 const PRIORITY: Record<WorkPriority, number> = { foreground: 0, index: 1, warming: 2, experiment: 3 };
@@ -60,15 +65,19 @@ export class BoundedPriorityScheduler {
     private sequence = 0;
     private disposed = false;
     private foregroundBurst = 0;
+    private queuedBytes = 0;
     private counters = { accepted: 0, completed: 0, cancelled: 0, superseded: 0, rejected: 0, peakQueued: 0 };
 
     constructor(
         private readonly maxConcurrency = 2,
         private readonly capacity = 128,
-        private readonly maxForegroundBurst = 8
+        private readonly maxForegroundBurst = 8,
+        private readonly byteCapacity = 16 * 1024 * 1024,
+        private readonly foregroundReserve = Math.max(1, Math.floor(capacity / 8))
     ) {
         if (!Number.isInteger(maxConcurrency) || maxConcurrency < 1) throw new Error('Scheduler concurrency must be at least one.');
         if (!Number.isInteger(capacity) || capacity < 1) throw new Error('Scheduler capacity must be at least one.');
+        if (!Number.isFinite(byteCapacity) || byteCapacity < 1) throw new Error('Scheduler byte capacity must be positive.');
     }
 
     public schedule<T>(spec: WorkSpec, task: (context: WorkContext) => Promise<T> | T): Promise<T> {
@@ -79,7 +88,8 @@ export class BoundedPriorityScheduler {
         }
 
         return new Promise<T>((resolve, reject) => {
-            const job: Job<T> = { sequence: ++this.sequence, spec: { ...spec }, task, resolve, reject };
+            const estimatedBytes = Math.max(1, Math.floor(spec.estimatedBytes ?? 1));
+            const job: Job<T> = { sequence: ++this.sequence, spec: { ...spec }, task, resolve, reject, estimatedBytes };
             if (spec.key) {
                 const previous = this.queuedByKey.get(spec.key);
                 if (previous) {
@@ -89,9 +99,13 @@ export class BoundedPriorityScheduler {
                 }
             }
 
-            if (this.queue.length >= this.capacity) {
+            const nonForegroundLimit = Math.max(1, this.capacity - this.foregroundReserve);
+            const itemSaturated = this.queue.length >= this.capacity
+                || (spec.priority !== 'foreground' && this.queue.length >= nonForegroundLimit);
+            const byteSaturated = this.queuedBytes + estimatedBytes > this.byteCapacity;
+            if (itemSaturated || byteSaturated) {
                 const victim = this.findEvictionCandidate(spec.priority);
-                if (!victim) {
+                if (!victim || (this.queuedBytes - victim.estimatedBytes + estimatedBytes > this.byteCapacity)) {
                     this.counters.rejected++;
                     reject(new WorkQueueFullError());
                     return;
@@ -102,6 +116,7 @@ export class BoundedPriorityScheduler {
             }
 
             this.queue.push(job as Job<unknown>);
+            this.queuedBytes += estimatedBytes;
             if (spec.key) this.queuedByKey.set(spec.key, job as Job<unknown>);
             this.counters.accepted++;
             this.counters.peakQueued = Math.max(this.counters.peakQueued, this.queue.length);
@@ -110,12 +125,14 @@ export class BoundedPriorityScheduler {
     }
 
     public getStats(): SchedulerStats {
-        return Object.freeze({ running: this.running, queued: this.queue.length, capacity: this.capacity, ...this.counters });
+        return Object.freeze({ running: this.running, queued: this.queue.length, capacity: this.capacity,
+            queuedBytes: this.queuedBytes, byteCapacity: this.byteCapacity, ...this.counters });
     }
 
     public dispose(): void {
         this.disposed = true;
         for (const job of this.queue.splice(0)) job.reject(new WorkCancelledError('Scheduler disposed before work started.'));
+        this.queuedBytes = 0;
         this.queuedByKey.clear();
     }
 
@@ -140,7 +157,7 @@ export class BoundedPriorityScheduler {
                     if (this.isCancelled(job.spec)) throw new WorkCancelledError();
                 }
             };
-            Promise.resolve().then(() => job.task(context)).then(
+            this.runWithDeadline(job, context).then(
                 value => { this.counters.completed++; job.resolve(value); },
                 error => {
                     if (error instanceof WorkCancelledError) this.counters.cancelled++;
@@ -148,6 +165,28 @@ export class BoundedPriorityScheduler {
                 }
             ).finally(() => { this.running--; this.drain(); });
         }
+    }
+
+    private runWithDeadline(job: Job<unknown>, context: WorkContext): Promise<unknown> {
+        const task = Promise.resolve().then(() => job.task(context));
+        const racers: Promise<unknown>[] = [task];
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        let cancellationDisposable: { dispose(): void } | undefined;
+        if (job.spec.deadlineMs !== undefined) {
+            const remaining = Math.max(0, job.spec.deadlineMs - Date.now());
+            racers.push(new Promise((_, reject) => {
+                timer = setTimeout(() => reject(new WorkCancelledError('Scheduled work exceeded its deadline.')), remaining);
+            }));
+        }
+        if (job.spec.cancellation?.onCancellationRequested) {
+            racers.push(new Promise((_, reject) => {
+                cancellationDisposable = job.spec.cancellation!.onCancellationRequested!(() => reject(new WorkCancelledError()));
+            }));
+        }
+        return Promise.race(racers).finally(() => {
+            if (timer) clearTimeout(timer);
+            cancellationDisposable?.dispose();
+        });
     }
 
     private takeNext(): Job<unknown> | undefined {
@@ -175,7 +214,10 @@ export class BoundedPriorityScheduler {
 
     private removeQueued(job: Job<unknown>): void {
         const index = this.queue.indexOf(job);
-        if (index >= 0) this.queue.splice(index, 1);
+        if (index >= 0) {
+            this.queue.splice(index, 1);
+            this.queuedBytes = Math.max(0, this.queuedBytes - job.estimatedBytes);
+        }
         if (job.spec.key && this.queuedByKey.get(job.spec.key) === job) this.queuedByKey.delete(job.spec.key);
     }
 

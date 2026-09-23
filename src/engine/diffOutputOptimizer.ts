@@ -33,7 +33,8 @@ const EDIT_KEYWORDS = [
 const QUESTION_KEYWORDS = [
     'explain', 'why', 'how does', 'what is', 'what are',
     'describe', 'tell me', 'can you explain', 'help me understand',
-    'walk me through', 'summarize', 'analyze', 'review', 'compare'
+    'walk me through', 'summarize', 'analyze', 'review', 'compare',
+    'recommend', 'suggest', 'best practice', 'best practices', 'advice', 'guidance', 'how to', 'how should'
 ];
 
 /** Keywords signaling greenfield code generation */
@@ -96,7 +97,7 @@ export class DiffOutputOptimizer {
 
         // 3. Check for edit intent
         const isEdit = EDIT_KEYWORDS.some(kw => lowerQuery.includes(kw));
-        if (isEdit || (hasActiveFile && !isQuestion)) {
+        if (isEdit && !isQuestion) {
             const suffixTokens = TokenCounter.countTokens(DIFF_INSTRUCTION_SUFFIX);
             return {
                 intent: 'edit',
@@ -196,6 +197,10 @@ export class DiffOutputOptimizer {
      * e.g., "can you fix the bug in auth.ts?" has both question and edit signals.
      */
     private static hasStrongEditSignal(lowerQuery: string): boolean {
+        // If the query asks for recommendations, advice, ideas, or best practices, it is an advisory inquiry, not a direct edit instruction.
+        if (/\b(recommend|recommendation|suggestions?|best practices?|advice|guidance|ideas?|how to|how should|how can|pros and cons)\b/i.test(lowerQuery)) {
+            return false;
+        }
         const strongSignals = ['fix', 'refactor', 'change', 'update', 'replace', 'remove', 'delete', 'rename'];
         return strongSignals.some(s => lowerQuery.includes(s));
     }

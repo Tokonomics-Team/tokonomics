@@ -15,9 +15,16 @@ import { CostCalculator } from '../cost/costCalculator';
 import { costReconciliationLedger } from '../cost/reconciliationLedger';
 import { CanonicalRequestCompiler } from '../protocol/canonicalCompiler';
 import { ProtocolError, VsCodeProtocolAdapter } from '../protocol/canonicalProtocol';
-import { prepareCanonicalEgress } from '../protocol/canonicalEgress';
+import { CanonicalProviderGateway } from '../protocol/providerGateway';
 import { WorkspaceSnapshot } from '../workspace/workspaceIndex';
 import { BoundedPriorityScheduler, WorkQueueFullError } from '../performance/boundedScheduler';
+import { UserPreferenceRegistry } from '../config/userPreferences';
+import { TokenCounter } from '../engine/tokenizer';
+import { RequestContextEnvelope, resolveInitialAttachment } from '../engine/requestContextEnvelope';
+import { resolveSubscriptionChoice, subscriptionChoices } from '../subscriptions/modelChoices';
+import { subscriptionModel } from '../subscriptions/subscriptionModels';
+import { SubscriptionActivityListener } from '../subscriptions/cliTransport';
+import { asksForWorkspaceSource } from './chatContextReferences';
 
 export class TokenOptimizerLanguageModelProvider {
     private readonly protocol = new VsCodeProtocolAdapter();
@@ -25,16 +32,34 @@ export class TokenOptimizerLanguageModelProvider {
     constructor(
         private compiler: CanonicalRequestCompiler,
         private onOptimizationComplete: () => void,
-        private captureWorkspaceSnapshot?: () => WorkspaceSnapshot,
+        /**
+         * Resolves the snapshot this request may retrieve from. Allowed to be asynchronous:
+         * the index warms in the background after activation, and a caller that only reads
+         * whatever is present races that warm - the first prompts after opening the editor
+         * saw an empty snapshot, retrieval was never authorised, and the request went out
+         * with no workspace source at all.
+         */
+        private captureWorkspaceSnapshot?: () => WorkspaceSnapshot | Promise<WorkspaceSnapshot>,
         private inferenceScheduler?: BoundedPriorityScheduler
     ) {}
 
+    /** Monotonic, content-free counter giving each request envelope a distinct identity. */
+    private envelopeSequence = 0;
+
+    /**
+     * Reports the calibrated compile-time token estimate. This uses the same estimator the
+     * compiler uses for budgeting, so a caller's count agrees with Tokonomics' own accounting.
+     * The value is an estimate, never a provider-measured count.
+     */
     public async provideTokenCount(
         model: any,
         text: string | any,
         token: vscode.CancellationToken
     ): Promise<number> {
-        return typeof text === 'string' ? Math.ceil(text.length / 4) : 10;
+        if (typeof text === 'string') return TokenCounter.countTokens(text);
+        const canonical = this.protocol.fromProviderMessages([text]);
+        return canonical.reduce((sum, message) => sum + message.parts.reduce(
+            (partSum, part) => partSum + (part.kind === 'text' ? TokenCounter.countTokens(part.text) : 8), 0), 0);
     }
 
     public async provideLanguageModelChatResponse(
@@ -42,12 +67,56 @@ export class TokenOptimizerLanguageModelProvider {
         messages: readonly any[],
         options: any,
         progress: vscode.Progress<any>,
-        token: vscode.CancellationToken
+        token: vscode.CancellationToken,
+        /**
+         * Optional running account of what the provider is doing, for callers that have somewhere to
+         * show it. VS Code never passes this; the sidebar panel does, because the gap between "sent"
+         * and the first token is seconds long and a surface that says nothing during it is
+         * indistinguishable from one that has hung.
+         */
+        onActivity?: SubscriptionActivityListener
     ): Promise<void> {
         const config = this.getOptimizationConfig();
 
         const requestedFamilyOrId = model && model.family !== 'auto' ? model.family : undefined;
-        const { targetModel, detectedProvider, detectedFamily } = await this.resolveUpstreamModelAndProvider(config, requestedFamilyOrId);
+        // A caller may name one exact upstream model through a namespaced option. Only a
+        // well-formed string is accepted, and resolution below still requires that the id matches a
+        // model this host currently exposes, so a stale or forged value cannot redirect the request.
+        const internalRouting = readInternalChatRouting(options?.modelOptions);
+        const explicitUpstreamModelId = internalRouting.upstreamModelId;
+        let subscription = explicitUpstreamModelId ? await resolveSubscriptionChoice(explicitUpstreamModelId) : undefined;
+        const upstreamModelOptions = stripInternalChatOptions(options?.modelOptions);
+        let { targetModel, detectedProvider, detectedFamily } = subscription
+            ? { targetModel: subscriptionModel(subscription.provider, { model: subscription.model, onActivity }),
+                detectedProvider: (subscription.provider === 'codex' ? 'openai' : 'anthropic') as TargetProvider,
+                detectedFamily: subscription.model || subscription.provider }
+            : await this.resolveUpstreamModelAndProvider(config, requestedFamilyOrId, explicitUpstreamModelId);
+
+        // In environments without registered vscode.lm models (such as Antigravity IDE without Copilot),
+        // check whether an authenticated subscription CLI model is available (e.g. Codex or Claude).
+        if (!targetModel && !explicitUpstreamModelId) {
+            try {
+                const choices = await subscriptionChoices();
+                for (const choice of choices) {
+                    try {
+                        const candidate = subscriptionModel(choice.provider, { model: choice.model, onActivity });
+                        targetModel = candidate;
+                        detectedProvider = (choice.provider === 'codex' ? 'openai' : 'anthropic') as TargetProvider;
+                        detectedFamily = choice.model || choice.provider;
+                        subscription = choice;
+                        break;
+                    } catch {
+                        // Check next candidate
+                    }
+                }
+            } catch {}
+        }
+
+        // An explicit model choice is a strict contract. If it disappeared after discovery, fail
+        // before compilation so no successful optimization or savings entry can be recorded.
+        if (explicitUpstreamModelId && !targetModel) {
+            throw new Error('The selected upstream model is not available.');
+        }
 
         // Effective provider (uses detected provider if config is 'auto')
         const effectiveProvider: TargetProvider = config.targetProvider === 'auto' 
@@ -55,48 +124,95 @@ export class TokenOptimizerLanguageModelProvider {
             : config.targetProvider;
 
         const canonicalMessages = this.protocol.fromProviderMessages(messages);
+        const workspaceSnapshot = await this.captureWorkspaceSnapshot?.();
+
+        // Same envelope and the same policy as the chat participant, so both entry points answer
+        // the workspace-context question identically. This path has no active editor of its own -
+        // the caller supplies the messages - so there is no document to attach and the only decision
+        // the envelope makes here is whether retrieval is authorised. Previously it was never
+        // authorised on this path at all, which is why the sidebar could not reach parity.
+        const providerRuntime = UserPreferenceRegistry.get();
+        const providerEnvelope: RequestContextEnvelope = Object.freeze({
+            envelopeId: `env_lm_${(this.envelopeSequence += 1)}`,
+            contextMode: providerRuntime.workspace.contextMode,
+            promptChars: canonicalMessages.reduce((sum, message) => sum + message.parts.reduce(
+                (partSum, part) => partSum + (part.kind === 'text' ? part.text.length : 0), 0), 0),
+            documentIsDirty: false,
+            unsavedBuffersPermitted: providerRuntime.workspace.includeUnsavedBuffers === true,
+            workspaceTrusted: Boolean(workspaceSnapshot),
+            retrievalAvailable: Boolean(workspaceSnapshot && workspaceSnapshot.files.size > 0)
+        });
+        const providerAttachment = resolveInitialAttachment(providerEnvelope);
+
+        onActivity?.({ kind: 'status', id: 'context', text: 'Compiling context', status: 'running' });
         const compiled = await this.compiler.compile({
             messages: canonicalMessages,
-            sessionId: 'session_lm_proxy',
+            requestId: internalRouting.requestId,
+            sessionId: internalRouting.sessionId || 'session_lm_proxy',
             targetProvider: effectiveProvider,
             targetModel: targetModel?.id || detectedFamily,
             maxTokenBudget: typeof (targetModel as any)?.maxInputTokens === 'number' ? (targetModel as any).maxInputTokens : undefined,
-            maxOutputTokens: typeof options?.modelOptions?.maxOutputTokens === 'number'
-                ? options.modelOptions.maxOutputTokens
-                : typeof options?.modelOptions?.max_tokens === 'number'
-                    ? options.modelOptions.max_tokens
+            maxOutputTokens: typeof upstreamModelOptions?.maxOutputTokens === 'number'
+                ? upstreamModelOptions.maxOutputTokens
+                : typeof upstreamModelOptions?.max_tokens === 'number'
+                    ? upstreamModelOptions.max_tokens
                     : typeof (targetModel as any)?.maxOutputTokens === 'number' ? (targetModel as any).maxOutputTokens : undefined,
             cancellation: token,
-            workspaceSnapshot: this.captureWorkspaceSnapshot?.()
+            envelopeId: providerEnvelope.envelopeId,
+            allowWorkspaceRetrieval: providerAttachment.allowRetrieval,
+            callerSuppliedSource: Boolean(providerAttachment.attachFullDocument || providerAttachment.attachSelection),
+            workspaceSnapshot
+            ,requestOptions: { modelOptions: upstreamModelOptions, tools: options?.tools, toolMode: options?.toolMode }
         });
         const stats = compiled.compilation;
+        onActivity?.({ kind: 'status', id: 'context', text: `Context compiled: ${stats.originalTokens} to ${stats.optimizedTokens} input tokens`, status: 'completed' });
+        if (subscription) stats.event = { ...stats.event, subscriptionTransport: subscription.provider,
+            costStatus: 'unavailable', costState: 'billed_unavailable', isCostReconciled: false,
+            projectedRawCostUSD: 0, projectedOptimizedCostUSD: 0, projectedSavingsUSD: 0 };
 
         try {
+
+        const finalPrompt = canonicalMessages.filter(m => m.role === 'user').at(-1)?.parts
+            .filter(p => p.kind === 'text').map(p => (p as any).text).join('\n') || '';
+        if (subscription && asksForWorkspaceSource(finalPrompt) && !finalPrompt.includes('```')
+            && !JSON.stringify(compiled.messages).includes('<tokonomics-evidence')) {
+            // Name the condition that actually blocked it. "Set it to Automatic" is unhelpful advice
+            // to someone who already has, and the two causes need different actions.
+            const indexed = workspaceSnapshot?.files.size ?? 0;
+            throw new Error(providerRuntime.workspace.contextMode !== 'automatic'
+                ? 'No project source was prepared. Set Token Optimizer: Workspace Context to Automatic in a trusted workspace, or paste the relevant code.'
+                : indexed === 0
+                    ? 'No project source was prepared: no workspace files are indexed yet. Open a folder in a trusted window, or paste the relevant code.'
+                    : `No project source was prepared: retrieval admitted nothing from ${indexed} indexed file(s) for this request. Attach the files you mean, or paste the relevant code.`);
+        }
 
         if (!targetModel) {
             this.compiler.commit(compiled);
             this.onOptimizationComplete();
-            // If no underlying Copilot/LM is active, emit a helpful diagnostic message
-            const summary = `⚡ [Tokonomics]: Prompt optimized from ${stats.originalTokens} to ${stats.optimizedTokens} tokens (${stats.reductionPercentage}% saved for [${effectiveProvider.toUpperCase()}]). No downstream language model detected in current environment.`;
+            // If no underlying Copilot/LM or subscription CLI is active, emit an actionable message
+            const summary = `⚡ [Tokonomics]: Prompt optimized (${stats.originalTokens} → ${stats.optimizedTokens} tokens). No active language model detected.\n\nTo chat, please select **Codex** or **Claude** from the model dropdown, or sign in to your subscription CLI.`;
             progress.report(new vscode.LanguageModelTextPart(summary));
             return;
         }
 
         const forwardOptions = {
-            modelOptions: options?.modelOptions,
+            modelOptions: upstreamModelOptions,
             tools: options?.tools ? [...options.tools] : undefined,
             toolMode: options?.toolMode
         };
-        const prepared = prepareCanonicalEgress(compiled.messages, forwardOptions, {
+        const runtime = UserPreferenceRegistry.get();
+        const containsWorkspaceData = Boolean(compiled.compilation.evidenceRetrieval?.selected.length);
+        const prepared = CanonicalProviderGateway.prepare(this.protocol, compiled.messages, forwardOptions, {
             workspaceRoots: (vscode.workspace.workspaceFolders || []).map(folder => folder.uri.fsPath),
             workspaceTrusted: vscode.workspace.isTrusted !== false,
-            containsWorkspaceData: false,
+            containsWorkspaceData,
+            workspaceConsent: runtime.preferences.workspaceContext !== 'none',
+            sourcePolicySatisfied: !containsWorkspaceData || Boolean(workspaceSnapshot),
             isCancellationRequested: token.isCancellationRequested
         });
-        const upstreamMessages = this.protocol.toUpstreamMessages(prepared.messages);
         const performInference = async (checkpoint: () => void) => {
             checkpoint();
-            const response = await targetModel.sendRequest(upstreamMessages, prepared.options as any, token);
+            const response = await CanonicalProviderGateway.send(targetModel, prepared, token);
             const responseStream: AsyncIterable<unknown> = (response as any).stream || this.textFallback(response.text);
             for await (const fragment of responseStream) {
                 checkpoint();
@@ -124,7 +240,17 @@ export class TokenOptimizerLanguageModelProvider {
         const modelId = targetModel.id || targetModel.name || detectedFamily || 'claude-3-7-sonnet';
         const providerId = targetModel.vendor || effectiveProvider;
         const verifiedUsage = CostCalculator.parseVerifiedProviderUsage(responseUsage, compiled.requestId, providerId, modelId);
-        if (verifiedUsage) {
+        if (subscription) {
+            // The request identity has to travel with the event. Consumers match usage back to the
+            // turn that produced it by id, so an event carrying the compiler's own id instead of the
+            // caller's was silently dropped and the panel never showed a usage line at all.
+            OptimizationEventBus.getInstance().emit({ ...stats.event, id: compiled.requestId,
+                timestamp: Date.now(), state: 'PROMPT_COMPLETED',
+                model: (response as any).subscriptionModel || subscription.model || modelId,
+                observedInputTokens: verifiedUsage?.inputTokens, outputTokens: verifiedUsage?.outputTokens,
+                cachedTokens: verifiedUsage?.cacheReadInputTokens, cacheWriteTokens: verifiedUsage?.cacheWriteInputTokens,
+                traceId: `${compiled.requestId}:subscription-usage` });
+        } else if (verifiedUsage) {
             costReconciliationLedger.begin({
                 requestId: compiled.requestId,
                 provider: providerId,
@@ -141,6 +267,8 @@ export class TokenOptimizerLanguageModelProvider {
                     provider: providerId as any,
                     model: modelId,
                     cachedTokens: verifiedUsage.cacheReadInputTokens,
+                    cacheWriteTokens: verifiedUsage.cacheWriteInputTokens,
+                    observedInputTokens: verifiedUsage.inputTokens,
                     outputTokens: verifiedUsage.outputTokens,
                     actualRawCostUSD: costReconciled.actualRawCostUSD,
                     actualOptimizedCostUSD: costReconciled.actualOptimizedCostUSD,
@@ -215,7 +343,8 @@ export class TokenOptimizerLanguageModelProvider {
      */
     private async resolveUpstreamModelAndProvider(
         config: TokenOptimizationConfig,
-        requestedFamilyOrId?: string
+        requestedFamilyOrId?: string,
+        explicitUpstreamModelId?: string
     ): Promise<{
         targetModel: vscode.LanguageModelChat | null;
         detectedProvider: TargetProvider;
@@ -230,6 +359,21 @@ export class TokenOptimizerLanguageModelProvider {
             );
 
             if (upstreamModels.length > 0) {
+                // 1b. An explicit upstream id wins, but only by EXACT match against a model this
+                // host exposes right now. If that id has disappeared the request is not silently
+                // rerouted to a different model: resolution falls through and the caller is told.
+                if (explicitUpstreamModelId) {
+                    const exact = upstreamModels.find(candidate => candidate.id === explicitUpstreamModelId);
+                    if (exact) {
+                        return {
+                            targetModel: exact,
+                            detectedProvider: this.inferProviderFromModel(exact),
+                            detectedFamily: exact.family || exact.name || explicitUpstreamModelId
+                        };
+                    }
+                    return { targetModel: null, detectedProvider: 'anthropic', detectedFamily: explicitUpstreamModelId };
+                }
+
                 // 2. If caller or config requested a specific family/model, prioritize that
                 const targetPreference = (requestedFamilyOrId || config.targetUpstreamModelFamily || '').toLowerCase();
                 if (targetPreference && targetPreference !== 'auto') {
@@ -257,8 +401,8 @@ export class TokenOptimizerLanguageModelProvider {
                     detectedFamily: primaryModel.family || primaryModel.name || 'auto'
                 };
             }
-        } catch (e) {
-            console.warn('[Tokonomics] LM provider resolution fallback:', e);
+        } catch {
+            console.warn('[Tokonomics] LM provider resolution used the safe fallback.');
         }
 
         return {
@@ -296,16 +440,56 @@ export class TokenOptimizerLanguageModelProvider {
     }
 
     private getOptimizationConfig(): TokenOptimizationConfig {
-        const conf = vscode.workspace.getConfiguration('tokenOptimizer');
-        return {
-            enableAstPruning: conf.get<boolean>('enableAstPruning', true),
-            enableCacheAlignment: conf.get<boolean>('enableCacheAlignment', true),
-            enableTextCompression: conf.get<boolean>('enableTextCompression', true),
-            compressionRatio: conf.get<number>('compressionRatio', 0.4),
-            targetProvider: conf.get<TargetProvider>('targetProvider', 'auto'),
-            maxHistoryTurns: conf.get<number>('maxHistoryTurns', 8),
-            stripDiffsAndLogs: conf.get<boolean>('stripDiffsAndLogs', true),
-            targetUpstreamModelFamily: conf.get<string>('targetUpstreamModelFamily', 'auto')
-        };
+        return { ...UserPreferenceRegistry.get().tokenOptimization };
     }
+}
+
+/** Namespaced option through which a caller may name one exact upstream model. */
+export const UPSTREAM_TARGET_MODEL_OPTION = 'tokonomics.upstreamModelId';
+export const CHAT_REQUEST_ID_OPTION = 'tokonomics.chatRequestId';
+export const CHAT_SESSION_ID_OPTION = 'tokonomics.chatSessionId';
+
+interface InternalChatRouting {
+    readonly upstreamModelId?: string;
+    readonly requestId?: string;
+    readonly sessionId?: string;
+}
+
+function readInternalChatRouting(modelOptions: unknown): InternalChatRouting {
+    if (typeof modelOptions !== 'object' || modelOptions === null || Array.isArray(modelOptions)) return {};
+    const record = modelOptions as Record<string, unknown>;
+    return {
+        upstreamModelId: readExplicitUpstreamModelId(record),
+        requestId: readBoundedCorrelationId(record[CHAT_REQUEST_ID_OPTION], 'req_'),
+        sessionId: readBoundedCorrelationId(record[CHAT_SESSION_ID_OPTION], 'chat_')
+    };
+}
+
+/** Removes extension-private routing metadata before token budgeting and provider egress. */
+function stripInternalChatOptions(modelOptions: unknown): Record<string, unknown> | undefined {
+    if (typeof modelOptions !== 'object' || modelOptions === null || Array.isArray(modelOptions)) return undefined;
+    const sanitized = { ...(modelOptions as Record<string, unknown>) };
+    delete sanitized[UPSTREAM_TARGET_MODEL_OPTION];
+    delete sanitized[CHAT_REQUEST_ID_OPTION];
+    delete sanitized[CHAT_SESSION_ID_OPTION];
+    return Object.keys(sanitized).length > 0 ? sanitized : undefined;
+}
+
+function readBoundedCorrelationId(value: unknown, prefix: string): string | undefined {
+    if (typeof value !== 'string' || !value.startsWith(prefix) || value.length > 256) return undefined;
+    return /^[A-Za-z0-9_-]+$/.test(value) ? value : undefined;
+}
+
+/**
+ * Extracts the explicit upstream model id from caller-supplied model options.
+ * Anything that is not a plain, reasonably sized, non-empty string is ignored rather than trusted.
+ */
+function readExplicitUpstreamModelId(modelOptions: unknown): string | undefined {
+    if (typeof modelOptions !== 'object' || modelOptions === null) return undefined;
+    const value = (modelOptions as Record<string, unknown>)[UPSTREAM_TARGET_MODEL_OPTION];
+    if (typeof value !== 'string') return undefined;
+    const trimmed = value.trim();
+    if (trimmed.length === 0 || trimmed.length > 256) return undefined;
+    if (trimmed === 'auto') return undefined;
+    return trimmed;
 }

@@ -5,6 +5,9 @@
  */
 
 import { RequestLedger } from './requestLedger';
+import type { ComponentReceipt } from '../engine/componentRegistry';
+import { normalizeAccountingEvent } from '../cost/accountingTruth';
+import type { CostEvidenceState, CostUnavailableReason, TokenEvidenceState } from '../cost/accountingTruth';
 
 export type OptimizationLifecycleState =
     | 'PROMPT_RECEIVED'
@@ -30,6 +33,10 @@ export interface PromptOptimizationEvent {
     id: string;
     timestamp: number;
     sessionId: string;
+    taskId?: string;
+    subscriptionTransport?: 'codex' | 'claude';
+    observedInputTokens?: number;
+    cacheWriteTokens?: number;
     state: OptimizationLifecycleState;
 
     // Task and model metadata
@@ -43,6 +50,7 @@ export interface PromptOptimizationEvent {
     optimizedInputTokens: number;
     savedTokens: number;
     reductionPercentage: number;
+    tokenState?: TokenEvidenceState;
 
     // Cache metrics
     cacheableTokens: number;
@@ -61,6 +69,8 @@ export interface PromptOptimizationEvent {
     actualSavingsUSD?: number;
     isCostReconciled: boolean;
     costStatus?: 'projected' | 'reconciled' | 'unavailable';
+    costState?: CostEvidenceState;
+    costUnavailableReason?: CostUnavailableReason;
     pricingCatalogVersion?: string;
     pricingSource?: string;
     pricingCurrency?: string;
@@ -84,6 +94,8 @@ export interface PromptOptimizationEvent {
     redactionCount?: number;
     budgetTrace?: { inputLimit: number; outputReserve: number; finalInputTokens: number; projectedTotalTokens: number };
     errorCode?: string;
+    /** Content-free observed component outcomes for honest diagnostics and dashboard status. */
+    componentReceipts?: readonly ComponentReceipt[];
 }
 
 export type EventLifecycleListener = (event: PromptOptimizationEvent) => void;
@@ -120,7 +132,8 @@ export class OptimizationEventBus {
     }
 
     public emit(event: PromptOptimizationEvent): void {
-        const appended = this.ledger.append(event);
+        const normalizedEvent = normalizeAccountingEvent(event);
+        const appended = this.ledger.append(normalizedEvent);
         if (!appended) return;
 
         // Asynchronous non-blocking dispatch
@@ -128,30 +141,26 @@ export class OptimizationEventBus {
             // Global listeners
             for (const listener of this.globalListeners) {
                 try {
-                    listener(event);
-                } catch (err) {
-                    console.warn('[OptimizationEventBus] Error in global listener:', err);
+                    listener(normalizedEvent);
+                } catch {
+                    console.warn('[OptimizationEventBus] A global listener failed safely.');
                 }
             }
 
             // State-specific listeners
-            const stateListeners = this.listeners.get(event.state);
+            const stateListeners = this.listeners.get(normalizedEvent.state);
             if (stateListeners) {
                 for (const listener of stateListeners) {
                     try {
-                        listener(event);
-                    } catch (err) {
-                        console.warn(`[OptimizationEventBus] Error in ${event.state} listener:`, err);
+                        listener(normalizedEvent);
+                    } catch {
+                        console.warn(`[OptimizationEventBus] A ${normalizedEvent.state} listener failed safely.`);
                     }
                 }
             }
         };
 
-        if (typeof setImmediate === 'function') {
-            setImmediate(dispatch);
-        } else {
-            setTimeout(dispatch, 0);
-        }
+        queueMicrotask(dispatch);
     }
 
     public getRecentEvents(limit: number = 20): PromptOptimizationEvent[] {

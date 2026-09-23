@@ -42,6 +42,9 @@ export async function runCleanRoomAudit() {
     const oracleRes = OracleAuditEngine.auditAllSubsystems();
     OracleAuditEngine.generateReports();
     console.log(\`  ✓ \${oracleRes.totalSuitesAudited} Subsystems Audited | Independent Coverage: \${oracleRes.independentOracleCoverage} (\${oracleRes.independentOracleRatioPct}%) | Self-Validating: \${oracleRes.certificationCriticalSelfValidatingCount}\`);
+    if (!oracleRes.auditPassed) {
+        throw new Error(\`Independent-oracle audit FAILED: \${oracleRes.unresolvedDeclarationCount} unresolved declaration(s), \${oracleRes.certificationCriticalSelfValidatingCount} certification-critical self-validating suite(s). See validation/reports/oracle-audit.md\`);
+    }
 
     console.log('\\n>>> [3/8] EXECUTING REAL PRODUCTION-PATH & STAGE FLOW INTEGRITY AUDIT...');
     const prodRes = await ProductionPathAuditor.runProductionPathAudit();

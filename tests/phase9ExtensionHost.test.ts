@@ -37,15 +37,10 @@ export async function run(): Promise<void> {
     await vscode.commands.executeCommand('tokenOptimizer.showAnalyticsWebview');
 
     const config = vscode.workspace.getConfiguration('tokenOptimizer');
-    assert.strictEqual(config.inspect('releaseChannel')?.defaultValue, 'stable');
-    assert.strictEqual(config.inspect('stagedRolloutPercent')?.defaultValue, 100);
-    assert.strictEqual(config.inspect('emergencyDisableOptimization')?.defaultValue, false);
-    assert.deepStrictEqual(config.inspect('disabledCapabilities')?.defaultValue, []);
-    assert.strictEqual(config.inspect('experimentalConsent')?.defaultValue, false);
-    assert.deepStrictEqual(config.inspect('experimentalFeatures')?.defaultValue, []);
-    assert.deepStrictEqual(config.inspect('disabledExperiments')?.defaultValue, []);
-    assert.strictEqual(config.inspect('experimentalMaxLatencyMs')?.defaultValue, 25);
-    assert.strictEqual(config.inspect('experimentalMaxMemoryMB')?.defaultValue, 32);
+    assert.strictEqual(config.inspect('optimizationMode')?.defaultValue, 'balanced');
+    assert.strictEqual(config.inspect('workspaceContext')?.defaultValue, 'selection');
+    assert.strictEqual(config.inspect('includeUnsavedChanges')?.defaultValue, false);
+    assert.strictEqual(config.inspect('responseReuse')?.defaultValue, true);
 
     for (const parser of ['tree-sitter.wasm', 'tree-sitter-typescript.wasm', 'tree-sitter-javascript.wasm', 'tree-sitter-python.wasm']) {
         const bytes = fs.readFileSync(path.join(extension.extensionPath, 'parsers', parser));

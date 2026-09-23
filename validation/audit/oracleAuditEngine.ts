@@ -39,6 +39,7 @@ export interface OracleAuditReport {
     independentOracleCoverage: string;
     independentOracleRatioPct: number;
     certificationCriticalSelfValidatingCount: number;
+    unresolvedDeclarationCount: number;
     auditPassed: boolean;
     entries: OracleAuditEntry[];
 }
@@ -61,7 +62,7 @@ export class OracleAuditEngine {
             {
                 subsystem: 'ORACLE_02_GRAPH_INCREMENTAL',
                 subsystemName: 'Incremental Workspace Graph Indexer',
-                implementationUnderTest: 'src/graph/workspaceGraph.ts (Dynamic incremental AST mutations)',
+                implementationUnderTest: 'src/workspace/workspaceGraph.ts (Dynamic incremental AST mutations)',
                 oracleImplementation: 'tests/validation/phase5-6-graph-consistency.test.ts (Clean Rebuild Runner)',
                 oracleSource: 'Fresh Full Repository Rebuild Oracle',
                 expectedResultSource: 'Clean-room freshly parsed repository AST graph state',
@@ -73,7 +74,7 @@ export class OracleAuditEngine {
             {
                 subsystem: 'ORACLE_03_TOKENIZER',
                 subsystemName: 'Tokenizer & BPE Estimation',
-                implementationUnderTest: 'src/tokenizer/tokenizerAdapters.ts',
+                implementationUnderTest: 'src/tokenizer/tokenizerAdapter.ts',
                 oracleImplementation: 'tests/validation/phase2-property-based.test.ts (Authoritative BPE reference)',
                 oracleSource: 'Authoritative Reference Tokenizer Engine (Claude BPE / OpenAI o200k_base)',
                 expectedResultSource: 'Authoritative external token count ground truth',
@@ -85,7 +86,7 @@ export class OracleAuditEngine {
             {
                 subsystem: 'ORACLE_04_COST_RECONCILIATION',
                 subsystemName: 'Post-Inference Cost Accounting & Reconciliation',
-                implementationUnderTest: 'src/pricing/pricingCalculator.ts',
+                implementationUnderTest: 'src/cost/costCalculator.ts',
                 oracleImplementation: 'tests/validation/phase19-20-pricing-reconciliation.test.ts (Published Rate Fixtures)',
                 oracleSource: 'Authoritative Cloud Provider Published Rate Cards (Feb 2025/2026)',
                 expectedResultSource: 'Post-inference exact token usage multiplied by authoritative rate card',
@@ -109,7 +110,7 @@ export class OracleAuditEngine {
             {
                 subsystem: 'ORACLE_06_SDG_SLICING',
                 subsystemName: 'System Dependence Graph (SDG) Program Slicing',
-                implementationUnderTest: 'src/sdg/sdgSlicer.ts (Inter-procedural CFG/DDG Slicer)',
+                implementationUnderTest: 'src/ast/systemDependenceGraph.ts (Inter-procedural CFG/DDG Slicer)',
                 oracleImplementation: 'src/evaluation/adversarialSdgCorpus.ts (Hand-Annotated Closure)',
                 oracleSource: 'Hand-Annotated Ground Truth Dependency Set (15 Adversarial Patterns)',
                 expectedResultSource: 'Required symbol closure defined independently of compiler AST',
@@ -121,7 +122,7 @@ export class OracleAuditEngine {
             {
                 subsystem: 'ORACLE_07_RETRIEVAL',
                 subsystemName: 'Hybrid Lexical + Dense Retrieval & MMR',
-                implementationUnderTest: 'src/retrieval/hybridRetriever.ts & src/retrieval/reranker.ts',
+                implementationUnderTest: 'src/search/hybridRetriever.ts & src/search/reranker.ts',
                 oracleImplementation: 'tests/validation/phase10-11-hybrid-retrieval.test.ts (Expert Labeled Sets)',
                 oracleSource: 'Expert-Labeled Relevant Entity Benchmark Dataset',
                 expectedResultSource: 'Gold-standard relevant symbol/file references for benchmark queries',
@@ -134,7 +135,7 @@ export class OracleAuditEngine {
                 subsystem: 'ORACLE_08_CODE_CORRECTNESS',
                 subsystemName: 'Downstream Code Accuracy & Patch Evaluator',
                 implementationUnderTest: 'validation/evaluators/codeAccuracyEvaluator.ts',
-                oracleImplementation: 'validation/evaluators/tsCompilerService.ts & realTestHarness.ts',
+                oracleImplementation: 'validation/evaluators/tsCompilerService.ts & validation/evaluators/realTestHarness.ts',
                 oracleSource: 'Official TypeScript Compiler API (ts.transpileModule) & Sandboxed Node.js VM Tests',
                 expectedResultSource: 'Real compiler diagnostic check and physical VM assertion execution',
                 independenceType: 'INDEPENDENT',
@@ -145,7 +146,7 @@ export class OracleAuditEngine {
             {
                 subsystem: 'ORACLE_09_DASHBOARD',
                 subsystemName: 'Real-Time Analytics Dashboard State',
-                implementationUnderTest: 'src/dashboard/dashboardAggregator.ts',
+                implementationUnderTest: 'src/ui/dashboardController.ts',
                 oracleImplementation: 'tests/validation/phase30-dashboard-lifecycle.test.ts (Event Stream Logger)',
                 oracleSource: 'Immutable Production Event Bus Stream Records',
                 expectedResultSource: 'Event emission payloads generated directly by compiler runtime',
@@ -157,7 +158,7 @@ export class OracleAuditEngine {
             {
                 subsystem: 'ORACLE_10_GOVERNOR_SAFETY',
                 subsystemName: 'Deterministic Context Governor & Safety Gate',
-                implementationUnderTest: 'src/governor/contextGovernor.ts & evidenceSafetyGate.ts',
+                implementationUnderTest: 'src/governor/contextGovernor.ts & src/governor/evidenceSafetyGate.ts',
                 oracleImplementation: 'validation/audit/governorAccuracyAuditor.ts (Set Theory Verifier)',
                 oracleSource: 'Mathematical Set Theory Containment Invariant (Required ⊆ Provided)',
                 expectedResultSource: 'Formal contract requiring fail-closed fallback on missing critical evidence',
@@ -192,6 +193,31 @@ export class OracleAuditEngine {
             }
         ];
 
+        // Resolve every declared path against the working tree. A declared oracle whose
+        // implementation or oracle file does not exist is a FAIL, not a PASS: the matrix is
+        // only evidence if the mapping it asserts is real. This is what makes the report an
+        // audit rather than a restatement of intent.
+        const repoRoot = process.cwd();
+        const declaredPaths = (declaration: string): string[] => declaration
+            .split('&')
+            .map(part => part.trim().split(/\s+/)[0].trim())
+            .filter(candidate => /\.[cm]?tsx?$/.test(candidate));
+        for (const entry of entries) {
+            const missing: string[] = [];
+            for (const declaration of [entry.implementationUnderTest, entry.oracleImplementation]) {
+                for (const candidate of declaredPaths(declaration)) {
+                    if (!fs.existsSync(path.resolve(repoRoot, candidate))) missing.push(candidate);
+                }
+            }
+            if (missing.length > 0) {
+                entry.status = 'FAIL';
+                entry.auditNotes = `UNRESOLVED DECLARATION: ${missing.join(', ')} does not exist at this commit. ${entry.auditNotes}`;
+            } else {
+                entry.status = 'PASS';
+            }
+        }
+        const unresolvedCount = entries.filter(e => e.status === 'FAIL').length;
+
         const independentCount = entries.filter(e => e.independenceType === 'INDEPENDENT').length;
         const derivedCount = entries.filter(e => e.independenceType === 'DERIVED').length;
         const selfValidatingCount = entries.filter(e => e.independenceType === 'SELF_VALIDATING').length;
@@ -211,7 +237,8 @@ export class OracleAuditEngine {
             independentOracleCoverage: coverageStr,
             independentOracleRatioPct: ratio,
             certificationCriticalSelfValidatingCount: criticalSelfVal,
-            auditPassed: criticalSelfVal === 0 && ratio >= 90.0,
+            auditPassed: criticalSelfVal === 0 && ratio >= 90.0 && unresolvedCount === 0,
+            unresolvedDeclarationCount: unresolvedCount,
             entries
         };
     }
@@ -246,7 +273,8 @@ export class OracleAuditEngine {
 > **Audit Date**: \`${report.auditDate}\`
 > **Total Subsystems Audited**: \`${report.totalSuitesAudited}\`
 > **Independent Oracle Coverage**: **${report.independentOracleCoverage}** (**${report.independentOracleRatioPct}%**)
-> **Certification-Critical Self-Validating Tests**: **${report.certificationCriticalSelfValidatingCount}** (Zero Tolerance Standard: **PASS**)
+> **Certification-Critical Self-Validating Tests**: **${report.certificationCriticalSelfValidatingCount}** (Zero Tolerance Standard: **${report.certificationCriticalSelfValidatingCount === 0 ? 'PASS' : 'FAIL'}**)
+> **Unresolved Declarations**: **${report.unresolvedDeclarationCount}** (every declared implementation and oracle path resolved against this commit)
 > **Final Status**: **${report.auditPassed ? 'APPROVED (ZERO SELF-VALIDATING TESTS IN CERTIFICATION PATH)' : 'FAILED'}**
 
 ---

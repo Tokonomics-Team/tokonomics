@@ -1,0 +1,41 @@
+{
+  "sha256": "023d91139731fcd916900678050c531d803d38936b1e1e9d248f727f28de104a",
+  "sizeBytes": 1370793,
+  "entries": [
+    "extension.vsixmanifest",
+    "[Content_Types].xml",
+    "extension/tokonomics.code-workspace",
+    "extension/readme.md",
+    "extension/package.json",
+    "extension/LICENSE.txt",
+    "extension/LICENSE",
+    "extension/changelog.md",
+    "extension/parsers/tree-sitter.wasm",
+    "extension/parsers/tree-sitter-typescript.wasm",
+    "extension/parsers/tree-sitter-python.wasm",
+    "extension/parsers/tree-sitter-javascript.wasm",
+    "extension/assets/icon.png",
+    "extension/assets/icon-128.png",
+    "extension/assets/demo.png",
+    "extension/dist/markdown-licenses.txt",
+    "extension/dist/extension.js"
+  ],
+  "forbiddenEntries": [],
+  "validationBundleInputs": [],
+  "evaluationBundleInputs": [
+    "src/evaluation/preservationGate.ts"
+  ],
+  "outEvaluationFiles": [
+    "adversarialSdgCorpus.js",
+    "cqCalibration.js",
+    "independentOracles.js",
+    "latencyProfiler.js",
+    "memoryProfiler.js",
+    "mutationEngine.js",
+    "networkAuditEngine.js",
+    "preservationGate.js",
+    "providerReconciliation.js",
+    "taskSuccessCorpus.js",
+    "taskSuccessEvaluator.js"
+  ]
+}

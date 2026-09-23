@@ -49,6 +49,60 @@ export class NetworkAuditEngine {
     ];
 
     /**
+     * Audits the SHIPPED production bundle, not just source. The extension bundles the
+     * Emscripten loader for the tree-sitter WASM parsers, which references fetch/XMLHttpRequest
+     * for browser hosts. In the Extension Host the Node branch (fs/promises.readFile) is the one
+     * that executes, and the parsers it loads are local files inside the VSIX. Those loader
+     * references are therefore allowed by an explicit, narrow exception; anything else in the
+     * bundle is a finding. Without this, a zero-egress claim rests only on source that ships
+     * alongside vendored code nobody audited.
+     */
+    public static readonly BUNDLE_ALLOWED_CONTEXTS = [
+        'instantiateStreaming',
+        'WebAssembly',
+        'wasmBinaryFile',
+        'readAsync',
+        'readBinary',
+        'ENVIRONMENT_IS_',
+        'scriptDirectory',
+        'fs/promises'
+    ];
+
+    public static auditProductionBundle(bundlePath: string = path.resolve(process.cwd(), 'dist', 'extension.js')): {
+        bundleFound: boolean;
+        occurrences: number;
+        unexplainedOccurrences: StaticNetworkAuditFinding[];
+        isBundleNetworkCertified: boolean;
+    } {
+        if (!fs.existsSync(bundlePath)) {
+            return { bundleFound: false, occurrences: 0, unexplainedOccurrences: [], isBundleNetworkCertified: false };
+        }
+        const source = fs.readFileSync(bundlePath, 'utf8');
+        const detector = /(?:\bfetch\s*\(|\bXMLHttpRequest\b|\bWebSocket\s*\(|require\(["'](?:https?|net|tls|dgram|http2)["']\))/g;
+        const unexplained: StaticNetworkAuditFinding[] = [];
+        let occurrences = 0;
+        let match: RegExpExecArray | null;
+        while ((match = detector.exec(source)) !== null) {
+            occurrences++;
+            const windowStart = Math.max(0, match.index - 400);
+            const context = source.slice(windowStart, Math.min(source.length, match.index + 400));
+            if (this.BUNDLE_ALLOWED_CONTEXTS.some(allowed => context.includes(allowed))) continue;
+            unexplained.push({
+                filePath: path.relative(process.cwd(), bundlePath),
+                lineNumber: source.slice(0, match.index).split(String.fromCharCode(10)).length,
+                forbiddenPattern: match[0],
+                lineSnippet: '[bundle context withheld]'
+            });
+        }
+        return {
+            bundleFound: true,
+            occurrences,
+            unexplainedOccurrences: unexplained,
+            isBundleNetworkCertified: unexplained.length === 0
+        };
+    }
+
+    /**
      * Scans source files (excluding evaluation/network test interceptors themselves) for network dependencies
      */
     public static runStaticAudit(srcDir: string = path.resolve(process.cwd(), 'src')): {
@@ -151,7 +205,7 @@ export class NetworkAuditEngine {
             dense.search([0.1, 0.2, 0.3], 5);
 
             // Exercise 2: Local SLM Brain Query Refinement
-            const slm = new LocalSlmBrain(false);
+            const slm = new LocalSlmBrain();
             await slm.refineQuery('Fix null pointer exception in AuthService');
 
             // Exercise 3: Semantic Compression

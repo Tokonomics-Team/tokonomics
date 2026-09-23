@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "classification": "installed-vsix-extension-host-evidence",
-  "generatedAt": "2026-09-04T02:51:29.144Z",
+  "generatedAt": "2026-09-06T11:03:47.223Z",
   "mode": "full-matrix",
   "artifact": {
-    "path": "tokonomics-6.0.0.vsix",
-    "sha256": "2ca661eeda14e69c6257e0b3e7ea23b169031b181415c060a73a2cd9aa2629a7"
+    "path": "tokonomics-7.0.1.vsix",
+    "sha256": "2f0d67a5e8d135d32878a98920860ce1000fbe4e1af7d8702711e4964a7f7668"
   },
   "results": [
     {
@@ -21,7 +21,7 @@
       "trustedWorkspacePassed": true,
       "restrictedWorkspaceRuntime": "not-executed-development-host-forces-trust",
       "manifestNormalization": "host-owned __metadata removed before comparison",
-      "durationMs": 2939
+      "durationMs": 21141
     },
     {
       "id": "stable",
@@ -36,7 +36,7 @@
       "trustedWorkspacePassed": true,
       "restrictedWorkspaceRuntime": "not-executed-development-host-forces-trust",
       "manifestNormalization": "host-owned __metadata removed before comparison",
-      "durationMs": 3155
+      "durationMs": 2911
     },
     {
       "id": "insiders",
@@ -45,18 +45,18 @@
       "requiredForRelease": true,
       "status": "passed",
       "actualVersion": "1.137.0-insider",
-      "hostCommit": "b6234bd71943c8a5caf5eef03bc4a8e49aef2698",
+      "hostCommit": "de8cc55dae905582f191fdcfb6dff8c811a743c4",
       "hostQuality": "insider",
       "installedPayloadMatched": true,
       "trustedWorkspacePassed": true,
       "restrictedWorkspaceRuntime": "not-executed-development-host-forces-trust",
       "manifestNormalization": "host-owned __metadata removed before comparison",
-      "durationMs": 3199
+      "durationMs": 33513
     }
   ],
   "allRequiredPassed": true,
   "releaseCertified": false,
-  "cleanupWarning": null,
+  "cleanupWarning": "Temporary profile cleanup deferred: EPERM",
   "limitations": [
     "Provider availability and account-backed model behavior remain environment-dependent."
   ]

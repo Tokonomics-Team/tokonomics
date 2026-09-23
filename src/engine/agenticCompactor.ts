@@ -104,15 +104,15 @@ export class AgenticToolCompactor {
      */
     public static maskHeadTail(content: string, headLines: number = 6, tailLines: number = 6): string {
         const lines = content.split('\n');
-        if (lines.length <= headLines + tailLines + 2) {
-            return content;
+        if (lines.length <= headLines + tailLines) return content;
+        const head = lines.slice(0, headLines);
+        const tail = lines.slice(lines.length - tailLines);
+        const middle = lines.slice(headLines, lines.length - tailLines);
+        const criticalMiddle = middle.filter(l => /\b(panic|fatal|error|exception|exit code|fail|failed)\b/i.test(l) || /^\s*at\s+/i.test(l));
+        if (criticalMiddle.length > 0) {
+            return [...head, '... [Intermediate lines truncated] ...', ...criticalMiddle, '... [Intermediate lines truncated] ...', ...tail].join('\n');
         }
-
-        const head = lines.slice(0, headLines).join('\n');
-        const tail = lines.slice(lines.length - tailLines).join('\n');
-        const omittedCount = lines.length - (headLines + tailLines);
-
-        return `${head}\n... [${omittedCount} lines of intermediate execution output masked] ...\n${tail}`;
+        return [...head, `... [${middle.length} lines of intermediate execution output masked] ...`, ...tail].join('\n');
     }
 
     private static condenseToolMessageContent(content: string): string {
@@ -128,7 +128,7 @@ export class AgenticToolCompactor {
         }
 
         // 2. Detect test runner outputs (e.g. Jest / Mocha / Pytest / Cargo test)
-        if (content.includes('PASS') || content.includes('FAIL') || content.includes('Tests:') || content.includes('pytest') || content.includes('running ') && content.includes('test')) {
+        if (content.includes('PASS') || content.includes('FAIL') || content.includes('Tests:') || content.includes('pytest') || (content.includes('running ') && content.includes('test'))) {
             return this.maskHeadTail(content, 4, 4);
         }
 

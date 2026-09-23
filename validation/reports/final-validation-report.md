@@ -1,9 +1,9 @@
 # 🧪 Tokonomics Controlled Synthetic Validation Report
 
-> **Tokonomics Version**: `6.0.0`
-> **Commit SHA**: `1fcc71872b4021d59fce80f9b0284119a399040d`
-> **Evaluation Date**: `2026-09-04`
-> **Execution Duration**: `0.85s`
+> **Tokonomics Version**: `8.0.0`
+> **Commit SHA**: `e1dc162de88fd2fe51bdc364e4351c34b590f4d7`
+> **Evaluation Date**: `2026-09-23`
+> **Execution Duration**: `0.90s`
 > **Production Decision**: **NOT EVALUATED — CONTROLLED SYNTHETIC HARNESS ONLY**
 
 ---
@@ -49,8 +49,8 @@
 
 ## SECTION C — Synthetic Transformation Samples & Layer Attribution
 
-- **Average Token Reduction**: **-99.1%** (11,512 $\to$ 101 tokens)
-- **Effective Cost Savings**: **-104.1%** (accounting for prefix cache read discounts)
+- **Average Token Reduction**: **-99.2%** (11,512 $\to$ 91 tokens)
+- **Effective Cost Savings**: **-100%** (accounting for prefix cache read discounts)
 
 ### Layer-by-Layer Causal Attribution Matrix ($L_0 - L_{12}$)
 | Layer | Subsystem Name | Tokens Saved | Cost Saved | Task Success Impact | Latency Delta | Production Decision |

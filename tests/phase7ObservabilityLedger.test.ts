@@ -42,7 +42,7 @@ function event(id: string, timestamp: number, overrides: Partial<PromptOptimizat
     };
 }
 
-export function runPhase7ObservabilityLedgerTests(): boolean {
+export async function runPhase7ObservabilityLedgerTests(): Promise<boolean> {
     console.log('\n--- Running Phase 7 Authoritative Observability & Dashboard Tests ---');
 
     // A compiled request and its reconciliation are one prompt, with the latest
@@ -130,6 +130,7 @@ export function runPhase7ObservabilityLedgerTests(): boolean {
     const persistentLedger = new RequestLedger();
     persistentLedger.configurePersistence(memento);
     persistentLedger.append(event('persisted', now));
+    await persistentLedger.flushPersistence();
     const restoredLedger = new RequestLedger();
     restoredLedger.configurePersistence(memento);
     assert.strictEqual(restoredLedger.getLatestRequestEvents().length, 1);

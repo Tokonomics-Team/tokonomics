@@ -1,7 +1,7 @@
 {
   "metadata": {
-    "repositoryCommitSha": "1fcc71872b4021d59fce80f9b0284119a399040d",
-    "tokonomicsVersion": "6.0.0",
+    "repositoryCommitSha": "e1dc162de88fd2fe51bdc364e4351c34b590f4d7",
+    "tokonomicsVersion": "8.0.0",
     "benchmarkDatasetVersion": "2026-v2.1",
     "modelProvider": "none (controlled synthetic fixture)",
     "modelVersion": "not applicable",
@@ -22,9 +22,9 @@
     "pricingProfileVersion": "synthetic-estimate-only",
     "benchmarkClassification": "Controlled Synthetic Benchmark",
     "datasetMetadataSha256": "0347d021aa250511b865a987c4fdf4dee8586335e5f48fdba4a79efdc6fed1d2",
-    "timestamp": "2026-09-04T02:53:15.521Z"
+    "timestamp": "2026-09-23T13:17:39.152Z"
   },
-  "executionDurationSec": "0.85",
+  "executionDurationSec": "0.90",
   "sectionA_SyntheticHarnessAssertions": {
     "pipelineIntegrity": "PASS (100% Contract Compliant)",
     "deterministicGovernorCorrectness": "PASS (Deterministic Repeatability & Invariants Verified)",
@@ -174,9 +174,9 @@
   },
   "sectionC_CompilerTransformationSamples": {
     "baselineAverageTokens": 11512,
-    "tokonomicsAverageTokens": 101,
-    "tokenReductionPct": 99.1,
-    "effectiveCostReductionPct": 104.1,
+    "tokonomicsAverageTokens": 91,
+    "tokenReductionPct": 99.2,
+    "effectiveCostReductionPct": 100,
     "layerAttribution": [
       {
         "layerId": "L1",

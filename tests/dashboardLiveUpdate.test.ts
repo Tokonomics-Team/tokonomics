@@ -27,6 +27,7 @@ export async function runDashboardLiveUpdateTests(): Promise<boolean> {
     };
 
     const panel = new (DashboardWebviewPanel as any)(mockPanel, new MetricsTracker(), new AstPrunerEngine());
+    assert.strictEqual(messageListeners.length, 1, 'The dashboard must have one inbound message owner');
     assert.match(html, /DASHBOARD_READY/, 'The webview must handshake after installing its message listener');
     assert.match(html, /id="stageWaterfall"/, 'The stage waterfall must have a live update target');
     assert.match(html, /id="requestCostEvidence"/, 'Cost evidence must have a live update target');
@@ -34,6 +35,9 @@ export async function runDashboardLiveUpdateTests(): Promise<boolean> {
     assert.match(html, /@media \(max-width: 860px\)/, 'Dashboard layout must adapt to narrow editor columns');
     assert.match(html, /pairs\.length === 1/, 'The first prompt must render a visible chart mark');
     assert.match(html, /aria-live="polite"/, 'Live metrics must be announced without interrupting the user');
+    assert.match(html, /id="activeOptimizationProfile"/, 'Dashboard must read the central optimization profile');
+    assert.match(html, /id="observedComponentStatus"/, 'Dashboard must expose observed, receipt-derived component status');
+    assert.match(html, /updateObservedComponentStatus/, 'Live prompt events must update observed component status');
     const script = html.match(/<script nonce="[^"]+">([\s\S]*?)<\/script>/)?.[1];
     assert.ok(script, 'The dashboard must contain its nonce-protected client script');
     assert.doesNotThrow(() => new Function(script!), 'The generated dashboard client script must be valid JavaScript');
@@ -74,7 +78,12 @@ export async function runDashboardLiveUpdateTests(): Promise<boolean> {
         totalOptimizationLatencyMs: 8,
         stageMetrics: [{ stageName: 'Context preparation', tokensBefore: 1200, tokensAfter: 480, tokensSaved: 720, latencyMs: 8 }],
         contextItemCount: 3,
-        traceId: 'dashboard-live-trace'
+        traceId: 'dashboard-live-trace',
+        componentReceipts: [
+            { componentId: 'context_solver', outcome: 'attempted', sequence: 1 },
+            { componentId: 'context_solver', outcome: 'invoked', sequence: 2 },
+            { componentId: 'context_solver', outcome: 'contributed', sequence: 3 }
+        ]
     };
 
     messages.length = 0;
@@ -82,10 +91,10 @@ export async function runDashboardLiveUpdateTests(): Promise<boolean> {
     OptimizationEventBus.getInstance().emit(emitted);
     await new Promise<void>(resolve => setImmediate(resolve));
 
-    assert.ok(messages.some(message => message.type === 'EVENT' && message.payload.id === emitted.id),
-        'Each prompt event must be pushed to the open dashboard');
-    assert.ok(messages.some(message => message.type === 'SUMMARY_UPDATE' && message.payload.totalPrompts >= 1),
-        'Each prompt event must refresh the aggregate summary');
+    const lifecycleUpdates = messages.filter(message => message.type === 'LIFECYCLE_UPDATE' && message.payload.event.id === emitted.id);
+    assert.strictEqual(lifecycleUpdates.length, 1, 'Each lifecycle transition must produce exactly one atomic dashboard update');
+    assert.ok(lifecycleUpdates[0].payload.summary.totalPrompts >= 1,
+        'The atomic update must include the matching aggregate summary');
     assert.strictEqual(html, htmlBeforePrompt,
         'A live prompt update must not replace the document and reset focus, scroll, or time-window state');
 

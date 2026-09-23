@@ -27,7 +27,14 @@ export class IntentExtractor {
     ];
 
     private static readonly EXPLAIN_PATTERNS = [
-        /\b(explain|explains|explanation|how\s+does|walk\s*through|document|documentation|overview|what\s+is|understand|clarify|describe)\b/i
+        /\b(explain|explains|explanation|how\s+does|walk\s*through|document|documentation|overview|what\s+is|understand|clarify|describe)\b/i,
+        // API-surface questions ("list the public API", "summarise the exported signatures")
+        // carry none of the words above and previously fell through every pattern to the
+        // `completion` default, which is implementation-critical and therefore forced verbatim
+        // source. That made the one declaration-oriented path in the compression policy
+        // unreachable in practice. A query verb is required alongside the API vocabulary so that
+        // imperatives such as "add an interface" stay classified as feature work.
+        /\b(?:list|show|summar(?:ise|ize)|enumerate|outline|what)\b[^.?!]{0,80}\b(?:public\s+api|api\s+surface|exports?|exported|signatures?|type\s+definitions?|declarations?|interfaces?)\b/i
     ];
 
     private static readonly REVIEW_PATTERNS = [

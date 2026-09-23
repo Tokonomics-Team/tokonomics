@@ -16,6 +16,7 @@
 import { ValidationTaskCorpus, BenchmarkTaskDefinition } from '../datasets/taskCorpus';
 import { BaselineRunner, TaskExecutionResult } from './baselineRunner';
 import { TokonomicsRunner } from './tokonomicsRunner';
+import { BoundedEconomics } from '../../src/cost/boundedEconomics';
 
 export interface SplitMetrics {
     splitName: 'train' | 'validation' | 'holdout' | 'all';
@@ -177,7 +178,7 @@ export class ThreeRunExperimentEngine {
                 unitTestDeltaPct: testDelta,
                 behavioralDeltaPct: m.absoluteImprovement,
                 tokenReductionPct: tokRed,
-                costReductionPct: Math.round((tokRed + 5.0) * 10) / 10
+                costReductionPct: BoundedEconomics.percentage(tokRed + 5.0)
             };
         };
 
@@ -209,7 +210,7 @@ export class ThreeRunExperimentEngine {
             behavioralDeltaPct: overallMetrics.absoluteImprovement,
             regressionRatePct: 0.0,
             averageTokenReductionPct: avgTokRed,
-            averageCostReductionPct: Math.round((avgTokRed + 5.0) * 10) / 10,
+            averageCostReductionPct: BoundedEconomics.percentage(avgTokRed + 5.0),
             splits: {
                 training: trainingSplit,
                 validation: validationSplit,

@@ -5,11 +5,15 @@ out_test/
 *.vsix
 .DS_Store
 *.log
+.vscode/
 .vscode-test/
 .tokenopt/
 .agents/
 .tempmediaStorage/
 scratch/
+# Independently versioned portfolio repository; commit its changes inside that repository.
+/portfolio-site/
+/tokonomics-pm-portfolio/
 INTERNAL_ARCHITECTURE_AND_FEATURES.md
 CHANGELOG_INTERNAL.md
 implementation_plan.md
@@ -20,3 +24,4 @@ PRODUCT_MANAGEMENT_SUITE.md
 BIG_TECH_PM_SUITE.md
 *PM*.md
 *SUITE*.md
+.continue/

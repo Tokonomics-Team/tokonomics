@@ -1,0 +1,5092 @@
+{
+  "inputs": {
+    "src/engine/tokenizer.ts": {
+      "bytes": 4236,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/ast/treeShaker.ts": {
+      "bytes": 17366,
+      "imports": [
+        {
+          "path": "src/engine/tokenizer.ts",
+          "kind": "import-statement",
+          "original": "../engine/tokenizer"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/security/sanitizer.ts": {
+      "bytes": 12638,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/ast/types.ts": {
+      "bytes": 1379,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/cache/blobAstCache.ts": {
+      "bytes": 5911,
+      "imports": [
+        {
+          "path": "crypto",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/ast/types.ts",
+          "kind": "import-statement",
+          "original": "../ast/types"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/@vscode/tree-sitter-wasm/wasm/tree-sitter.js": {
+      "bytes": 168729,
+      "imports": [
+        {
+          "path": "url",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "fs/promises",
+          "kind": "dynamic-import",
+          "external": true
+        },
+        {
+          "path": "module",
+          "kind": "dynamic-import",
+          "external": true
+        }
+      ],
+      "format": "cjs"
+    },
+    "src/ast/pruner.ts": {
+      "bytes": 49078,
+      "imports": [
+        {
+          "path": "path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "./types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/engine/tokenizer.ts",
+          "kind": "import-statement",
+          "original": "../engine/tokenizer"
+        },
+        {
+          "path": "src/ast/treeShaker.ts",
+          "kind": "import-statement",
+          "original": "./treeShaker"
+        },
+        {
+          "path": "src/security/sanitizer.ts",
+          "kind": "import-statement",
+          "original": "../security/sanitizer"
+        },
+        {
+          "path": "src/cache/blobAstCache.ts",
+          "kind": "import-statement",
+          "original": "../cache/blobAstCache"
+        },
+        {
+          "path": "node_modules/@vscode/tree-sitter-wasm/wasm/tree-sitter.js",
+          "kind": "require-call",
+          "original": "@vscode/tree-sitter-wasm"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/cache/normalizer.ts": {
+      "bytes": 1184,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/cache/schemaMinifier.ts": {
+      "bytes": 12793,
+      "imports": [
+        {
+          "path": "src/engine/tokenizer.ts",
+          "kind": "import-statement",
+          "original": "../engine/tokenizer"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/cache/providerCapabilities.ts": {
+      "bytes": 4395,
+      "imports": [
+        {
+          "path": "./types",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/cache/aligner.ts": {
+      "bytes": 10111,
+      "imports": [
+        {
+          "path": "../types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "./types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/engine/tokenizer.ts",
+          "kind": "import-statement",
+          "original": "../engine/tokenizer"
+        },
+        {
+          "path": "src/cache/normalizer.ts",
+          "kind": "import-statement",
+          "original": "./normalizer"
+        },
+        {
+          "path": "src/cache/schemaMinifier.ts",
+          "kind": "import-statement",
+          "original": "./schemaMinifier"
+        },
+        {
+          "path": "src/cache/providerCapabilities.ts",
+          "kind": "import-statement",
+          "original": "./providerCapabilities"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/cost/pricingCatalog.ts": {
+      "bytes": 10348,
+      "imports": [
+        {
+          "path": "../tokenizer/modelProfile",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/cost/costCalculator.ts": {
+      "bytes": 15460,
+      "imports": [
+        {
+          "path": "../tokenizer/modelProfile",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/cost/pricingCatalog.ts",
+          "kind": "import-statement",
+          "original": "./pricingCatalog"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/metrics/tracker.ts": {
+      "bytes": 6867,
+      "imports": [
+        {
+          "path": "../types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/cost/costCalculator.ts",
+          "kind": "import-statement",
+          "original": "../cost/costCalculator"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/events/requestLedger.ts": {
+      "bytes": 11743,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/finops/taskContext.ts": {
+      "bytes": 935,
+      "imports": [
+        {
+          "path": "crypto",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/cost/accountingTruth.ts": {
+      "bytes": 4884,
+      "imports": [
+        {
+          "path": "src/finops/taskContext.ts",
+          "kind": "import-statement",
+          "original": "../finops/taskContext"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/events/optimizationEvent.ts": {
+      "bytes": 6267,
+      "imports": [
+        {
+          "path": "src/events/requestLedger.ts",
+          "kind": "import-statement",
+          "original": "./requestLedger"
+        },
+        {
+          "path": "src/cost/accountingTruth.ts",
+          "kind": "import-statement",
+          "original": "../cost/accountingTruth"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/cost/reconciliationLedger.ts": {
+      "bytes": 3107,
+      "imports": [
+        {
+          "path": "src/cost/costCalculator.ts",
+          "kind": "import-statement",
+          "original": "./costCalculator"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/protocol/canonicalProtocol.ts": {
+      "bytes": 4885,
+      "imports": [
+        {
+          "path": "vscode",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/security/requestBoundary.ts": {
+      "bytes": 6556,
+      "imports": [
+        {
+          "path": "os",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/security/sanitizer.ts",
+          "kind": "import-statement",
+          "original": "./sanitizer"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/protocol/canonicalEgress.ts": {
+      "bytes": 4815,
+      "imports": [
+        {
+          "path": "src/security/requestBoundary.ts",
+          "kind": "import-statement",
+          "original": "../security/requestBoundary"
+        },
+        {
+          "path": "./canonicalProtocol",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/protocol/providerGateway.ts": {
+      "bytes": 1884,
+      "imports": [
+        {
+          "path": "vscode",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/security/requestBoundary.ts",
+          "kind": "import-statement",
+          "original": "../security/requestBoundary"
+        },
+        {
+          "path": "./canonicalProtocol",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/protocol/canonicalEgress.ts",
+          "kind": "import-statement",
+          "original": "./canonicalEgress"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/performance/boundedScheduler.ts": {
+      "bytes": 9840,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/config/userPreferences.ts": {
+      "bytes": 19110,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/engine/requestContextEnvelope.ts": {
+      "bytes": 10274,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/subscriptions/cliTransport.ts": {
+      "bytes": 21372,
+      "imports": [
+        {
+          "path": "child_process",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "os",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/subscriptions/modelChoices.ts": {
+      "bytes": 2990,
+      "imports": [
+        {
+          "path": "fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "os",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/subscriptions/cliTransport.ts",
+          "kind": "import-statement",
+          "original": "./cliTransport"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/subscriptions/subscriptionModels.ts": {
+      "bytes": 16275,
+      "imports": [
+        {
+          "path": "vscode",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "os",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/subscriptions/cliTransport.ts",
+          "kind": "import-statement",
+          "original": "./cliTransport"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/ignore/tokenIgnore.ts": {
+      "bytes": 3672,
+      "imports": [
+        {
+          "path": "fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/security/sourcePolicy.ts": {
+      "bytes": 4395,
+      "imports": [
+        {
+          "path": "fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/ignore/tokenIgnore.ts",
+          "kind": "import-statement",
+          "original": "../ignore/tokenIgnore"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/proxy/chatContextReferences.ts": {
+      "bytes": 4418,
+      "imports": [
+        {
+          "path": "vscode",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/security/sourcePolicy.ts",
+          "kind": "import-statement",
+          "original": "../security/sourcePolicy"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/proxy/modelProvider.ts": {
+      "bytes": 26205,
+      "imports": [
+        {
+          "path": "vscode",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/events/optimizationEvent.ts",
+          "kind": "import-statement",
+          "original": "../events/optimizationEvent"
+        },
+        {
+          "path": "src/cost/costCalculator.ts",
+          "kind": "import-statement",
+          "original": "../cost/costCalculator"
+        },
+        {
+          "path": "src/cost/reconciliationLedger.ts",
+          "kind": "import-statement",
+          "original": "../cost/reconciliationLedger"
+        },
+        {
+          "path": "../protocol/canonicalCompiler",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/protocol/canonicalProtocol.ts",
+          "kind": "import-statement",
+          "original": "../protocol/canonicalProtocol"
+        },
+        {
+          "path": "src/protocol/providerGateway.ts",
+          "kind": "import-statement",
+          "original": "../protocol/providerGateway"
+        },
+        {
+          "path": "../workspace/workspaceIndex",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/performance/boundedScheduler.ts",
+          "kind": "import-statement",
+          "original": "../performance/boundedScheduler"
+        },
+        {
+          "path": "src/config/userPreferences.ts",
+          "kind": "import-statement",
+          "original": "../config/userPreferences"
+        },
+        {
+          "path": "src/engine/tokenizer.ts",
+          "kind": "import-statement",
+          "original": "../engine/tokenizer"
+        },
+        {
+          "path": "src/engine/requestContextEnvelope.ts",
+          "kind": "import-statement",
+          "original": "../engine/requestContextEnvelope"
+        },
+        {
+          "path": "src/subscriptions/modelChoices.ts",
+          "kind": "import-statement",
+          "original": "../subscriptions/modelChoices"
+        },
+        {
+          "path": "src/subscriptions/subscriptionModels.ts",
+          "kind": "import-statement",
+          "original": "../subscriptions/subscriptionModels"
+        },
+        {
+          "path": "../subscriptions/cliTransport",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/proxy/chatContextReferences.ts",
+          "kind": "import-statement",
+          "original": "./chatContextReferences"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/ui/chatProtocol.ts": {
+      "bytes": 10699,
+      "imports": [],
+      "format": "esm"
+    },
+    "node_modules/mdurl/lib/decode.mjs": {
+      "bytes": 2843,
+      "imports": [],
+      "format": "esm"
+    },
+    "node_modules/mdurl/lib/encode.mjs": {
+      "bytes": 2211,
+      "imports": [],
+      "format": "esm"
+    },
+    "node_modules/mdurl/lib/format.mjs": {
+      "bytes": 485,
+      "imports": [],
+      "format": "esm"
+    },
+    "node_modules/mdurl/lib/parse.mjs": {
+      "bytes": 9733,
+      "imports": [],
+      "format": "esm"
+    },
+    "node_modules/mdurl/index.mjs": {
+      "bytes": 200,
+      "imports": [
+        {
+          "path": "node_modules/mdurl/lib/decode.mjs",
+          "kind": "import-statement",
+          "original": "./lib/decode.mjs"
+        },
+        {
+          "path": "node_modules/mdurl/lib/encode.mjs",
+          "kind": "import-statement",
+          "original": "./lib/encode.mjs"
+        },
+        {
+          "path": "node_modules/mdurl/lib/format.mjs",
+          "kind": "import-statement",
+          "original": "./lib/format.mjs"
+        },
+        {
+          "path": "node_modules/mdurl/lib/parse.mjs",
+          "kind": "import-statement",
+          "original": "./lib/parse.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/uc.micro/properties/Any/regex.mjs": {
+      "bytes": 145,
+      "imports": [],
+      "format": "esm"
+    },
+    "node_modules/uc.micro/categories/Cc/regex.mjs": {
+      "bytes": 35,
+      "imports": [],
+      "format": "esm"
+    },
+    "node_modules/uc.micro/categories/Cf/regex.mjs": {
+      "bytes": 264,
+      "imports": [],
+      "format": "esm"
+    },
+    "node_modules/uc.micro/categories/P/regex.mjs": {
+      "bytes": 2042,
+      "imports": [],
+      "format": "esm"
+    },
+    "node_modules/uc.micro/categories/S/regex.mjs": {
+      "bytes": 2551,
+      "imports": [],
+      "format": "esm"
+    },
+    "node_modules/uc.micro/categories/Z/regex.mjs": {
+      "bytes": 73,
+      "imports": [],
+      "format": "esm"
+    },
+    "node_modules/uc.micro/index.mjs": {
+      "bytes": 302,
+      "imports": [
+        {
+          "path": "node_modules/uc.micro/properties/Any/regex.mjs",
+          "kind": "import-statement",
+          "original": "./properties/Any/regex.mjs"
+        },
+        {
+          "path": "node_modules/uc.micro/categories/Cc/regex.mjs",
+          "kind": "import-statement",
+          "original": "./categories/Cc/regex.mjs"
+        },
+        {
+          "path": "node_modules/uc.micro/categories/Cf/regex.mjs",
+          "kind": "import-statement",
+          "original": "./categories/Cf/regex.mjs"
+        },
+        {
+          "path": "node_modules/uc.micro/categories/P/regex.mjs",
+          "kind": "import-statement",
+          "original": "./categories/P/regex.mjs"
+        },
+        {
+          "path": "node_modules/uc.micro/categories/S/regex.mjs",
+          "kind": "import-statement",
+          "original": "./categories/S/regex.mjs"
+        },
+        {
+          "path": "node_modules/uc.micro/categories/Z/regex.mjs",
+          "kind": "import-statement",
+          "original": "./categories/Z/regex.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/entities/lib/esm/generated/decode-data-html.js": {
+      "bytes": 47724,
+      "imports": [],
+      "format": "esm"
+    },
+    "node_modules/entities/lib/esm/generated/decode-data-xml.js": {
+      "bytes": 279,
+      "imports": [],
+      "format": "esm"
+    },
+    "node_modules/entities/lib/esm/decode_codepoint.js": {
+      "bytes": 2112,
+      "imports": [],
+      "format": "esm"
+    },
+    "node_modules/entities/lib/esm/decode.js": {
+      "bytes": 19810,
+      "imports": [
+        {
+          "path": "node_modules/entities/lib/esm/generated/decode-data-html.js",
+          "kind": "import-statement",
+          "original": "./generated/decode-data-html.js"
+        },
+        {
+          "path": "node_modules/entities/lib/esm/generated/decode-data-xml.js",
+          "kind": "import-statement",
+          "original": "./generated/decode-data-xml.js"
+        },
+        {
+          "path": "node_modules/entities/lib/esm/decode_codepoint.js",
+          "kind": "import-statement",
+          "original": "./decode_codepoint.js"
+        },
+        {
+          "path": "node_modules/entities/lib/esm/decode_codepoint.js",
+          "kind": "import-statement",
+          "original": "./decode_codepoint.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/entities/lib/esm/generated/encode-html.js": {
+      "bytes": 27039,
+      "imports": [],
+      "format": "esm"
+    },
+    "node_modules/entities/lib/esm/escape.js": {
+      "bytes": 3965,
+      "imports": [],
+      "format": "esm"
+    },
+    "node_modules/entities/lib/esm/encode.js": {
+      "bytes": 2569,
+      "imports": [
+        {
+          "path": "node_modules/entities/lib/esm/generated/encode-html.js",
+          "kind": "import-statement",
+          "original": "./generated/encode-html.js"
+        },
+        {
+          "path": "node_modules/entities/lib/esm/escape.js",
+          "kind": "import-statement",
+          "original": "./escape.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/entities/lib/esm/index.js": {
+      "bytes": 4057,
+      "imports": [
+        {
+          "path": "node_modules/entities/lib/esm/decode.js",
+          "kind": "import-statement",
+          "original": "./decode.js"
+        },
+        {
+          "path": "node_modules/entities/lib/esm/encode.js",
+          "kind": "import-statement",
+          "original": "./encode.js"
+        },
+        {
+          "path": "node_modules/entities/lib/esm/escape.js",
+          "kind": "import-statement",
+          "original": "./escape.js"
+        },
+        {
+          "path": "node_modules/entities/lib/esm/escape.js",
+          "kind": "import-statement",
+          "original": "./escape.js"
+        },
+        {
+          "path": "node_modules/entities/lib/esm/encode.js",
+          "kind": "import-statement",
+          "original": "./encode.js"
+        },
+        {
+          "path": "node_modules/entities/lib/esm/decode.js",
+          "kind": "import-statement",
+          "original": "./decode.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/markdown-it/lib/common/utils.mjs": {
+      "bytes": 8350,
+      "imports": [
+        {
+          "path": "node_modules/mdurl/index.mjs",
+          "kind": "import-statement",
+          "original": "mdurl"
+        },
+        {
+          "path": "node_modules/uc.micro/index.mjs",
+          "kind": "import-statement",
+          "original": "uc.micro"
+        },
+        {
+          "path": "node_modules/entities/lib/esm/index.js",
+          "kind": "import-statement",
+          "original": "entities"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/markdown-it/lib/helpers/parse_link_label.mjs": {
+      "bytes": 985,
+      "imports": [],
+      "format": "esm"
+    },
+    "node_modules/markdown-it/lib/helpers/parse_link_destination.mjs": {
+      "bytes": 1553,
+      "imports": [
+        {
+          "path": "node_modules/markdown-it/lib/common/utils.mjs",
+          "kind": "import-statement",
+          "original": "../common/utils.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/markdown-it/lib/helpers/parse_link_title.mjs": {
+      "bytes": 1851,
+      "imports": [
+        {
+          "path": "node_modules/markdown-it/lib/common/utils.mjs",
+          "kind": "import-statement",
+          "original": "../common/utils.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/markdown-it/lib/helpers/index.mjs": {
+      "bytes": 275,
+      "imports": [
+        {
+          "path": "node_modules/markdown-it/lib/helpers/parse_link_label.mjs",
+          "kind": "import-statement",
+          "original": "./parse_link_label.mjs"
+        },
+        {
+          "path": "node_modules/markdown-it/lib/helpers/parse_link_destination.mjs",
+          "kind": "import-statement",
+          "original": "./parse_link_destination.mjs"
+        },
+        {
+          "path": "node_modules/markdown-it/lib/helpers/parse_link_title.mjs",
+          "kind": "import-statement",
+          "original": "./parse_link_title.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/markdown-it/lib/renderer.mjs": {
+      "bytes": 8927,
+      "imports": [
+        {
+          "path": "node_modules/markdown-it/lib/common/utils.mjs",
+          "kind": "import-statement",
+          "original": "./common/utils.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/markdown-it/lib/ruler.mjs": {
+      "bytes": 8478,
+      "imports": [],
+      "format": "esm"
+    },
+    "node_modules/markdown-it/lib/token.mjs": {
+      "bytes": 3762,
+      "imports": [],
+      "format": "esm"
+    },
+    "node_modules/markdown-it/lib/rules_core/state_core.mjs": {
+      "bytes": 325,
+      "imports": [
+        {
+          "path": "node_modules/markdown-it/lib/token.mjs",
+          "kind": "import-statement",
+          "original": "../token.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/markdown-it/lib/rules_core/normalize.mjs": {
+      "bytes": 345,
+      "imports": [],
+      "format": "esm"
+    },
+    "node_modules/markdown-it/lib/rules_core/block.mjs": {
+      "bytes": 318,
+      "imports": [],
+      "format": "esm"
+    },
+    "node_modules/markdown-it/lib/rules_core/inline.mjs": {
+      "bytes": 289,
+      "imports": [],
+      "format": "esm"
+    },
+    "node_modules/markdown-it/lib/rules_core/linkify.mjs": {
+      "bytes": 4883,
+      "imports": [],
+      "format": "esm"
+    },
+    "node_modules/markdown-it/lib/rules_core/replacements.mjs": {
+      "bytes": 2633,
+      "imports": [],
+      "format": "esm"
+    },
+    "node_modules/markdown-it/lib/rules_core/smartquotes.mjs": {
+      "bytes": 5957,
+      "imports": [
+        {
+          "path": "node_modules/markdown-it/lib/common/utils.mjs",
+          "kind": "import-statement",
+          "original": "../common/utils.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/markdown-it/lib/rules_core/text_join.mjs": {
+      "bytes": 1147,
+      "imports": [],
+      "format": "esm"
+    },
+    "node_modules/markdown-it/lib/parser_core.mjs": {
+      "bytes": 1470,
+      "imports": [
+        {
+          "path": "node_modules/markdown-it/lib/ruler.mjs",
+          "kind": "import-statement",
+          "original": "./ruler.mjs"
+        },
+        {
+          "path": "node_modules/markdown-it/lib/rules_core/state_core.mjs",
+          "kind": "import-statement",
+          "original": "./rules_core/state_core.mjs"
+        },
+        {
+          "path": "node_modules/markdown-it/lib/rules_core/normalize.mjs",
+          "kind": "import-statement",
+          "original": "./rules_core/normalize.mjs"
+        },
+        {
+          "path": "node_modules/markdown-it/lib/rules_core/block.mjs",
+          "kind": "import-statement",
+          "original": "./rules_core/block.mjs"
+        },
+        {
+          "path": "node_modules/markdown-it/lib/rules_core/inline.mjs",
+          "kind": "import-statement",
+          "original": "./rules_core/inline.mjs"
+        },
+        {
+          "path": "node_modules/markdown-it/lib/rules_core/linkify.mjs",
+          "kind": "import-statement",
+          "original": "./rules_core/linkify.mjs"
+        },
+        {
+          "path": "node_modules/markdown-it/lib/rules_core/replacements.mjs",
+          "kind": "import-statement",
+          "original": "./rules_core/replacements.mjs"
+        },
+        {
+          "path": "node_modules/markdown-it/lib/rules_core/smartquotes.mjs",
+          "kind": "import-statement",
+          "original": "./rules_core/smartquotes.mjs"
+        },
+        {
+          "path": "node_modules/markdown-it/lib/rules_core/text_join.mjs",
+          "kind": "import-statement",
+          "original": "./rules_core/text_join.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/markdown-it/lib/rules_block/state_block.mjs": {
+      "bytes": 5874,
+      "imports": [
+        {
+          "path": "node_modules/markdown-it/lib/token.mjs",
+          "kind": "import-statement",
+          "original": "../token.mjs"
+        },
+        {
+          "path": "node_modules/markdown-it/lib/common/utils.mjs",
+          "kind": "import-statement",
+          "original": "../common/utils.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/markdown-it/lib/rules_block/table.mjs": {
+      "bytes": 7083,
+      "imports": [
+        {
+          "path": "node_modules/markdown-it/lib/common/utils.mjs",
+          "kind": "import-statement",
+          "original": "../common/utils.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/markdown-it/lib/rules_block/code.mjs": {
+      "bytes": 680,
+      "imports": [],
+      "format": "esm"
+    },
+    "node_modules/markdown-it/lib/rules_block/fence.mjs": {
+      "bytes": 2402,
+      "imports": [],
+      "format": "esm"
+    },
+    "node_modules/markdown-it/lib/rules_block/blockquote.mjs": {
+      "bytes": 6048,
+      "imports": [
+        {
+          "path": "node_modules/markdown-it/lib/common/utils.mjs",
+          "kind": "import-statement",
+          "original": "../common/utils.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/markdown-it/lib/rules_block/hr.mjs": {
+      "bytes": 1066,
+      "imports": [
+        {
+          "path": "node_modules/markdown-it/lib/common/utils.mjs",
+          "kind": "import-statement",
+          "original": "../common/utils.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/markdown-it/lib/rules_block/list.mjs": {
+      "bytes": 9071,
+      "imports": [
+        {
+          "path": "node_modules/markdown-it/lib/common/utils.mjs",
+          "kind": "import-statement",
+          "original": "../common/utils.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/markdown-it/lib/rules_block/reference.mjs": {
+      "bytes": 5819,
+      "imports": [
+        {
+          "path": "node_modules/markdown-it/lib/common/utils.mjs",
+          "kind": "import-statement",
+          "original": "../common/utils.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/markdown-it/lib/common/html_blocks.mjs": {
+      "bytes": 799,
+      "imports": [],
+      "format": "esm"
+    },
+    "node_modules/markdown-it/lib/common/html_re.mjs": {
+      "bytes": 964,
+      "imports": [],
+      "format": "esm"
+    },
+    "node_modules/markdown-it/lib/rules_block/html_block.mjs": {
+      "bytes": 2820,
+      "imports": [
+        {
+          "path": "node_modules/markdown-it/lib/common/html_blocks.mjs",
+          "kind": "import-statement",
+          "original": "../common/html_blocks.mjs"
+        },
+        {
+          "path": "node_modules/markdown-it/lib/common/html_re.mjs",
+          "kind": "import-statement",
+          "original": "../common/html_re.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/markdown-it/lib/rules_block/heading.mjs": {
+      "bytes": 1497,
+      "imports": [
+        {
+          "path": "node_modules/markdown-it/lib/common/utils.mjs",
+          "kind": "import-statement",
+          "original": "../common/utils.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/markdown-it/lib/rules_block/lheading.mjs": {
+      "bytes": 2553,
+      "imports": [
+        {
+          "path": "node_modules/markdown-it/lib/common/utils.mjs",
+          "kind": "import-statement",
+          "original": "../common/utils.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/markdown-it/lib/rules_block/paragraph.mjs": {
+      "bytes": 1494,
+      "imports": [
+        {
+          "path": "node_modules/markdown-it/lib/common/utils.mjs",
+          "kind": "import-statement",
+          "original": "../common/utils.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/markdown-it/lib/parser_block.mjs": {
+      "bytes": 3922,
+      "imports": [
+        {
+          "path": "node_modules/markdown-it/lib/ruler.mjs",
+          "kind": "import-statement",
+          "original": "./ruler.mjs"
+        },
+        {
+          "path": "node_modules/markdown-it/lib/rules_block/state_block.mjs",
+          "kind": "import-statement",
+          "original": "./rules_block/state_block.mjs"
+        },
+        {
+          "path": "node_modules/markdown-it/lib/rules_block/table.mjs",
+          "kind": "import-statement",
+          "original": "./rules_block/table.mjs"
+        },
+        {
+          "path": "node_modules/markdown-it/lib/rules_block/code.mjs",
+          "kind": "import-statement",
+          "original": "./rules_block/code.mjs"
+        },
+        {
+          "path": "node_modules/markdown-it/lib/rules_block/fence.mjs",
+          "kind": "import-statement",
+          "original": "./rules_block/fence.mjs"
+        },
+        {
+          "path": "node_modules/markdown-it/lib/rules_block/blockquote.mjs",
+          "kind": "import-statement",
+          "original": "./rules_block/blockquote.mjs"
+        },
+        {
+          "path": "node_modules/markdown-it/lib/rules_block/hr.mjs",
+          "kind": "import-statement",
+          "original": "./rules_block/hr.mjs"
+        },
+        {
+          "path": "node_modules/markdown-it/lib/rules_block/list.mjs",
+          "kind": "import-statement",
+          "original": "./rules_block/list.mjs"
+        },
+        {
+          "path": "node_modules/markdown-it/lib/rules_block/reference.mjs",
+          "kind": "import-statement",
+          "original": "./rules_block/reference.mjs"
+        },
+        {
+          "path": "node_modules/markdown-it/lib/rules_block/html_block.mjs",
+          "kind": "import-statement",
+          "original": "./rules_block/html_block.mjs"
+        },
+        {
+          "path": "node_modules/markdown-it/lib/rules_block/heading.mjs",
+          "kind": "import-statement",
+          "original": "./rules_block/heading.mjs"
+        },
+        {
+          "path": "node_modules/markdown-it/lib/rules_block/lheading.mjs",
+          "kind": "import-statement",
+          "original": "./rules_block/lheading.mjs"
+        },
+        {
+          "path": "node_modules/markdown-it/lib/rules_block/paragraph.mjs",
+          "kind": "import-statement",
+          "original": "./rules_block/paragraph.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/markdown-it/lib/rules_inline/state_inline.mjs": {
+      "bytes": 4624,
+      "imports": [
+        {
+          "path": "node_modules/markdown-it/lib/token.mjs",
+          "kind": "import-statement",
+          "original": "../token.mjs"
+        },
+        {
+          "path": "node_modules/markdown-it/lib/common/utils.mjs",
+          "kind": "import-statement",
+          "original": "../common/utils.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/markdown-it/lib/rules_inline/text.mjs": {
+      "bytes": 2101,
+      "imports": [],
+      "format": "esm"
+    },
+    "node_modules/markdown-it/lib/rules_inline/linkify.mjs": {
+      "bytes": 2640,
+      "imports": [],
+      "format": "esm"
+    },
+    "node_modules/markdown-it/lib/rules_inline/newline.mjs": {
+      "bytes": 1199,
+      "imports": [
+        {
+          "path": "node_modules/markdown-it/lib/common/utils.mjs",
+          "kind": "import-statement",
+          "original": "../common/utils.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/markdown-it/lib/rules_inline/escape.mjs": {
+      "bytes": 1798,
+      "imports": [
+        {
+          "path": "node_modules/markdown-it/lib/common/utils.mjs",
+          "kind": "import-statement",
+          "original": "../common/utils.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/markdown-it/lib/rules_inline/backticks.mjs": {
+      "bytes": 1674,
+      "imports": [],
+      "format": "esm"
+    },
+    "node_modules/markdown-it/lib/rules_inline/strikethrough.mjs": {
+      "bytes": 2887,
+      "imports": [],
+      "format": "esm"
+    },
+    "node_modules/markdown-it/lib/rules_inline/emphasis.mjs": {
+      "bytes": 3500,
+      "imports": [],
+      "format": "esm"
+    },
+    "node_modules/markdown-it/lib/rules_inline/link.mjs": {
+      "bytes": 3723,
+      "imports": [
+        {
+          "path": "node_modules/markdown-it/lib/common/utils.mjs",
+          "kind": "import-statement",
+          "original": "../common/utils.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/markdown-it/lib/rules_inline/image.mjs": {
+      "bytes": 3638,
+      "imports": [
+        {
+          "path": "node_modules/markdown-it/lib/common/utils.mjs",
+          "kind": "import-statement",
+          "original": "../common/utils.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/markdown-it/lib/rules_inline/autolink.mjs": {
+      "bytes": 1977,
+      "imports": [],
+      "format": "esm"
+    },
+    "node_modules/markdown-it/lib/rules_inline/html_inline.mjs": {
+      "bytes": 1162,
+      "imports": [
+        {
+          "path": "node_modules/markdown-it/lib/common/html_re.mjs",
+          "kind": "import-statement",
+          "original": "../common/html_re.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/markdown-it/lib/rules_inline/entity.mjs": {
+      "bytes": 1486,
+      "imports": [
+        {
+          "path": "node_modules/entities/lib/esm/index.js",
+          "kind": "import-statement",
+          "original": "entities"
+        },
+        {
+          "path": "node_modules/markdown-it/lib/common/utils.mjs",
+          "kind": "import-statement",
+          "original": "../common/utils.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/markdown-it/lib/rules_inline/balance_pairs.mjs": {
+      "bytes": 4081,
+      "imports": [],
+      "format": "esm"
+    },
+    "node_modules/markdown-it/lib/rules_inline/fragments_join.mjs": {
+      "bytes": 1267,
+      "imports": [],
+      "format": "esm"
+    },
+    "node_modules/markdown-it/lib/parser_inline.mjs": {
+      "bytes": 5330,
+      "imports": [
+        {
+          "path": "node_modules/markdown-it/lib/ruler.mjs",
+          "kind": "import-statement",
+          "original": "./ruler.mjs"
+        },
+        {
+          "path": "node_modules/markdown-it/lib/rules_inline/state_inline.mjs",
+          "kind": "import-statement",
+          "original": "./rules_inline/state_inline.mjs"
+        },
+        {
+          "path": "node_modules/markdown-it/lib/rules_inline/text.mjs",
+          "kind": "import-statement",
+          "original": "./rules_inline/text.mjs"
+        },
+        {
+          "path": "node_modules/markdown-it/lib/rules_inline/linkify.mjs",
+          "kind": "import-statement",
+          "original": "./rules_inline/linkify.mjs"
+        },
+        {
+          "path": "node_modules/markdown-it/lib/rules_inline/newline.mjs",
+          "kind": "import-statement",
+          "original": "./rules_inline/newline.mjs"
+        },
+        {
+          "path": "node_modules/markdown-it/lib/rules_inline/escape.mjs",
+          "kind": "import-statement",
+          "original": "./rules_inline/escape.mjs"
+        },
+        {
+          "path": "node_modules/markdown-it/lib/rules_inline/backticks.mjs",
+          "kind": "import-statement",
+          "original": "./rules_inline/backticks.mjs"
+        },
+        {
+          "path": "node_modules/markdown-it/lib/rules_inline/strikethrough.mjs",
+          "kind": "import-statement",
+          "original": "./rules_inline/strikethrough.mjs"
+        },
+        {
+          "path": "node_modules/markdown-it/lib/rules_inline/emphasis.mjs",
+          "kind": "import-statement",
+          "original": "./rules_inline/emphasis.mjs"
+        },
+        {
+          "path": "node_modules/markdown-it/lib/rules_inline/link.mjs",
+          "kind": "import-statement",
+          "original": "./rules_inline/link.mjs"
+        },
+        {
+          "path": "node_modules/markdown-it/lib/rules_inline/image.mjs",
+          "kind": "import-statement",
+          "original": "./rules_inline/image.mjs"
+        },
+        {
+          "path": "node_modules/markdown-it/lib/rules_inline/autolink.mjs",
+          "kind": "import-statement",
+          "original": "./rules_inline/autolink.mjs"
+        },
+        {
+          "path": "node_modules/markdown-it/lib/rules_inline/html_inline.mjs",
+          "kind": "import-statement",
+          "original": "./rules_inline/html_inline.mjs"
+        },
+        {
+          "path": "node_modules/markdown-it/lib/rules_inline/entity.mjs",
+          "kind": "import-statement",
+          "original": "./rules_inline/entity.mjs"
+        },
+        {
+          "path": "node_modules/markdown-it/lib/rules_inline/balance_pairs.mjs",
+          "kind": "import-statement",
+          "original": "./rules_inline/balance_pairs.mjs"
+        },
+        {
+          "path": "node_modules/markdown-it/lib/rules_inline/fragments_join.mjs",
+          "kind": "import-statement",
+          "original": "./rules_inline/fragments_join.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/linkify-it/lib/re.mjs": {
+      "bytes": 5655,
+      "imports": [
+        {
+          "path": "node_modules/uc.micro/index.mjs",
+          "kind": "import-statement",
+          "original": "uc.micro"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/linkify-it/index.mjs": {
+      "bytes": 17725,
+      "imports": [
+        {
+          "path": "node_modules/linkify-it/lib/re.mjs",
+          "kind": "import-statement",
+          "original": "./lib/re.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/punycode.js/punycode.js": {
+      "bytes": 12711,
+      "imports": [],
+      "format": "cjs"
+    },
+    "node_modules/markdown-it/lib/presets/default.mjs": {
+      "bytes": 1281,
+      "imports": [],
+      "format": "esm"
+    },
+    "node_modules/markdown-it/lib/presets/zero.mjs": {
+      "bytes": 1652,
+      "imports": [],
+      "format": "esm"
+    },
+    "node_modules/markdown-it/lib/presets/commonmark.mjs": {
+      "bytes": 1909,
+      "imports": [],
+      "format": "esm"
+    },
+    "node_modules/markdown-it/lib/index.mjs": {
+      "bytes": 17899,
+      "imports": [
+        {
+          "path": "node_modules/markdown-it/lib/common/utils.mjs",
+          "kind": "import-statement",
+          "original": "./common/utils.mjs"
+        },
+        {
+          "path": "node_modules/markdown-it/lib/helpers/index.mjs",
+          "kind": "import-statement",
+          "original": "./helpers/index.mjs"
+        },
+        {
+          "path": "node_modules/markdown-it/lib/renderer.mjs",
+          "kind": "import-statement",
+          "original": "./renderer.mjs"
+        },
+        {
+          "path": "node_modules/markdown-it/lib/parser_core.mjs",
+          "kind": "import-statement",
+          "original": "./parser_core.mjs"
+        },
+        {
+          "path": "node_modules/markdown-it/lib/parser_block.mjs",
+          "kind": "import-statement",
+          "original": "./parser_block.mjs"
+        },
+        {
+          "path": "node_modules/markdown-it/lib/parser_inline.mjs",
+          "kind": "import-statement",
+          "original": "./parser_inline.mjs"
+        },
+        {
+          "path": "node_modules/linkify-it/index.mjs",
+          "kind": "import-statement",
+          "original": "linkify-it"
+        },
+        {
+          "path": "node_modules/mdurl/index.mjs",
+          "kind": "import-statement",
+          "original": "mdurl"
+        },
+        {
+          "path": "node_modules/punycode.js/punycode.js",
+          "kind": "import-statement",
+          "original": "punycode.js"
+        },
+        {
+          "path": "node_modules/markdown-it/lib/presets/default.mjs",
+          "kind": "import-statement",
+          "original": "./presets/default.mjs"
+        },
+        {
+          "path": "node_modules/markdown-it/lib/presets/zero.mjs",
+          "kind": "import-statement",
+          "original": "./presets/zero.mjs"
+        },
+        {
+          "path": "node_modules/markdown-it/lib/presets/commonmark.mjs",
+          "kind": "import-statement",
+          "original": "./presets/commonmark.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/markdown-it/index.mjs": {
+      "bytes": 42,
+      "imports": [
+        {
+          "path": "node_modules/markdown-it/lib/index.mjs",
+          "kind": "import-statement",
+          "original": "./lib/index.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/ui/chatMarkdown.ts": {
+      "bytes": 3519,
+      "imports": [
+        {
+          "path": "node_modules/markdown-it/index.mjs",
+          "kind": "import-statement",
+          "original": "markdown-it"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/history/modelHistory.ts": {
+      "bytes": 1242,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/ui/chatPersistence.ts": {
+      "bytes": 3272,
+      "imports": [
+        {
+          "path": "src/ui/chatProtocol.ts",
+          "kind": "import-statement",
+          "original": "./chatProtocol"
+        },
+        {
+          "path": "src/security/sanitizer.ts",
+          "kind": "import-statement",
+          "original": "../security/sanitizer"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/ui/chatSessionController.ts": {
+      "bytes": 27511,
+      "imports": [
+        {
+          "path": "src/ui/chatMarkdown.ts",
+          "kind": "import-statement",
+          "original": "./chatMarkdown"
+        },
+        {
+          "path": "vscode",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/ui/chatProtocol.ts",
+          "kind": "import-statement",
+          "original": "./chatProtocol"
+        },
+        {
+          "path": "src/history/modelHistory.ts",
+          "kind": "import-statement",
+          "original": "../history/modelHistory"
+        },
+        {
+          "path": "src/proxy/modelProvider.ts",
+          "kind": "import-statement",
+          "original": "../proxy/modelProvider"
+        },
+        {
+          "path": "src/events/optimizationEvent.ts",
+          "kind": "import-statement",
+          "original": "../events/optimizationEvent"
+        },
+        {
+          "path": "src/cost/accountingTruth.ts",
+          "kind": "import-statement",
+          "original": "../cost/accountingTruth"
+        },
+        {
+          "path": "src/subscriptions/modelChoices.ts",
+          "kind": "import-statement",
+          "original": "../subscriptions/modelChoices"
+        },
+        {
+          "path": "src/subscriptions/cliTransport.ts",
+          "kind": "import-statement",
+          "original": "../subscriptions/cliTransport"
+        },
+        {
+          "path": "src/security/sanitizer.ts",
+          "kind": "import-statement",
+          "original": "../security/sanitizer"
+        },
+        {
+          "path": "src/ui/chatPersistence.ts",
+          "kind": "import-statement",
+          "original": "./chatPersistence"
+        },
+        {
+          "path": "src/proxy/modelProvider.ts",
+          "kind": "import-statement",
+          "original": "../proxy/modelProvider"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/ui/chatViewHtml.ts": {
+      "bytes": 26376,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/ui/chatViewProvider.ts": {
+      "bytes": 14209,
+      "imports": [
+        {
+          "path": "vscode",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "crypto",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/ui/chatProtocol.ts",
+          "kind": "import-statement",
+          "original": "./chatProtocol"
+        },
+        {
+          "path": "src/ui/chatSessionController.ts",
+          "kind": "import-statement",
+          "original": "./chatSessionController"
+        },
+        {
+          "path": "src/ui/chatViewHtml.ts",
+          "kind": "import-statement",
+          "original": "./chatViewHtml"
+        },
+        {
+          "path": "src/subscriptions/modelChoices.ts",
+          "kind": "import-statement",
+          "original": "../subscriptions/modelChoices"
+        },
+        {
+          "path": "src/subscriptions/subscriptionModels.ts",
+          "kind": "import-statement",
+          "original": "../subscriptions/subscriptionModels"
+        },
+        {
+          "path": "../subscriptions/cliTransport",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/ui/chatPersistence.ts",
+          "kind": "import-statement",
+          "original": "./chatPersistence"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/metrics/liveAggregator.ts": {
+      "bytes": 6886,
+      "imports": [
+        {
+          "path": "../events/optimizationEvent",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/events/requestLedger.ts",
+          "kind": "import-statement",
+          "original": "../events/requestLedger"
+        },
+        {
+          "path": "src/cost/accountingTruth.ts",
+          "kind": "import-statement",
+          "original": "../cost/accountingTruth"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/history/localHistoryStore.ts": {
+      "bytes": 3023,
+      "imports": [
+        {
+          "path": "../events/optimizationEvent",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/events/requestLedger.ts",
+          "kind": "import-statement",
+          "original": "../events/requestLedger"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/finops/usageStore.ts": {
+      "bytes": 14562,
+      "imports": [
+        {
+          "path": "crypto",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../events/optimizationEvent",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/cost/accountingTruth.ts",
+          "kind": "import-statement",
+          "original": "../cost/accountingTruth"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/finops/claudeUsage.ts": {
+      "bytes": 2309,
+      "imports": [
+        {
+          "path": "src/cost/costCalculator.ts",
+          "kind": "import-statement",
+          "original": "../cost/costCalculator"
+        },
+        {
+          "path": "src/finops/usageStore.ts",
+          "kind": "import-statement",
+          "original": "./usageStore"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/finops/usageFileReader.ts": {
+      "bytes": 2331,
+      "imports": [
+        {
+          "path": "fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "crypto",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/finops/modelRecommendation.ts": {
+      "bytes": 2523,
+      "imports": [
+        {
+          "path": "../tokenizer/modelProfile",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/cost/costCalculator.ts",
+          "kind": "import-statement",
+          "original": "../cost/costCalculator"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/tokenizer/modelProfile.ts": {
+      "bytes": 9249,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/finops/finOpsService.ts": {
+      "bytes": 25530,
+      "imports": [
+        {
+          "path": "vscode",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/events/optimizationEvent.ts",
+          "kind": "import-statement",
+          "original": "../events/optimizationEvent"
+        },
+        {
+          "path": "src/events/requestLedger.ts",
+          "kind": "import-statement",
+          "original": "../events/requestLedger"
+        },
+        {
+          "path": "src/cost/pricingCatalog.ts",
+          "kind": "import-statement",
+          "original": "../cost/pricingCatalog"
+        },
+        {
+          "path": "src/finops/taskContext.ts",
+          "kind": "import-statement",
+          "original": "./taskContext"
+        },
+        {
+          "path": "src/finops/usageStore.ts",
+          "kind": "import-statement",
+          "original": "./usageStore"
+        },
+        {
+          "path": "src/finops/claudeUsage.ts",
+          "kind": "import-statement",
+          "original": "./claudeUsage"
+        },
+        {
+          "path": "src/finops/usageFileReader.ts",
+          "kind": "import-statement",
+          "original": "./usageFileReader"
+        },
+        {
+          "path": "src/finops/modelRecommendation.ts",
+          "kind": "import-statement",
+          "original": "./modelRecommendation"
+        },
+        {
+          "path": "src/tokenizer/modelProfile.ts",
+          "kind": "import-statement",
+          "original": "../tokenizer/modelProfile"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/ui/dashboardController.ts": {
+      "bytes": 7454,
+      "imports": [
+        {
+          "path": "src/events/optimizationEvent.ts",
+          "kind": "import-statement",
+          "original": "../events/optimizationEvent"
+        },
+        {
+          "path": "src/metrics/liveAggregator.ts",
+          "kind": "import-statement",
+          "original": "../metrics/liveAggregator"
+        },
+        {
+          "path": "src/history/localHistoryStore.ts",
+          "kind": "import-statement",
+          "original": "../history/localHistoryStore"
+        },
+        {
+          "path": "src/events/requestLedger.ts",
+          "kind": "import-statement",
+          "original": "../events/requestLedger"
+        },
+        {
+          "path": "src/finops/finOpsService.ts",
+          "kind": "import-statement",
+          "original": "../finops/finOpsService"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/ui/spendDashboard.ts": {
+      "bytes": 14087,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/ui/dashboardWebview.ts": {
+      "bytes": 74704,
+      "imports": [
+        {
+          "path": "vscode",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "crypto",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../metrics/tracker",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/ast/pruner.ts",
+          "kind": "import-statement",
+          "original": "../ast/pruner"
+        },
+        {
+          "path": "src/engine/tokenizer.ts",
+          "kind": "import-statement",
+          "original": "../engine/tokenizer"
+        },
+        {
+          "path": "src/ignore/tokenIgnore.ts",
+          "kind": "import-statement",
+          "original": "../ignore/tokenIgnore"
+        },
+        {
+          "path": "src/ui/dashboardController.ts",
+          "kind": "import-statement",
+          "original": "./dashboardController"
+        },
+        {
+          "path": "src/metrics/liveAggregator.ts",
+          "kind": "import-statement",
+          "original": "../metrics/liveAggregator"
+        },
+        {
+          "path": "src/events/requestLedger.ts",
+          "kind": "import-statement",
+          "original": "../events/requestLedger"
+        },
+        {
+          "path": "../metrics/liveAggregator",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../events/optimizationEvent",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../workspace/workspaceIndex",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/config/userPreferences.ts",
+          "kind": "import-statement",
+          "original": "../config/userPreferences"
+        },
+        {
+          "path": "src/cost/accountingTruth.ts",
+          "kind": "import-statement",
+          "original": "../cost/accountingTruth"
+        },
+        {
+          "path": "src/ui/spendDashboard.ts",
+          "kind": "import-statement",
+          "original": "./spendDashboard"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/ui/statusBar.ts": {
+      "bytes": 5806,
+      "imports": [
+        {
+          "path": "vscode",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../metrics/tracker",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/ui/dashboardWebview.ts",
+          "kind": "import-statement",
+          "original": "./dashboardWebview"
+        },
+        {
+          "path": "src/events/optimizationEvent.ts",
+          "kind": "import-statement",
+          "original": "../events/optimizationEvent"
+        },
+        {
+          "path": "src/metrics/liveAggregator.ts",
+          "kind": "import-statement",
+          "original": "../metrics/liveAggregator"
+        },
+        {
+          "path": "src/finops/finOpsService.ts",
+          "kind": "import-statement",
+          "original": "../finops/finOpsService"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/metrics/budgetGuard.ts": {
+      "bytes": 599,
+      "imports": [
+        {
+          "path": "./tracker",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/cache/responseCache.ts": {
+      "bytes": 12206,
+      "imports": [
+        {
+          "path": "crypto",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/engine/diffOutputOptimizer.ts": {
+      "bytes": 7575,
+      "imports": [
+        {
+          "path": "src/engine/tokenizer.ts",
+          "kind": "import-statement",
+          "original": "./tokenizer"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/metrics/circuitBreaker.ts": {
+      "bytes": 4888,
+      "imports": [
+        {
+          "path": "../engine/tokenizer",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/engine/imageRightsizer.ts": {
+      "bytes": 12032,
+      "imports": [
+        {
+          "path": "fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../performance/cpuWorkerBoundary",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../performance/boundedScheduler",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/engine/ramManager.ts": {
+      "bytes": 19882,
+      "imports": [
+        {
+          "path": "fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/ast/pruner.ts",
+          "kind": "import-statement",
+          "original": "../ast/pruner"
+        },
+        {
+          "path": "src/engine/tokenizer.ts",
+          "kind": "import-statement",
+          "original": "./tokenizer"
+        },
+        {
+          "path": "src/ignore/tokenIgnore.ts",
+          "kind": "import-statement",
+          "original": "../ignore/tokenIgnore"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/security/anonymizedLogger.ts": {
+      "bytes": 10316,
+      "imports": [
+        {
+          "path": "os",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/security/sanitizer.ts",
+          "kind": "import-statement",
+          "original": "./sanitizer"
+        },
+        {
+          "path": "vscode",
+          "kind": "require-call",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/engine/componentRegistry.ts": {
+      "bytes": 16522,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/engine/featureFlags.ts": {
+      "bytes": 4697,
+      "imports": [
+        {
+          "path": "src/engine/componentRegistry.ts",
+          "kind": "import-statement",
+          "original": "./componentRegistry"
+        },
+        {
+          "path": "src/config/userPreferences.ts",
+          "kind": "import-statement",
+          "original": "../config/userPreferences"
+        },
+        {
+          "path": "vscode",
+          "kind": "require-call",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/engine/traceLogger.ts": {
+      "bytes": 3210,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/solver/contextIR.ts": {
+      "bytes": 9166,
+      "imports": [
+        {
+          "path": "src/engine/tokenizer.ts",
+          "kind": "import-statement",
+          "original": "../engine/tokenizer"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/solver/knapsackSolver.ts": {
+      "bytes": 19020,
+      "imports": [
+        {
+          "path": "src/solver/contextIR.ts",
+          "kind": "import-statement",
+          "original": "./contextIR"
+        },
+        {
+          "path": "src/cost/pricingCatalog.ts",
+          "kind": "import-statement",
+          "original": "../cost/pricingCatalog"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/solver/qualityScore.ts": {
+      "bytes": 3537,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/ast/systemDependenceGraph.ts": {
+      "bytes": 14434,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/engine/sufficiencyEngine.ts": {
+      "bytes": 8623,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/cache/cachePlanner.ts": {
+      "bytes": 5068,
+      "imports": [
+        {
+          "path": "../tokenizer/modelProfile",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/engine/tokenizer.ts",
+          "kind": "import-statement",
+          "original": "../engine/tokenizer"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/compression/compressionProvider.ts": {
+      "bytes": 8388,
+      "imports": [
+        {
+          "path": "src/engine/tokenizer.ts",
+          "kind": "import-statement",
+          "original": "../engine/tokenizer"
+        },
+        {
+          "path": "../engine/featureFlags",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../engine/localSlmBrain",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/governor/intentExtractor.ts": {
+      "bytes": 6979,
+      "imports": [
+        {
+          "path": "./governorTypes",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/governor/evidencePolicy.ts": {
+      "bytes": 6889,
+      "imports": [
+        {
+          "path": "./governorTypes",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/governor/riskEngine.ts": {
+      "bytes": 4205,
+      "imports": [
+        {
+          "path": "./governorTypes",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/governor/evidenceSafetyGate.ts": {
+      "bytes": 1886,
+      "imports": [
+        {
+          "path": "./governorTypes",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/governor/contextGovernor.ts": {
+      "bytes": 4268,
+      "imports": [
+        {
+          "path": "./governorTypes",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/governor/intentExtractor.ts",
+          "kind": "import-statement",
+          "original": "./intentExtractor"
+        },
+        {
+          "path": "src/governor/evidencePolicy.ts",
+          "kind": "import-statement",
+          "original": "./evidencePolicy"
+        },
+        {
+          "path": "src/governor/riskEngine.ts",
+          "kind": "import-statement",
+          "original": "./riskEngine"
+        },
+        {
+          "path": "src/governor/evidenceSafetyGate.ts",
+          "kind": "import-statement",
+          "original": "./evidenceSafetyGate"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/engine/conversationalPrompt.ts": {
+      "bytes": 3581,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/evaluation/preservationGate.ts": {
+      "bytes": 14510,
+      "imports": [
+        {
+          "path": "../types",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/ast/sliceConfidence.ts": {
+      "bytes": 5870,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/workspace/semanticChunk.ts": {
+      "bytes": 13258,
+      "imports": [
+        {
+          "path": "crypto",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/workspace/provenance.ts": {
+      "bytes": 11504,
+      "imports": [
+        {
+          "path": "path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "./workspaceIndex",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/security/sanitizer.ts",
+          "kind": "import-statement",
+          "original": "../security/sanitizer"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/retrieval/evidenceContract.ts": {
+      "bytes": 1914,
+      "imports": [
+        {
+          "path": "src/governor/evidencePolicy.ts",
+          "kind": "import-statement",
+          "original": "../governor/evidencePolicy"
+        },
+        {
+          "path": "../governor/governorTypes",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "./evidenceTypes",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/solver/candidateUtility.ts": {
+      "bytes": 1027,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/retrieval/evidenceRetriever.ts": {
+      "bytes": 32007,
+      "imports": [
+        {
+          "path": "src/security/sanitizer.ts",
+          "kind": "import-statement",
+          "original": "../security/sanitizer"
+        },
+        {
+          "path": "src/workspace/semanticChunk.ts",
+          "kind": "import-statement",
+          "original": "../workspace/semanticChunk"
+        },
+        {
+          "path": "crypto",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../governor/governorTypes",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../workspace/workspaceIndex",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/workspace/provenance.ts",
+          "kind": "import-statement",
+          "original": "../workspace/provenance"
+        },
+        {
+          "path": "src/retrieval/evidenceContract.ts",
+          "kind": "import-statement",
+          "original": "./evidenceContract"
+        },
+        {
+          "path": "./evidenceTypes",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/solver/candidateUtility.ts",
+          "kind": "import-statement",
+          "original": "../solver/candidateUtility"
+        },
+        {
+          "path": "src/engine/tokenizer.ts",
+          "kind": "import-statement",
+          "original": "../engine/tokenizer"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/retrieval/structuredPreservation.ts": {
+      "bytes": 3078,
+      "imports": [
+        {
+          "path": "../types",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/solver/globalBudget.ts": {
+      "bytes": 4107,
+      "imports": [
+        {
+          "path": "src/engine/tokenizer.ts",
+          "kind": "import-statement",
+          "original": "../engine/tokenizer"
+        },
+        {
+          "path": "../types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../tokenizer/modelProfile",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/experiments/experimentCatalog.ts": {
+      "bytes": 2895,
+      "imports": [
+        {
+          "path": "./experimentTypes",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/experiments/experimentTypes.ts": {
+      "bytes": 3247,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/experiments/experimentRuntime.ts": {
+      "bytes": 4746,
+      "imports": [
+        {
+          "path": "crypto",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/experiments/experimentCatalog.ts",
+          "kind": "import-statement",
+          "original": "./experimentCatalog"
+        },
+        {
+          "path": "src/experiments/experimentTypes.ts",
+          "kind": "import-statement",
+          "original": "./experimentTypes"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/experiments/candidateAdapters.ts": {
+      "bytes": 4762,
+      "imports": [
+        {
+          "path": "crypto",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/cost/boundedEconomics.ts": {
+      "bytes": 1061,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/workspace/workspaceIdentity.ts": {
+      "bytes": 2898,
+      "imports": [
+        {
+          "path": "fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "crypto",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/workspace/lspAdapter.ts": {
+      "bytes": 9910,
+      "imports": [
+        {
+          "path": "path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "vscode",
+          "kind": "require-call",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/workspace/snapshotSafeLsp.ts": {
+      "bytes": 30459,
+      "imports": [
+        {
+          "path": "path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "./workspaceIndex",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/workspace/workspaceIdentity.ts",
+          "kind": "import-statement",
+          "original": "./workspaceIdentity"
+        },
+        {
+          "path": "./workspaceGraph",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "./scipIndexer",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/workspace/lspAdapter.ts",
+          "kind": "import-statement",
+          "original": "./lspAdapter"
+        },
+        {
+          "path": "../retrieval/evidenceTypes",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/workspace/deltaContextEngine.ts": {
+      "bytes": 6410,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/workspace/errorIntelligence.ts": {
+      "bytes": 6049,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/workspace/testGraph.ts": {
+      "bytes": 3974,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/workspace/gitGraph.ts": {
+      "bytes": 3428,
+      "imports": [
+        {
+          "path": "src/security/sanitizer.ts",
+          "kind": "import-statement",
+          "original": "../security/sanitizer"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/workspace/terminalOptimizer.ts": {
+      "bytes": 13006,
+      "imports": [
+        {
+          "path": "crypto",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/security/sanitizer.ts",
+          "kind": "import-statement",
+          "original": "../security/sanitizer"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/workspace/signalCoordinator.ts": {
+      "bytes": 18013,
+      "imports": [
+        {
+          "path": "path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "./workspaceIndex",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/workspace/deltaContextEngine.ts",
+          "kind": "import-statement",
+          "original": "./deltaContextEngine"
+        },
+        {
+          "path": "src/workspace/errorIntelligence.ts",
+          "kind": "import-statement",
+          "original": "./errorIntelligence"
+        },
+        {
+          "path": "src/workspace/testGraph.ts",
+          "kind": "import-statement",
+          "original": "./testGraph"
+        },
+        {
+          "path": "src/workspace/gitGraph.ts",
+          "kind": "import-statement",
+          "original": "./gitGraph"
+        },
+        {
+          "path": "src/workspace/terminalOptimizer.ts",
+          "kind": "import-statement",
+          "original": "./terminalOptimizer"
+        },
+        {
+          "path": "src/workspace/provenance.ts",
+          "kind": "import-statement",
+          "original": "./provenance"
+        },
+        {
+          "path": "./signalTypes",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../retrieval/evidenceTypes",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/workspace/exactSourceReader.ts": {
+      "bytes": 3394,
+      "imports": [
+        {
+          "path": "fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/workspace/semanticChunk.ts",
+          "kind": "import-statement",
+          "original": "./semanticChunk"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/search/embeddingProvider.ts": {
+      "bytes": 13879,
+      "imports": [
+        {
+          "path": "crypto",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/search/vectorIndex.ts": {
+      "bytes": 8562,
+      "imports": [
+        {
+          "path": "../workspace/workspaceIndex",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/search/invertedIndex.ts": {
+      "bytes": 10390,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/search/hybridRetriever.ts": {
+      "bytes": 15398,
+      "imports": [
+        {
+          "path": "src/search/embeddingProvider.ts",
+          "kind": "import-statement",
+          "original": "./embeddingProvider"
+        },
+        {
+          "path": "src/search/vectorIndex.ts",
+          "kind": "import-statement",
+          "original": "./vectorIndex"
+        },
+        {
+          "path": "../workspace/workspaceIndex",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/search/invertedIndex.ts",
+          "kind": "import-statement",
+          "original": "./invertedIndex"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/search/reranker.ts": {
+      "bytes": 14080,
+      "imports": [
+        {
+          "path": "./embeddingProvider",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/search/mmrDiversity.ts": {
+      "bytes": 6059,
+      "imports": [
+        {
+          "path": "./reranker",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/dedup/semanticDedup.ts": {
+      "bytes": 10857,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/memory/projectMemory.ts": {
+      "bytes": 34009,
+      "imports": [
+        {
+          "path": "crypto",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/engine/tokenizer.ts",
+          "kind": "import-statement",
+          "original": "../engine/tokenizer"
+        },
+        {
+          "path": "src/security/sanitizer.ts",
+          "kind": "import-statement",
+          "original": "../security/sanitizer"
+        },
+        {
+          "path": "../search/reranker",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/engine/localSlmBrain.ts": {
+      "bytes": 31040,
+      "imports": [
+        {
+          "path": "crypto",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/engine/pipelineStages.ts": {
+      "bytes": 5507,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/governor/inlineEvidenceClassifier.ts": {
+      "bytes": 9853,
+      "imports": [
+        {
+          "path": "./governorTypes",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/compression/conservativePathCompressor.ts": {
+      "bytes": 8015,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/engine/safePathPolicy.ts": {
+      "bytes": 7079,
+      "imports": [
+        {
+          "path": "src/compression/conservativePathCompressor.ts",
+          "kind": "import-statement",
+          "original": "../compression/conservativePathCompressor"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/engine/prefixContinuity.ts": {
+      "bytes": 3536,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/engine/taskCompressionPolicy.ts": {
+      "bytes": 6930,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/engine/legacyPipeline.ts": {
+      "bytes": 2923,
+      "imports": [
+        {
+          "path": "src/engine/taskCompressionPolicy.ts",
+          "kind": "import-statement",
+          "original": "./taskCompressionPolicy"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/engine/retrievalRenderPolicy.ts": {
+      "bytes": 6599,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/engine/pipelineOrchestrator.ts": {
+      "bytes": 91898,
+      "imports": [
+        {
+          "path": "src/ast/pruner.ts",
+          "kind": "import-statement",
+          "original": "../ast/pruner"
+        },
+        {
+          "path": "crypto",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "./ramManager",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/cache/aligner.ts",
+          "kind": "import-statement",
+          "original": "../cache/aligner"
+        },
+        {
+          "path": "../metrics/tracker",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/engine/featureFlags.ts",
+          "kind": "import-statement",
+          "original": "./featureFlags"
+        },
+        {
+          "path": "src/engine/traceLogger.ts",
+          "kind": "import-statement",
+          "original": "./traceLogger"
+        },
+        {
+          "path": "src/engine/tokenizer.ts",
+          "kind": "import-statement",
+          "original": "./tokenizer"
+        },
+        {
+          "path": "../types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/solver/knapsackSolver.ts",
+          "kind": "import-statement",
+          "original": "../solver/knapsackSolver"
+        },
+        {
+          "path": "src/solver/qualityScore.ts",
+          "kind": "import-statement",
+          "original": "../solver/qualityScore"
+        },
+        {
+          "path": "src/ast/systemDependenceGraph.ts",
+          "kind": "import-statement",
+          "original": "../ast/systemDependenceGraph"
+        },
+        {
+          "path": "src/engine/sufficiencyEngine.ts",
+          "kind": "import-statement",
+          "original": "./sufficiencyEngine"
+        },
+        {
+          "path": "src/cache/cachePlanner.ts",
+          "kind": "import-statement",
+          "original": "../cache/cachePlanner"
+        },
+        {
+          "path": "src/tokenizer/modelProfile.ts",
+          "kind": "import-statement",
+          "original": "../tokenizer/modelProfile"
+        },
+        {
+          "path": "src/compression/compressionProvider.ts",
+          "kind": "import-statement",
+          "original": "../compression/compressionProvider"
+        },
+        {
+          "path": "../solver/contextIR",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/events/optimizationEvent.ts",
+          "kind": "import-statement",
+          "original": "../events/optimizationEvent"
+        },
+        {
+          "path": "src/cost/costCalculator.ts",
+          "kind": "import-statement",
+          "original": "../cost/costCalculator"
+        },
+        {
+          "path": "src/governor/contextGovernor.ts",
+          "kind": "import-statement",
+          "original": "../governor/contextGovernor"
+        },
+        {
+          "path": "src/security/anonymizedLogger.ts",
+          "kind": "import-statement",
+          "original": "../security/anonymizedLogger"
+        },
+        {
+          "path": "src/engine/conversationalPrompt.ts",
+          "kind": "import-statement",
+          "original": "./conversationalPrompt"
+        },
+        {
+          "path": "../governor/governorTypes",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/evaluation/preservationGate.ts",
+          "kind": "import-statement",
+          "original": "../evaluation/preservationGate"
+        },
+        {
+          "path": "../workspace/workspaceIndex",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/ast/sliceConfidence.ts",
+          "kind": "import-statement",
+          "original": "../ast/sliceConfidence"
+        },
+        {
+          "path": "src/retrieval/evidenceRetriever.ts",
+          "kind": "import-statement",
+          "original": "../retrieval/evidenceRetriever"
+        },
+        {
+          "path": "../retrieval/evidenceTypes",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/retrieval/structuredPreservation.ts",
+          "kind": "import-statement",
+          "original": "../retrieval/structuredPreservation"
+        },
+        {
+          "path": "src/solver/globalBudget.ts",
+          "kind": "import-statement",
+          "original": "../solver/globalBudget"
+        },
+        {
+          "path": "src/solver/knapsackSolver.ts",
+          "kind": "import-statement",
+          "original": "../solver/knapsackSolver"
+        },
+        {
+          "path": "crypto",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../tokenizer/modelProfile",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/experiments/experimentRuntime.ts",
+          "kind": "import-statement",
+          "original": "../experiments/experimentRuntime"
+        },
+        {
+          "path": "src/experiments/candidateAdapters.ts",
+          "kind": "import-statement",
+          "original": "../experiments/candidateAdapters"
+        },
+        {
+          "path": "src/engine/componentRegistry.ts",
+          "kind": "import-statement",
+          "original": "./componentRegistry"
+        },
+        {
+          "path": "src/cost/boundedEconomics.ts",
+          "kind": "import-statement",
+          "original": "../cost/boundedEconomics"
+        },
+        {
+          "path": "src/workspace/snapshotSafeLsp.ts",
+          "kind": "import-statement",
+          "original": "../workspace/snapshotSafeLsp"
+        },
+        {
+          "path": "src/workspace/signalCoordinator.ts",
+          "kind": "import-statement",
+          "original": "../workspace/signalCoordinator"
+        },
+        {
+          "path": "../workspace/signalTypes",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/workspace/exactSourceReader.ts",
+          "kind": "import-statement",
+          "original": "../workspace/exactSourceReader"
+        },
+        {
+          "path": "src/search/hybridRetriever.ts",
+          "kind": "import-statement",
+          "original": "../search/hybridRetriever"
+        },
+        {
+          "path": "src/search/reranker.ts",
+          "kind": "import-statement",
+          "original": "../search/reranker"
+        },
+        {
+          "path": "src/search/mmrDiversity.ts",
+          "kind": "import-statement",
+          "original": "../search/mmrDiversity"
+        },
+        {
+          "path": "src/dedup/semanticDedup.ts",
+          "kind": "import-statement",
+          "original": "../dedup/semanticDedup"
+        },
+        {
+          "path": "src/memory/projectMemory.ts",
+          "kind": "import-statement",
+          "original": "../memory/projectMemory"
+        },
+        {
+          "path": "src/engine/localSlmBrain.ts",
+          "kind": "import-statement",
+          "original": "./localSlmBrain"
+        },
+        {
+          "path": "src/engine/pipelineStages.ts",
+          "kind": "import-statement",
+          "original": "./pipelineStages"
+        },
+        {
+          "path": "src/governor/inlineEvidenceClassifier.ts",
+          "kind": "import-statement",
+          "original": "../governor/inlineEvidenceClassifier"
+        },
+        {
+          "path": "src/engine/safePathPolicy.ts",
+          "kind": "import-statement",
+          "original": "./safePathPolicy"
+        },
+        {
+          "path": "src/engine/prefixContinuity.ts",
+          "kind": "import-statement",
+          "original": "./prefixContinuity"
+        },
+        {
+          "path": "src/engine/legacyPipeline.ts",
+          "kind": "import-statement",
+          "original": "./legacyPipeline"
+        },
+        {
+          "path": "src/engine/retrievalRenderPolicy.ts",
+          "kind": "import-statement",
+          "original": "./retrievalRenderPolicy"
+        },
+        {
+          "path": "src/config/userPreferences.ts",
+          "kind": "import-statement",
+          "original": "../config/userPreferences"
+        },
+        {
+          "path": "src/engine/taskCompressionPolicy.ts",
+          "kind": "import-statement",
+          "original": "./taskCompressionPolicy"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/compression/observationMasking.ts": {
+      "bytes": 8936,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/tokenizer/canonicalPayload.ts": {
+      "bytes": 2925,
+      "imports": [
+        {
+          "path": "src/engine/tokenizer.ts",
+          "kind": "import-statement",
+          "original": "../engine/tokenizer"
+        },
+        {
+          "path": "../protocol/canonicalProtocol",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/performance/requestLifecycle.ts": {
+      "bytes": 5675,
+      "imports": [
+        {
+          "path": "src/performance/boundedScheduler.ts",
+          "kind": "import-statement",
+          "original": "./boundedScheduler"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/protocol/canonicalCompiler.ts": {
+      "bytes": 10451,
+      "imports": [
+        {
+          "path": "crypto",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../engine/pipelineOrchestrator",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/protocol/canonicalProtocol.ts",
+          "kind": "import-statement",
+          "original": "./canonicalProtocol"
+        },
+        {
+          "path": "src/compression/observationMasking.ts",
+          "kind": "import-statement",
+          "original": "../compression/observationMasking"
+        },
+        {
+          "path": "src/engine/featureFlags.ts",
+          "kind": "import-statement",
+          "original": "../engine/featureFlags"
+        },
+        {
+          "path": "../workspace/workspaceIndex",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../workspace/signalTypes",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../retrieval/evidenceTypes",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/tokenizer/canonicalPayload.ts",
+          "kind": "import-statement",
+          "original": "../tokenizer/canonicalPayload"
+        },
+        {
+          "path": "src/events/optimizationEvent.ts",
+          "kind": "import-statement",
+          "original": "../events/optimizationEvent"
+        },
+        {
+          "path": "src/performance/boundedScheduler.ts",
+          "kind": "import-statement",
+          "original": "../performance/boundedScheduler"
+        },
+        {
+          "path": "../engine/componentRegistry",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/performance/requestLifecycle.ts",
+          "kind": "import-statement",
+          "original": "../performance/requestLifecycle"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/workspace/workspaceIndex.ts": {
+      "bytes": 39942,
+      "imports": [
+        {
+          "path": "fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "crypto",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/ast/pruner.ts",
+          "kind": "import-statement",
+          "original": "../ast/pruner"
+        },
+        {
+          "path": "src/engine/tokenizer.ts",
+          "kind": "import-statement",
+          "original": "../engine/tokenizer"
+        },
+        {
+          "path": "src/ignore/tokenIgnore.ts",
+          "kind": "import-statement",
+          "original": "../ignore/tokenIgnore"
+        },
+        {
+          "path": "../repo/repoMap",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/workspace/workspaceIdentity.ts",
+          "kind": "import-statement",
+          "original": "./workspaceIdentity"
+        },
+        {
+          "path": "src/performance/boundedScheduler.ts",
+          "kind": "import-statement",
+          "original": "../performance/boundedScheduler"
+        },
+        {
+          "path": "../performance/cpuWorkerBoundary",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/workspace/semanticChunk.ts",
+          "kind": "import-statement",
+          "original": "./semanticChunk"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/history/contextEpoch.ts": {
+      "bytes": 15962,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/engine/authoritativeCount.ts": {
+      "bytes": 7802,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/workspace/signalCollection.ts": {
+      "bytes": 7735,
+      "imports": [
+        {
+          "path": "./signalTypes",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "./errorIntelligence",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/proxy/chatParticipant.ts": {
+      "bytes": 70752,
+      "imports": [
+        {
+          "path": "vscode",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/subscriptions/subscriptionModels.ts",
+          "kind": "import-statement",
+          "original": "../subscriptions/subscriptionModels"
+        },
+        {
+          "path": "../subscriptions/cliTransport",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/subscriptions/cliTransport.ts",
+          "kind": "import-statement",
+          "original": "../subscriptions/cliTransport"
+        },
+        {
+          "path": "src/proxy/chatContextReferences.ts",
+          "kind": "import-statement",
+          "original": "./chatContextReferences"
+        },
+        {
+          "path": "../metrics/tracker",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../ast/pruner",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/engine/tokenizer.ts",
+          "kind": "import-statement",
+          "original": "../engine/tokenizer"
+        },
+        {
+          "path": "../types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/ignore/tokenIgnore.ts",
+          "kind": "import-statement",
+          "original": "../ignore/tokenIgnore"
+        },
+        {
+          "path": "src/metrics/budgetGuard.ts",
+          "kind": "import-statement",
+          "original": "../metrics/budgetGuard"
+        },
+        {
+          "path": "src/cache/responseCache.ts",
+          "kind": "import-statement",
+          "original": "../cache/responseCache"
+        },
+        {
+          "path": "../engine/relevanceScorer",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/engine/diffOutputOptimizer.ts",
+          "kind": "import-statement",
+          "original": "../engine/diffOutputOptimizer"
+        },
+        {
+          "path": "src/metrics/circuitBreaker.ts",
+          "kind": "import-statement",
+          "original": "../metrics/circuitBreaker"
+        },
+        {
+          "path": "../engine/scratchpadManager",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/engine/imageRightsizer.ts",
+          "kind": "import-statement",
+          "original": "../engine/imageRightsizer"
+        },
+        {
+          "path": "src/engine/ramManager.ts",
+          "kind": "import-statement",
+          "original": "../engine/ramManager"
+        },
+        {
+          "path": "src/security/anonymizedLogger.ts",
+          "kind": "import-statement",
+          "original": "../security/anonymizedLogger"
+        },
+        {
+          "path": "src/engine/pipelineOrchestrator.ts",
+          "kind": "import-statement",
+          "original": "../engine/pipelineOrchestrator"
+        },
+        {
+          "path": "src/events/optimizationEvent.ts",
+          "kind": "import-statement",
+          "original": "../events/optimizationEvent"
+        },
+        {
+          "path": "src/metrics/liveAggregator.ts",
+          "kind": "import-statement",
+          "original": "../metrics/liveAggregator"
+        },
+        {
+          "path": "src/cost/costCalculator.ts",
+          "kind": "import-statement",
+          "original": "../cost/costCalculator"
+        },
+        {
+          "path": "src/cost/reconciliationLedger.ts",
+          "kind": "import-statement",
+          "original": "../cost/reconciliationLedger"
+        },
+        {
+          "path": "src/ui/dashboardWebview.ts",
+          "kind": "import-statement",
+          "original": "../ui/dashboardWebview"
+        },
+        {
+          "path": "src/security/sourcePolicy.ts",
+          "kind": "import-statement",
+          "original": "../security/sourcePolicy"
+        },
+        {
+          "path": "src/protocol/canonicalCompiler.ts",
+          "kind": "import-statement",
+          "original": "../protocol/canonicalCompiler"
+        },
+        {
+          "path": "src/protocol/canonicalProtocol.ts",
+          "kind": "import-statement",
+          "original": "../protocol/canonicalProtocol"
+        },
+        {
+          "path": "src/protocol/providerGateway.ts",
+          "kind": "import-statement",
+          "original": "../protocol/providerGateway"
+        },
+        {
+          "path": "src/engine/featureFlags.ts",
+          "kind": "import-statement",
+          "original": "../engine/featureFlags"
+        },
+        {
+          "path": "src/workspace/workspaceIndex.ts",
+          "kind": "import-statement",
+          "original": "../workspace/workspaceIndex"
+        },
+        {
+          "path": "../retrieval/evidenceTypes",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../performance/cpuWorkerBoundary",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../performance/boundedScheduler",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../release/releaseControl",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/config/userPreferences.ts",
+          "kind": "import-statement",
+          "original": "../config/userPreferences"
+        },
+        {
+          "path": "src/history/modelHistory.ts",
+          "kind": "import-statement",
+          "original": "../history/modelHistory"
+        },
+        {
+          "path": "src/history/contextEpoch.ts",
+          "kind": "import-statement",
+          "original": "../history/contextEpoch"
+        },
+        {
+          "path": "src/engine/authoritativeCount.ts",
+          "kind": "import-statement",
+          "original": "../engine/authoritativeCount"
+        },
+        {
+          "path": "src/workspace/signalCollection.ts",
+          "kind": "import-statement",
+          "original": "../workspace/signalCollection"
+        },
+        {
+          "path": "src/engine/requestContextEnvelope.ts",
+          "kind": "import-statement",
+          "original": "../engine/requestContextEnvelope"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/diff/diffProvider.ts": {
+      "bytes": 4995,
+      "imports": [
+        {
+          "path": "vscode",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../ast/pruner",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/engine/tokenizer.ts",
+          "kind": "import-statement",
+          "original": "../engine/tokenizer"
+        },
+        {
+          "path": "src/solver/qualityScore.ts",
+          "kind": "import-statement",
+          "original": "../solver/qualityScore"
+        },
+        {
+          "path": "src/ast/systemDependenceGraph.ts",
+          "kind": "import-statement",
+          "original": "../ast/systemDependenceGraph"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/ui/reviewPrompter.ts": {
+      "bytes": 4425,
+      "imports": [
+        {
+          "path": "vscode",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/performance/workerPool.ts": {
+      "bytes": 50105,
+      "imports": [
+        {
+          "path": "os",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/performance/boundedScheduler.ts",
+          "kind": "import-statement",
+          "original": "./boundedScheduler"
+        },
+        {
+          "path": "src/solver/knapsackSolver.ts",
+          "kind": "import-statement",
+          "original": "../solver/knapsackSolver"
+        },
+        {
+          "path": "../ast/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "./cpuWorkerBoundary",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "worker_threads",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "worker_threads",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "worker_threads",
+          "kind": "require-call",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/performance/cpuWorkerBoundary.ts": {
+      "bytes": 3340,
+      "imports": [
+        {
+          "path": "./boundedScheduler",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/performance/workerPool.ts",
+          "kind": "import-statement",
+          "original": "./workerPool"
+        },
+        {
+          "path": "../solver/knapsackSolver",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../ast/types",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/release/releaseControl.ts": {
+      "bytes": 2669,
+      "imports": [
+        {
+          "path": "crypto",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/ui/panelModel.ts": {
+      "bytes": 1247,
+      "imports": [
+        {
+          "path": "vscode",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../proxy/modelProvider",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/subscriptions/subscriptionModels.ts",
+          "kind": "import-statement",
+          "original": "../subscriptions/subscriptionModels"
+        },
+        {
+          "path": "../subscriptions/cliTransport",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/extension.ts": {
+      "bytes": 36560,
+      "imports": [
+        {
+          "path": "vscode",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "crypto",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/ast/pruner.ts",
+          "kind": "import-statement",
+          "original": "./ast/pruner"
+        },
+        {
+          "path": "src/cache/aligner.ts",
+          "kind": "import-statement",
+          "original": "./cache/aligner"
+        },
+        {
+          "path": "src/metrics/tracker.ts",
+          "kind": "import-statement",
+          "original": "./metrics/tracker"
+        },
+        {
+          "path": "src/proxy/modelProvider.ts",
+          "kind": "import-statement",
+          "original": "./proxy/modelProvider"
+        },
+        {
+          "path": "src/ui/chatViewProvider.ts",
+          "kind": "import-statement",
+          "original": "./ui/chatViewProvider"
+        },
+        {
+          "path": "src/ui/statusBar.ts",
+          "kind": "import-statement",
+          "original": "./ui/statusBar"
+        },
+        {
+          "path": "src/ui/dashboardWebview.ts",
+          "kind": "import-statement",
+          "original": "./ui/dashboardWebview"
+        },
+        {
+          "path": "src/proxy/chatParticipant.ts",
+          "kind": "import-statement",
+          "original": "./proxy/chatParticipant"
+        },
+        {
+          "path": "src/engine/tokenizer.ts",
+          "kind": "import-statement",
+          "original": "./engine/tokenizer"
+        },
+        {
+          "path": "src/diff/diffProvider.ts",
+          "kind": "import-statement",
+          "original": "./diff/diffProvider"
+        },
+        {
+          "path": "src/metrics/budgetGuard.ts",
+          "kind": "import-statement",
+          "original": "./metrics/budgetGuard"
+        },
+        {
+          "path": "src/cache/responseCache.ts",
+          "kind": "import-statement",
+          "original": "./cache/responseCache"
+        },
+        {
+          "path": "src/ui/reviewPrompter.ts",
+          "kind": "import-statement",
+          "original": "./ui/reviewPrompter"
+        },
+        {
+          "path": "src/security/anonymizedLogger.ts",
+          "kind": "import-statement",
+          "original": "./security/anonymizedLogger"
+        },
+        {
+          "path": "src/engine/pipelineOrchestrator.ts",
+          "kind": "import-statement",
+          "original": "./engine/pipelineOrchestrator"
+        },
+        {
+          "path": "src/metrics/liveAggregator.ts",
+          "kind": "import-statement",
+          "original": "./metrics/liveAggregator"
+        },
+        {
+          "path": "src/history/localHistoryStore.ts",
+          "kind": "import-statement",
+          "original": "./history/localHistoryStore"
+        },
+        {
+          "path": "src/engine/featureFlags.ts",
+          "kind": "import-statement",
+          "original": "./engine/featureFlags"
+        },
+        {
+          "path": "src/protocol/canonicalCompiler.ts",
+          "kind": "import-statement",
+          "original": "./protocol/canonicalCompiler"
+        },
+        {
+          "path": "src/workspace/workspaceIndex.ts",
+          "kind": "import-statement",
+          "original": "./workspace/workspaceIndex"
+        },
+        {
+          "path": "src/events/requestLedger.ts",
+          "kind": "import-statement",
+          "original": "./events/requestLedger"
+        },
+        {
+          "path": "src/performance/boundedScheduler.ts",
+          "kind": "import-statement",
+          "original": "./performance/boundedScheduler"
+        },
+        {
+          "path": "src/performance/cpuWorkerBoundary.ts",
+          "kind": "import-statement",
+          "original": "./performance/cpuWorkerBoundary"
+        },
+        {
+          "path": "src/release/releaseControl.ts",
+          "kind": "import-statement",
+          "original": "./release/releaseControl"
+        },
+        {
+          "path": "src/experiments/experimentRuntime.ts",
+          "kind": "import-statement",
+          "original": "./experiments/experimentRuntime"
+        },
+        {
+          "path": "src/config/userPreferences.ts",
+          "kind": "import-statement",
+          "original": "./config/userPreferences"
+        },
+        {
+          "path": "src/engine/componentRegistry.ts",
+          "kind": "import-statement",
+          "original": "./engine/componentRegistry"
+        },
+        {
+          "path": "src/performance/requestLifecycle.ts",
+          "kind": "import-statement",
+          "original": "./performance/requestLifecycle"
+        },
+        {
+          "path": "src/memory/projectMemory.ts",
+          "kind": "import-statement",
+          "original": "./memory/projectMemory"
+        },
+        {
+          "path": "src/finops/finOpsService.ts",
+          "kind": "import-statement",
+          "original": "./finops/finOpsService"
+        },
+        {
+          "path": "src/subscriptions/subscriptionModels.ts",
+          "kind": "import-statement",
+          "original": "./subscriptions/subscriptionModels"
+        },
+        {
+          "path": "src/ui/panelModel.ts",
+          "kind": "import-statement",
+          "original": "./ui/panelModel"
+        }
+      ],
+      "format": "esm"
+    }
+  },
+  "outputs": {
+    "extension.js": {
+      "imports": [
+        {
+          "path": "url",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "fs/promises",
+          "kind": "dynamic-import",
+          "external": true
+        },
+        {
+          "path": "module",
+          "kind": "dynamic-import",
+          "external": true
+        },
+        {
+          "path": "vscode",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "crypto",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "fs",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "crypto",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "vscode",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "crypto",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "vscode",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "os",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "fs",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "os",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "child_process",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "fs",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "os",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "vscode",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "fs",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "os",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "vscode",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "fs",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "fs",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "vscode",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "crypto",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "vscode",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "vscode",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "vscode",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "crypto",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "fs",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "vscode",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "fs",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "crypto",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "fs",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "crypto",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "vscode",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "fs",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "crypto",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "fs",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "fs",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "os",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "vscode",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "crypto",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "vscode",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "crypto",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "crypto",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "fs",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "crypto",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "crypto",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "crypto",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "fs",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "crypto",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "vscode",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "crypto",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "fs",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "crypto",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "crypto",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "fs",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "crypto",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "crypto",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "fs",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "crypto",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "vscode",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "vscode",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "os",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "worker_threads",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "worker_threads",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "worker_threads",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "crypto",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "vscode",
+          "kind": "require-call",
+          "external": true
+        }
+      ],
+      "exports": [],
+      "entryPoint": "src/extension.ts",
+      "inputs": {
+        "node_modules/@vscode/tree-sitter-wasm/wasm/tree-sitter.js": {
+          "bytesInOutput": 91480
+        },
+        "node_modules/punycode.js/punycode.js": {
+          "bytesInOutput": 2428
+        },
+        "src/extension.ts": {
+          "bytesInOutput": 16535
+        },
+        "src/ast/pruner.ts": {
+          "bytesInOutput": 19313
+        },
+        "src/engine/tokenizer.ts": {
+          "bytesInOutput": 1131
+        },
+        "src/ast/treeShaker.ts": {
+          "bytesInOutput": 4419
+        },
+        "src/security/sanitizer.ts": {
+          "bytesInOutput": 5898
+        },
+        "src/cache/blobAstCache.ts": {
+          "bytesInOutput": 2226
+        },
+        "src/ast/types.ts": {
+          "bytesInOutput": 146
+        },
+        "src/cache/normalizer.ts": {
+          "bytesInOutput": 326
+        },
+        "src/cache/schemaMinifier.ts": {
+          "bytesInOutput": 5003
+        },
+        "src/cache/providerCapabilities.ts": {
+          "bytesInOutput": 2188
+        },
+        "src/cache/aligner.ts": {
+          "bytesInOutput": 2689
+        },
+        "src/cost/pricingCatalog.ts": {
+          "bytesInOutput": 5824
+        },
+        "src/cost/costCalculator.ts": {
+          "bytesInOutput": 6401
+        },
+        "src/metrics/tracker.ts": {
+          "bytesInOutput": 2565
+        },
+        "src/proxy/modelProvider.ts": {
+          "bytesInOutput": 9258
+        },
+        "src/events/requestLedger.ts": {
+          "bytesInOutput": 5508
+        },
+        "src/finops/taskContext.ts": {
+          "bytesInOutput": 444
+        },
+        "src/cost/accountingTruth.ts": {
+          "bytesInOutput": 2358
+        },
+        "src/events/optimizationEvent.ts": {
+          "bytesInOutput": 955
+        },
+        "src/cost/reconciliationLedger.ts": {
+          "bytesInOutput": 1637
+        },
+        "src/protocol/canonicalProtocol.ts": {
+          "bytesInOutput": 2234
+        },
+        "src/security/requestBoundary.ts": {
+          "bytesInOutput": 3159
+        },
+        "src/protocol/canonicalEgress.ts": {
+          "bytesInOutput": 1753
+        },
+        "src/protocol/providerGateway.ts": {
+          "bytesInOutput": 500
+        },
+        "src/performance/boundedScheduler.ts": {
+          "bytesInOutput": 4637
+        },
+        "src/config/userPreferences.ts": {
+          "bytesInOutput": 7063
+        },
+        "src/engine/requestContextEnvelope.ts": {
+          "bytesInOutput": 2541
+        },
+        "src/subscriptions/modelChoices.ts": {
+          "bytesInOutput": 1129
+        },
+        "src/subscriptions/cliTransport.ts": {
+          "bytesInOutput": 8836
+        },
+        "src/subscriptions/subscriptionModels.ts": {
+          "bytesInOutput": 6258
+        },
+        "src/proxy/chatContextReferences.ts": {
+          "bytesInOutput": 2320
+        },
+        "src/security/sourcePolicy.ts": {
+          "bytesInOutput": 2411
+        },
+        "src/ignore/tokenIgnore.ts": {
+          "bytesInOutput": 1899
+        },
+        "src/ui/chatViewProvider.ts": {
+          "bytesInOutput": 6515
+        },
+        "src/ui/chatProtocol.ts": {
+          "bytesInOutput": 2388
+        },
+        "node_modules/markdown-it/lib/common/utils.mjs": {
+          "bytesInOutput": 2835
+        },
+        "node_modules/mdurl/index.mjs": {
+          "bytesInOutput": 74
+        },
+        "node_modules/mdurl/lib/decode.mjs": {
+          "bytesInOutput": 1311
+        },
+        "node_modules/mdurl/lib/encode.mjs": {
+          "bytesInOutput": 828
+        },
+        "node_modules/mdurl/lib/format.mjs": {
+          "bytesInOutput": 249
+        },
+        "node_modules/mdurl/lib/parse.mjs": {
+          "bytesInOutput": 2380
+        },
+        "node_modules/uc.micro/index.mjs": {
+          "bytesInOutput": 77
+        },
+        "node_modules/uc.micro/properties/Any/regex.mjs": {
+          "bytesInOutput": 138
+        },
+        "node_modules/uc.micro/categories/Cc/regex.mjs": {
+          "bytesInOutput": 28
+        },
+        "node_modules/uc.micro/categories/Cf/regex.mjs": {
+          "bytesInOutput": 257
+        },
+        "node_modules/uc.micro/categories/P/regex.mjs": {
+          "bytesInOutput": 2035
+        },
+        "node_modules/uc.micro/categories/S/regex.mjs": {
+          "bytesInOutput": 2544
+        },
+        "node_modules/uc.micro/categories/Z/regex.mjs": {
+          "bytesInOutput": 66
+        },
+        "node_modules/entities/lib/esm/generated/decode-data-html.js": {
+          "bytesInOutput": 47190
+        },
+        "node_modules/entities/lib/esm/generated/decode-data-xml.js": {
+          "bytesInOutput": 133
+        },
+        "node_modules/entities/lib/esm/decode_codepoint.js": {
+          "bytesInOutput": 605
+        },
+        "node_modules/entities/lib/esm/decode.js": {
+          "bytesInOutput": 5033
+        },
+        "node_modules/entities/lib/esm/generated/encode-html.js": {
+          "bytesInOutput": 23424
+        },
+        "node_modules/entities/lib/esm/escape.js": {
+          "bytesInOutput": 619
+        },
+        "node_modules/entities/lib/esm/index.js": {
+          "bytesInOutput": 223
+        },
+        "node_modules/markdown-it/lib/helpers/index.mjs": {
+          "bytesInOutput": 91
+        },
+        "node_modules/markdown-it/lib/helpers/parse_link_label.mjs": {
+          "bytesInOutput": 270
+        },
+        "node_modules/markdown-it/lib/helpers/parse_link_destination.mjs": {
+          "bytesInOutput": 509
+        },
+        "node_modules/markdown-it/lib/helpers/parse_link_title.mjs": {
+          "bytesInOutput": 431
+        },
+        "node_modules/markdown-it/lib/renderer.mjs": {
+          "bytesInOutput": 2545
+        },
+        "node_modules/markdown-it/lib/ruler.mjs": {
+          "bytesInOutput": 2005
+        },
+        "node_modules/markdown-it/lib/token.mjs": {
+          "bytesInOutput": 770
+        },
+        "node_modules/markdown-it/lib/rules_core/state_core.mjs": {
+          "bytesInOutput": 117
+        },
+        "node_modules/markdown-it/lib/rules_core/normalize.mjs": {
+          "bytesInOutput": 106
+        },
+        "node_modules/markdown-it/lib/rules_core/block.mjs": {
+          "bytesInOutput": 168
+        },
+        "node_modules/markdown-it/lib/rules_core/inline.mjs": {
+          "bytesInOutput": 144
+        },
+        "node_modules/markdown-it/lib/rules_core/linkify.mjs": {
+          "bytesInOutput": 1724
+        },
+        "node_modules/markdown-it/lib/rules_core/replacements.mjs": {
+          "bytesInOutput": 1076
+        },
+        "node_modules/markdown-it/lib/rules_core/smartquotes.mjs": {
+          "bytesInOutput": 1713
+        },
+        "node_modules/markdown-it/lib/rules_core/text_join.mjs": {
+          "bytesInOutput": 348
+        },
+        "node_modules/markdown-it/lib/parser_core.mjs": {
+          "bytesInOutput": 354
+        },
+        "node_modules/markdown-it/lib/rules_block/state_block.mjs": {
+          "bytesInOutput": 2020
+        },
+        "node_modules/markdown-it/lib/rules_block/table.mjs": {
+          "bytesInOutput": 2489
+        },
+        "node_modules/markdown-it/lib/rules_block/code.mjs": {
+          "bytesInOutput": 285
+        },
+        "node_modules/markdown-it/lib/rules_block/fence.mjs": {
+          "bytesInOutput": 707
+        },
+        "node_modules/markdown-it/lib/rules_block/blockquote.mjs": {
+          "bytesInOutput": 1550
+        },
+        "node_modules/markdown-it/lib/rules_block/hr.mjs": {
+          "bytesInOutput": 394
+        },
+        "node_modules/markdown-it/lib/rules_block/list.mjs": {
+          "bytesInOutput": 2620
+        },
+        "node_modules/markdown-it/lib/rules_block/reference.mjs": {
+          "bytesInOutput": 1801
+        },
+        "node_modules/markdown-it/lib/common/html_blocks.mjs": {
+          "bytesInOutput": 489
+        },
+        "node_modules/markdown-it/lib/common/html_re.mjs": {
+          "bytesInOutput": 469
+        },
+        "node_modules/markdown-it/lib/rules_block/html_block.mjs": {
+          "bytesInOutput": 875
+        },
+        "node_modules/markdown-it/lib/rules_block/heading.mjs": {
+          "bytesInOutput": 655
+        },
+        "node_modules/markdown-it/lib/rules_block/lheading.mjs": {
+          "bytesInOutput": 879
+        },
+        "node_modules/markdown-it/lib/rules_block/paragraph.mjs": {
+          "bytesInOutput": 505
+        },
+        "node_modules/markdown-it/lib/parser_block.mjs": {
+          "bytesInOutput": 1226
+        },
+        "node_modules/markdown-it/lib/rules_inline/state_inline.mjs": {
+          "bytesInOutput": 1592
+        },
+        "node_modules/markdown-it/lib/rules_inline/text.mjs": {
+          "bytesInOutput": 385
+        },
+        "node_modules/markdown-it/lib/rules_inline/linkify.mjs": {
+          "bytesInOutput": 989
+        },
+        "node_modules/markdown-it/lib/rules_inline/newline.mjs": {
+          "bytesInOutput": 458
+        },
+        "node_modules/markdown-it/lib/rules_inline/escape.mjs": {
+          "bytesInOutput": 728
+        },
+        "node_modules/markdown-it/lib/rules_inline/backticks.mjs": {
+          "bytesInOutput": 582
+        },
+        "node_modules/markdown-it/lib/rules_inline/strikethrough.mjs": {
+          "bytesInOutput": 1116
+        },
+        "node_modules/markdown-it/lib/rules_inline/emphasis.mjs": {
+          "bytesInOutput": 1116
+        },
+        "node_modules/markdown-it/lib/rules_inline/link.mjs": {
+          "bytesInOutput": 1150
+        },
+        "node_modules/markdown-it/lib/rules_inline/image.mjs": {
+          "bytesInOutput": 1179
+        },
+        "node_modules/markdown-it/lib/rules_inline/autolink.mjs": {
+          "bytesInOutput": 1079
+        },
+        "node_modules/markdown-it/lib/rules_inline/html_inline.mjs": {
+          "bytesInOutput": 505
+        },
+        "node_modules/markdown-it/lib/rules_inline/entity.mjs": {
+          "bytesInOutput": 631
+        },
+        "node_modules/markdown-it/lib/rules_inline/balance_pairs.mjs": {
+          "bytesInOutput": 795
+        },
+        "node_modules/markdown-it/lib/rules_inline/fragments_join.mjs": {
+          "bytesInOutput": 263
+        },
+        "node_modules/markdown-it/lib/parser_inline.mjs": {
+          "bytesInOutput": 1406
+        },
+        "node_modules/linkify-it/lib/re.mjs": {
+          "bytesInOutput": 2488
+        },
+        "node_modules/linkify-it/index.mjs": {
+          "bytesInOutput": 6808
+        },
+        "node_modules/markdown-it/lib/index.mjs": {
+          "bytesInOutput": 2802
+        },
+        "node_modules/markdown-it/lib/presets/default.mjs": {
+          "bytesInOutput": 202
+        },
+        "node_modules/markdown-it/lib/presets/zero.mjs": {
+          "bytesInOutput": 324
+        },
+        "node_modules/markdown-it/lib/presets/commonmark.mjs": {
+          "bytesInOutput": 512
+        },
+        "node_modules/markdown-it/index.mjs": {
+          "bytesInOutput": 0
+        },
+        "src/ui/chatMarkdown.ts": {
+          "bytesInOutput": 1381
+        },
+        "src/ui/chatSessionController.ts": {
+          "bytesInOutput": 11987
+        },
+        "src/history/modelHistory.ts": {
+          "bytesInOutput": 572
+        },
+        "src/ui/chatPersistence.ts": {
+          "bytesInOutput": 1310
+        },
+        "src/ui/chatViewHtml.ts": {
+          "bytesInOutput": 24955
+        },
+        "src/ui/statusBar.ts": {
+          "bytesInOutput": 3169
+        },
+        "src/ui/dashboardWebview.ts": {
+          "bytesInOutput": 60646
+        },
+        "src/metrics/liveAggregator.ts": {
+          "bytesInOutput": 2584
+        },
+        "src/history/localHistoryStore.ts": {
+          "bytesInOutput": 1042
+        },
+        "src/finops/finOpsService.ts": {
+          "bytesInOutput": 14636
+        },
+        "src/finops/usageStore.ts": {
+          "bytesInOutput": 8325
+        },
+        "src/finops/claudeUsage.ts": {
+          "bytesInOutput": 1384
+        },
+        "src/finops/usageFileReader.ts": {
+          "bytesInOutput": 1118
+        },
+        "src/finops/modelRecommendation.ts": {
+          "bytesInOutput": 1061
+        },
+        "src/tokenizer/modelProfile.ts": {
+          "bytesInOutput": 4060
+        },
+        "src/ui/dashboardController.ts": {
+          "bytesInOutput": 2885
+        },
+        "src/ui/spendDashboard.ts": {
+          "bytesInOutput": 13825
+        },
+        "src/proxy/chatParticipant.ts": {
+          "bytesInOutput": 28000
+        },
+        "src/metrics/budgetGuard.ts": {
+          "bytesInOutput": 38
+        },
+        "src/cache/responseCache.ts": {
+          "bytesInOutput": 5594
+        },
+        "src/engine/diffOutputOptimizer.ts": {
+          "bytesInOutput": 2762
+        },
+        "src/metrics/circuitBreaker.ts": {
+          "bytesInOutput": 1947
+        },
+        "src/engine/imageRightsizer.ts": {
+          "bytesInOutput": 3971
+        },
+        "src/engine/ramManager.ts": {
+          "bytesInOutput": 6513
+        },
+        "src/security/anonymizedLogger.ts": {
+          "bytesInOutput": 4322
+        },
+        "src/engine/pipelineOrchestrator.ts": {
+          "bytesInOutput": 38068
+        },
+        "src/engine/componentRegistry.ts": {
+          "bytesInOutput": 6042
+        },
+        "src/engine/featureFlags.ts": {
+          "bytesInOutput": 1207
+        },
+        "src/engine/traceLogger.ts": {
+          "bytesInOutput": 1467
+        },
+        "src/solver/contextIR.ts": {
+          "bytesInOutput": 3093
+        },
+        "src/solver/knapsackSolver.ts": {
+          "bytesInOutput": 5150
+        },
+        "src/solver/qualityScore.ts": {
+          "bytesInOutput": 1099
+        },
+        "src/ast/systemDependenceGraph.ts": {
+          "bytesInOutput": 4345
+        },
+        "src/engine/sufficiencyEngine.ts": {
+          "bytesInOutput": 2439
+        },
+        "src/cache/cachePlanner.ts": {
+          "bytesInOutput": 1356
+        },
+        "src/compression/compressionProvider.ts": {
+          "bytesInOutput": 512
+        },
+        "src/governor/intentExtractor.ts": {
+          "bytesInOutput": 3406
+        },
+        "src/governor/evidencePolicy.ts": {
+          "bytesInOutput": 4531
+        },
+        "src/governor/riskEngine.ts": {
+          "bytesInOutput": 1455
+        },
+        "src/governor/evidenceSafetyGate.ts": {
+          "bytesInOutput": 430
+        },
+        "src/governor/contextGovernor.ts": {
+          "bytesInOutput": 1128
+        },
+        "src/engine/conversationalPrompt.ts": {
+          "bytesInOutput": 949
+        },
+        "src/evaluation/preservationGate.ts": {
+          "bytesInOutput": 4271
+        },
+        "src/ast/sliceConfidence.ts": {
+          "bytesInOutput": 2048
+        },
+        "src/workspace/semanticChunk.ts": {
+          "bytesInOutput": 3089
+        },
+        "src/retrieval/evidenceRetriever.ts": {
+          "bytesInOutput": 11061
+        },
+        "src/workspace/provenance.ts": {
+          "bytesInOutput": 4374
+        },
+        "src/retrieval/evidenceContract.ts": {
+          "bytesInOutput": 897
+        },
+        "src/solver/candidateUtility.ts": {
+          "bytesInOutput": 319
+        },
+        "src/retrieval/structuredPreservation.ts": {
+          "bytesInOutput": 1376
+        },
+        "src/solver/globalBudget.ts": {
+          "bytesInOutput": 1443
+        },
+        "src/experiments/experimentRuntime.ts": {
+          "bytesInOutput": 2222
+        },
+        "src/experiments/experimentCatalog.ts": {
+          "bytesInOutput": 2359
+        },
+        "src/experiments/experimentTypes.ts": {
+          "bytesInOutput": 264
+        },
+        "src/experiments/candidateAdapters.ts": {
+          "bytesInOutput": 2280
+        },
+        "src/cost/boundedEconomics.ts": {
+          "bytesInOutput": 465
+        },
+        "src/workspace/snapshotSafeLsp.ts": {
+          "bytesInOutput": 9229
+        },
+        "src/workspace/workspaceIdentity.ts": {
+          "bytesInOutput": 1268
+        },
+        "src/workspace/lspAdapter.ts": {
+          "bytesInOutput": 1812
+        },
+        "src/workspace/signalCoordinator.ts": {
+          "bytesInOutput": 6156
+        },
+        "src/workspace/deltaContextEngine.ts": {
+          "bytesInOutput": 1820
+        },
+        "src/workspace/errorIntelligence.ts": {
+          "bytesInOutput": 2060
+        },
+        "src/workspace/testGraph.ts": {
+          "bytesInOutput": 1194
+        },
+        "src/workspace/gitGraph.ts": {
+          "bytesInOutput": 1247
+        },
+        "src/workspace/terminalOptimizer.ts": {
+          "bytesInOutput": 4426
+        },
+        "src/workspace/exactSourceReader.ts": {
+          "bytesInOutput": 933
+        },
+        "src/search/embeddingProvider.ts": {
+          "bytesInOutput": 4128
+        },
+        "src/search/vectorIndex.ts": {
+          "bytesInOutput": 2856
+        },
+        "src/search/invertedIndex.ts": {
+          "bytesInOutput": 3297
+        },
+        "src/search/hybridRetriever.ts": {
+          "bytesInOutput": 5140
+        },
+        "src/search/reranker.ts": {
+          "bytesInOutput": 3112
+        },
+        "src/search/mmrDiversity.ts": {
+          "bytesInOutput": 1580
+        },
+        "src/dedup/semanticDedup.ts": {
+          "bytesInOutput": 3503
+        },
+        "src/memory/projectMemory.ts": {
+          "bytesInOutput": 12342
+        },
+        "src/engine/localSlmBrain.ts": {
+          "bytesInOutput": 12180
+        },
+        "src/engine/pipelineStages.ts": {
+          "bytesInOutput": 1638
+        },
+        "src/governor/inlineEvidenceClassifier.ts": {
+          "bytesInOutput": 3668
+        },
+        "src/compression/conservativePathCompressor.ts": {
+          "bytesInOutput": 1999
+        },
+        "src/engine/safePathPolicy.ts": {
+          "bytesInOutput": 1794
+        },
+        "src/engine/prefixContinuity.ts": {
+          "bytesInOutput": 603
+        },
+        "src/engine/taskCompressionPolicy.ts": {
+          "bytesInOutput": 1837
+        },
+        "src/engine/legacyPipeline.ts": {
+          "bytesInOutput": 895
+        },
+        "src/engine/retrievalRenderPolicy.ts": {
+          "bytesInOutput": 1325
+        },
+        "src/protocol/canonicalCompiler.ts": {
+          "bytesInOutput": 3029
+        },
+        "src/compression/observationMasking.ts": {
+          "bytesInOutput": 1842
+        },
+        "src/tokenizer/canonicalPayload.ts": {
+          "bytesInOutput": 1290
+        },
+        "src/performance/requestLifecycle.ts": {
+          "bytesInOutput": 2771
+        },
+        "src/workspace/workspaceIndex.ts": {
+          "bytesInOutput": 18097
+        },
+        "src/history/contextEpoch.ts": {
+          "bytesInOutput": 3757
+        },
+        "src/engine/authoritativeCount.ts": {
+          "bytesInOutput": 1750
+        },
+        "src/workspace/signalCollection.ts": {
+          "bytesInOutput": 1608
+        },
+        "src/diff/diffProvider.ts": {
+          "bytesInOutput": 2433
+        },
+        "src/ui/reviewPrompter.ts": {
+          "bytesInOutput": 1721
+        },
+        "src/performance/workerPool.ts": {
+          "bytesInOutput": 36084
+        },
+        "src/performance/cpuWorkerBoundary.ts": {
+          "bytesInOutput": 770
+        },
+        "src/release/releaseControl.ts": {
+          "bytesInOutput": 797
+        },
+        "src/ui/panelModel.ts": {
+          "bytesInOutput": 367
+        }
+      },
+      "bytes": 879184
+    }
+  }
+}

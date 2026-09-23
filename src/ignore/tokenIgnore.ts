@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-interface IgnoreRule { negative: boolean; regex: RegExp; }
+interface IgnoreRule { negative: boolean; regex: { test(value: string): boolean }; }
 
 export class TokenIgnoreFilter {
     private readonly workspaceRoot?: string;
@@ -62,14 +62,42 @@ export class TokenIgnoreFilter {
         }
     }
 
-    private globToRegex(pattern: string): RegExp {
+    private globToRegex(pattern: string): { test(value: string): boolean } {
         const anchored = pattern.startsWith('/');
-        let source = pattern.replace(/^\//, '').replace(/\\/g, '/').replace(/\/$/, '/**');
-        source = source.replace(/[.+^${}()|[\]\\]/g, '\\$&')
-            .replace(/\*\*/g, '\u0000')
-            .replace(/\*/g, '[^/]*')
-            .replace(/\?/g, '[^/]')
-            .replace(/\u0000/g, '.*');
-        return new RegExp(`${anchored ? '^' : '(^|.*/)'}${source}(?:/.*)?$`, 'i');
+        const source = pattern.replace(/^\//, '').replace(/\\/g, '/').replace(/\/$/, '/**');
+        type Token = { type: 'star' | 'deep' | 'any' | 'literal'; text?: string };
+        const tokens: Token[] = [];
+        for (let i = 0; i < source.length; i++) {
+            if (source[i] === '*') {
+                const deep = source[i + 1] === '*';
+                if (deep) i++;
+                tokens.push({ type: deep ? 'deep' : 'star' });
+            } else tokens.push(source[i] === '?' ? { type: 'any' } : { type: 'literal', text: source[i].toLowerCase() });
+        }
+        return { test(value: string): boolean {
+            // Oversized rules/paths conservatively exclude, rather than widening the source boundary.
+            if (tokens.length > 1024 || value.length > 32768) return true;
+            let states = new Set<number>([0]);
+            const closure = () => {
+                for (const position of states) {
+                    if (tokens[position]?.type === 'star' || tokens[position]?.type === 'deep') states.add(position + 1);
+                }
+            };
+            for (const character of value.toLowerCase()) {
+                closure();
+                if (states.has(tokens.length) && character === '/') return true;
+                const next = new Set<number>();
+                for (const position of states) {
+                    const token = tokens[position];
+                    if (!token) continue;
+                    if (token.type === 'deep' || token.type === 'star' && character !== '/') next.add(position);
+                    else if (token.type === 'any' && character !== '/' || token.type === 'literal' && token.text === character) next.add(position + 1);
+                }
+                if (!anchored && character === '/') next.add(0);
+                states = next;
+            }
+            closure();
+            return states.has(tokens.length);
+        } };
     }
 }

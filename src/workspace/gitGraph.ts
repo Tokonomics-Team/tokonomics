@@ -1,8 +1,4 @@
-/**
- * Tokonomics Temporal Git History & GitGraph Engine
- * Tracks commit graphs and symbol evolution (MODIFIES_SYMBOL, INTRODUCES, REMOVES, SUPERSEDES)
- * to answer regression and intent questions ("What changed around this symbol?").
- */
+import { SecuritySanitizer } from '../security/sanitizer';
 
 export interface GitCommitNode {
     hash: string;
@@ -17,15 +13,42 @@ export interface GitCommitNode {
 export class GitGraph {
     private commits: Map<string, GitCommitNode> = new Map();
     private symbolHistory: Map<string, string[]> = new Map(); // symbolName -> commitHashes[]
+    private maxHistoryDepth: number = 5;
 
     public registerCommit(commit: GitCommitNode): void {
-        this.commits.set(commit.hash, commit);
+        // Step 5: Privacy & Secret Sanitization
+        // Strip author email address
+        const sanitizedAuthor = (commit.author || '')
+            .replace(/<[^>]*>/g, '')
+            .replace(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g, '')
+            .trim() || 'developer';
 
-        for (const mod of commit.modifiedSymbols) {
+        // Strip remote URLs and sanitize secrets from message
+        const messageWithoutUrls = (commit.message || '')
+            .replace(/https?:\/\/[^\s]+/g, '[REDACTED_URL]')
+            .replace(/git@[^\s]+/g, '[REDACTED_URL]');
+        const sanitizedMessage = SecuritySanitizer.sanitizeSecrets(messageWithoutUrls).sanitized;
+
+        const sanitizedCommit: GitCommitNode = {
+            ...commit,
+            author: sanitizedAuthor,
+            message: sanitizedMessage
+        };
+
+        this.commits.set(sanitizedCommit.hash, sanitizedCommit);
+
+        for (const mod of sanitizedCommit.modifiedSymbols) {
             if (!this.symbolHistory.has(mod.symbolName)) {
                 this.symbolHistory.set(mod.symbolName, []);
             }
-            this.symbolHistory.get(mod.symbolName)!.push(commit.hash);
+            const list = this.symbolHistory.get(mod.symbolName)!;
+            if (!list.includes(sanitizedCommit.hash)) {
+                list.push(sanitizedCommit.hash);
+                // Cap history depth
+                if (list.length > this.maxHistoryDepth) {
+                    list.shift();
+                }
+            }
         }
     }
 

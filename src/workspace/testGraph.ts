@@ -11,6 +11,9 @@ export interface TestNode {
     fixtures: string[];      // Data fixtures / JSON payloads
     mocks: string[];         // Mocked dependencies
     isFailing?: boolean;
+    sourceVersion?: string;  // Content hash or version tag of test file
+    timestamp?: number;
+    failureMessage?: string;
 }
 
 export class TestGraph {
@@ -18,13 +21,46 @@ export class TestGraph {
     private symbolToTests: Map<string, Set<string>> = new Map();
 
     public registerTest(test: TestNode): void {
-        this.tests.set(test.id, test);
+        this.tests.set(test.id, {
+            ...test,
+            timestamp: test.timestamp ?? Date.now()
+        });
 
         for (const sym of test.targetSymbols) {
             if (!this.symbolToTests.has(sym)) {
                 this.symbolToTests.set(sym, new Set());
             }
             this.symbolToTests.get(sym)!.add(test.id);
+        }
+    }
+
+    /**
+     * Expires and removes tests whose testFilePath or sourceVersion does not match current workspace file versions
+     */
+    public expireStaleTests(currentFileVersions: ReadonlyMap<string, string>): number {
+        let expiredCount = 0;
+        for (const [id, test] of this.tests.entries()) {
+            const currentVersion = currentFileVersions.get(test.testFilePath);
+            if (test.sourceVersion && currentVersion && test.sourceVersion !== currentVersion) {
+                this.removeTest(id);
+                expiredCount++;
+            }
+        }
+        return expiredCount;
+    }
+
+    public removeTest(testId: string): void {
+        const test = this.tests.get(testId);
+        if (!test) return;
+        this.tests.delete(testId);
+        for (const sym of test.targetSymbols) {
+            const set = this.symbolToTests.get(sym);
+            if (set) {
+                set.delete(testId);
+                if (set.size === 0) {
+                    this.symbolToTests.delete(sym);
+                }
+            }
         }
     }
 

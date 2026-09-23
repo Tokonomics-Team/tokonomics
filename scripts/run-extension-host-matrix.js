@@ -108,7 +108,7 @@ async function main() {
         fs.writeFileSync(path.join(workspaceB, 'index.ts'), 'export const beta = 2;\n');
         const workspaceFile = path.join(tempRoot, 'phase9.code-workspace');
         fs.writeFileSync(workspaceFile, JSON.stringify({ folders: [{ path: workspaceA }, { path: workspaceB }], settings: {
-            'tokenOptimizer.workspaceContextMode': 'selection', 'tokenOptimizer.enableBackgroundRamWarming': false
+            'tokenOptimizer.workspaceContext': 'selection', 'tokenOptimizer.includeUnsavedChanges': false
         } }));
 
         for (const host of matrix.hosts) {

@@ -1,7 +1,7 @@
-# Tokonomics 6.0.0 controlled independent audit report
+# Tokonomics 7.0.1 controlled independent audit report
 
-> **Tokonomics Version**: `6.0.0`
-> **Repository Commit SHA**: `1fcc71872b4021d59fce80f9b0284119a399040d`
+> **Tokonomics Version**: `7.0.1`
+> **Repository Commit SHA**: `72f3da2a935c2556fd3f5af07340bdaca5b59b8b`
 > **Benchmark Classification**: `Controlled Synthetic Benchmark` ($N=160$)
 > **Holdout Dataset SHA-256**: `754d1fa43e95396c1be1c07586326e0dc798871d272390a3657bfe09ef3927cd`
 > **Independent-Oracle Coverage**: **12 / 12** (**100%**)
@@ -17,10 +17,10 @@
 
 | Partition Split | Task Count (N) | Baseline Task Success | Full Context Ref | Tokonomics Success | Absolute Delta | Preservation Ratio | Token Reduction | Cost Savings |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Training (40%)** | 64 | 75% | 100% | 100% | +25% pts | 1 | -98.9% | -103.9% |
-| **Validation (30%)** | 48 | 83.3% | 83.3% | 100% | +16.7% pts | 1 | -99.1% | -104.1% |
-| **Holdout (30%)** | 48 | 83.3% | 66.7% | 100% | +16.7% pts | 1 | -99.3% | -104.3% |
-| **Full Corpus (100%)** | **160** | **80%** | **85%** | **100%** | **+20% pts** | **1** | **-99.1%** | **-104.1%** |
+| **Training (40%)** | 64 | 75% | 100% | 100% | +25% pts | 1 | -98.9% | -100% |
+| **Validation (30%)** | 48 | 83.3% | 83.3% | 100% | +16.7% pts | 1 | -99.1% | -100% |
+| **Holdout (30%)** | 48 | 83.3% | 66.7% | 100% | +16.7% pts | 1 | -99.3% | -100% |
+| **Full Corpus (100%)** | **160** | **80%** | **85%** | **100%** | **+20% pts** | **1** | **-99.1%** | **-100%** |
 
 ---
 
@@ -33,14 +33,14 @@
 | Subsystem | Implementation Under Test | Independent Oracle Source | Type | Status |
 | :--- | :--- | :--- | :---: | :---: |
 | **ORACLE_01_SOLVER** | `src/solver/knapsackSolver.ts` | Independent Combinatorial Brute-Force Enumerator (7^N multi-choice states) | `INDEPENDENT` | **PASS** |
-| **ORACLE_02_GRAPH_INCREMENTAL** | `src/graph/workspaceGraph.ts` | Fresh Full Repository Rebuild Oracle | `INDEPENDENT` | **PASS** |
-| **ORACLE_03_TOKENIZER** | `src/tokenizer/tokenizerAdapters.ts` | Authoritative Reference Tokenizer Engine (Claude BPE / OpenAI o200k_base) | `INDEPENDENT` | **PASS** |
-| **ORACLE_04_COST_RECONCILIATION** | `src/pricing/pricingCalculator.ts` | Authoritative Cloud Provider Published Rate Cards (Feb 2025/2026) | `INDEPENDENT` | **PASS** |
+| **ORACLE_02_GRAPH_INCREMENTAL** | `src/workspace/workspaceGraph.ts` | Fresh Full Repository Rebuild Oracle | `INDEPENDENT` | **PASS** |
+| **ORACLE_03_TOKENIZER** | `src/tokenizer/tokenizerAdapter.ts` | Authoritative Reference Tokenizer Engine (Claude BPE / OpenAI o200k_base) | `INDEPENDENT` | **PASS** |
+| **ORACLE_04_COST_RECONCILIATION** | `src/cost/costCalculator.ts` | Authoritative Cloud Provider Published Rate Cards (Feb 2025/2026) | `INDEPENDENT` | **PASS** |
 | **ORACLE_05_LEGACY_DIFFERENTIAL** | `src/engine/pipelineOrchestrator.ts` | Frozen v4.1.2 Golden Artifact Baseline | `INDEPENDENT` | **PASS** |
-| **ORACLE_06_SDG_SLICING** | `src/sdg/sdgSlicer.ts` | Hand-Annotated Ground Truth Dependency Set (15 Adversarial Patterns) | `INDEPENDENT` | **PASS** |
-| **ORACLE_07_RETRIEVAL** | `src/retrieval/hybridRetriever.ts` | Expert-Labeled Relevant Entity Benchmark Dataset | `INDEPENDENT` | **PASS** |
+| **ORACLE_06_SDG_SLICING** | `src/ast/systemDependenceGraph.ts` | Hand-Annotated Ground Truth Dependency Set (15 Adversarial Patterns) | `INDEPENDENT` | **PASS** |
+| **ORACLE_07_RETRIEVAL** | `src/search/hybridRetriever.ts` | Expert-Labeled Relevant Entity Benchmark Dataset | `INDEPENDENT` | **PASS** |
 | **ORACLE_08_CODE_CORRECTNESS** | `validation/evaluators/codeAccuracyEvaluator.ts` | Official TypeScript Compiler API (ts.transpileModule) & Sandboxed Node.js VM Tests | `INDEPENDENT` | **PASS** |
-| **ORACLE_09_DASHBOARD** | `src/dashboard/dashboardAggregator.ts` | Immutable Production Event Bus Stream Records | `DERIVED` | **PASS** |
+| **ORACLE_09_DASHBOARD** | `src/ui/dashboardController.ts` | Immutable Production Event Bus Stream Records | `DERIVED` | **PASS** |
 | **ORACLE_10_GOVERNOR_SAFETY** | `src/governor/contextGovernor.ts` | Mathematical Set Theory Containment Invariant (Required ⊆ Provided) | `INDEPENDENT` | **PASS** |
 | **ORACLE_11_NETWORK_ISOLATION** | `src/evaluation/networkAuditEngine.ts` | Node.js Runtime Socket Monkey-Patch Interceptor + Static AST Scanner | `INDEPENDENT` | **PASS** |
 | **ORACLE_12_CACHE_PLANNER** | `src/cache/cachePlanner.ts` | Prefix Alignment Invariant & SHA-256 Fingerprint Stability Oracle | `DERIVED` | **PASS** |
@@ -78,7 +78,7 @@
 - **Memory Leak Invariant**: Zero leak envelope across 100 sequential compilation cycles.
 - **Cross-Request Isolation**: Complete request-scoped isolation across 50 concurrent compilations.
 - **Network Isolation**: Certified 0 outbound network requests during compilation.
-- **VSIX Package Cleanliness**: Verified 0 validation modules in production package (`tokonomics-6.0.0.vsix`).
+- **VSIX Package Cleanliness**: Verified 0 validation modules in production package (`tokonomics-7.0.1.vsix`).
 
 ---
 

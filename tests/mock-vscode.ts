@@ -42,6 +42,11 @@ export const languages = {
 };
 
 export const window = {
+    registerWebviewPanelSerializer: () => ({ dispose() {} }),
+    registerWebviewViewProvider: (viewId: string, provider: any, options?: any) => {
+        registeredWebviewViewProviders.push({ viewId, provider, options });
+        return { dispose: () => {} };
+    },
     createStatusBarItem: (alignment?: any, priority?: number) => ({
         text: '',
         tooltip: '',
@@ -98,6 +103,8 @@ export const workspace = {
     }),
     onDidChangeConfiguration: () => ({ dispose: () => {} }),
     onDidChangeTextDocument: () => ({ dispose: () => {} }),
+    onDidOpenTextDocument: () => ({ dispose: () => {} }),
+    onDidCloseTextDocument: () => ({ dispose: () => {} }),
     onDidSaveTextDocument: () => ({ dispose: () => {} }),
     onDidCreateFiles: () => ({ dispose: () => {} }),
     onDidDeleteFiles: () => ({ dispose: () => {} }),
@@ -222,9 +229,12 @@ export class ChatResponseMarkdownPart {
     constructor(public value: { value: string }) {}
 }
 
+// Roles are the numeric enum the real API uses. A string here silently diverged from
+// LanguageModelChatMessageRole, so code that branches on the role passed every test and failed
+// against the real host.
 export const LanguageModelChatMessage = {
-    User: (content: any, name?: string) => ({ role: 'user', content: typeof content === 'string' ? [new LanguageModelTextPart(content)] : content, name }),
-    Assistant: (content: any, name?: string) => ({ role: 'assistant', content: typeof content === 'string' ? [new LanguageModelTextPart(content)] : content, name })
+    User: (content: any, name?: string) => ({ role: LanguageModelChatMessageRole.User, content: typeof content === 'string' ? [new LanguageModelTextPart(content)] : content, name }),
+    Assistant: (content: any, name?: string) => ({ role: LanguageModelChatMessageRole.Assistant, content: typeof content === 'string' ? [new LanguageModelTextPart(content)] : content, name })
 };
 
 export const registeredLmProviders: Array<{ vendor: string; provider: any }> = [];
@@ -233,12 +243,63 @@ export function clearLastModelRequest() { lastModelRequest = undefined; }
 export let nextModelResponseParts: any[] | undefined;
 export function setNextModelResponseParts(parts?: any[]) { nextModelResponseParts = parts; }
 
+/**
+ * Chat-surface test hooks. When `chatModelOverride` is set, `lm.selectChatModels` returns it
+ * instead of the default fixture list, so model discovery cases (empty, duplicate, disappearing)
+ * can be driven without touching the existing provider fixtures.
+ */
+let chatModelOverride: any[] | undefined;
+let selectChatModelsThrows: Error | undefined;
+export function setChatModelOverride(models: any[] | undefined): void { chatModelOverride = models; }
+export function setSelectChatModelsError(error: Error | undefined): void { selectChatModelsThrows = error; }
+
+const chatModelChangeListeners: Array<() => void> = [];
+export function fireChatModelsChanged(): void { for (const listener of [...chatModelChangeListeners]) listener(); }
+export function chatModelListenerCount(): number { return chatModelChangeListeners.length; }
+
+export const registeredWebviewViewProviders: Array<{ viewId: string; provider: any; options?: any }> = [];
+
+export class CancellationTokenSource {
+    private listeners: Array<() => void> = [];
+    public token = {
+        isCancellationRequested: false,
+        onCancellationRequested: (listener: () => void) => {
+            this.listeners.push(listener);
+            return { dispose: () => { this.listeners = this.listeners.filter(item => item !== listener); } };
+        }
+    };
+    public cancel(): void {
+        if (this.token.isCancellationRequested) return;
+        this.token.isCancellationRequested = true;
+        for (const listener of [...this.listeners]) listener();
+    }
+    public dispose(): void { this.listeners = []; }
+}
+
 export const lm = {
+    onDidChangeChatModels: (listener: () => void) => {
+        chatModelChangeListeners.push(listener);
+        return { dispose: () => {
+            const index = chatModelChangeListeners.indexOf(listener);
+            if (index >= 0) chatModelChangeListeners.splice(index, 1);
+        } };
+    },
     registerLanguageModelChatProvider: (vendor: string, provider: any) => {
         registeredLmProviders.push({ vendor, provider });
         return { dispose: () => {} };
     },
-    selectChatModels: async () => [
+    selectChatModels: async (selector?: { vendor?: string }) => {
+        if (selectChatModelsThrows) throw selectChatModelsThrows;
+        if (chatModelOverride) {
+            return selector?.vendor
+                ? chatModelOverride.filter(model => model.vendor === selector.vendor)
+                : chatModelOverride;
+        }
+        return DEFAULT_CHAT_MODELS.filter(model => !selector?.vendor || model.vendor === selector.vendor);
+    }
+};
+
+const DEFAULT_CHAT_MODELS: any[] = [
         {
             id: 'claude-3-7-sonnet',
             name: 'Claude 3.7 Sonnet',
@@ -262,4 +323,3 @@ export const lm = {
             }
         }
     ]
-};

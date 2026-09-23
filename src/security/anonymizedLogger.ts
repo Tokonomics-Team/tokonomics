@@ -94,9 +94,12 @@ export class AnonymizedLogger {
      * Log an error with optional stack trace.
      */
     public error(component: string, message: string, error?: Error | any, metadata?: Record<string, any>): void {
-        const stack = error instanceof Error ? error.stack : undefined;
-        const errMessage = error instanceof Error ? `${message}: ${error.message}` : message;
-        this.log('ERROR', component, errMessage, stack, metadata);
+        const errorName = error instanceof Error ? error.name : 'UnknownError';
+        const errorCode = typeof error?.code === 'string' ? error.code.slice(0, 64) : undefined;
+        const stack = error instanceof Error ? this.stackFramesOnly(error.stack) : undefined;
+        this.log('ERROR', component, `${message} [${errorName}]`, stack, {
+            ...metadata, ...(errorCode ? { errorCode } : {})
+        });
     }
 
     /**
@@ -104,9 +107,10 @@ export class AnonymizedLogger {
      */
     public captureException(component: string, error: Error | any, contextInfo?: string): void {
         const message = contextInfo ? `Unhandled Exception (${contextInfo})` : 'Unhandled Exception';
-        const stack = error instanceof Error ? error.stack : String(error);
-        const errMsg = error instanceof Error ? `${message}: ${error.message}` : `${message}: ${String(error)}`;
-        this.log('CRASH', component, errMsg, stack);
+        const errorName = error instanceof Error ? error.name : 'UnknownError';
+        const errorCode = typeof error?.code === 'string' ? error.code.slice(0, 64) : undefined;
+        this.log('CRASH', component, `${message} [${errorName}]`, error instanceof Error ? this.stackFramesOnly(error.stack) : undefined,
+            errorCode ? { errorCode } : undefined);
     }
 
     /**
@@ -126,7 +130,7 @@ export class AnonymizedLogger {
         const entry: LogEntry = {
             timestamp: new Date().toISOString(),
             level,
-            component,
+            component: this.sanitize(component).slice(0, 128),
             message: sanitizedMsg,
             stack: sanitizedStack,
             metadata: sanitizedMeta
@@ -139,7 +143,7 @@ export class AnonymizedLogger {
 
         // Mirror to VS Code Output Channel if available
         if (this.outputChannel) {
-            const line = `[${entry.timestamp}] [${level}] [${component}] ${sanitizedMsg}${sanitizedStack ? '\n' + sanitizedStack : ''}`;
+            const line = `[${entry.timestamp}] [${level}] [${entry.component}] ${sanitizedMsg}${sanitizedStack ? '\n' + sanitizedStack : ''}`;
             this.outputChannel.appendLine(line);
         }
     }
@@ -150,7 +154,7 @@ export class AnonymizedLogger {
     public sanitize(text: string): string {
         if (!text || typeof text !== 'string') return '';
 
-        let result = text;
+        let result = text.slice(0, 16_384);
 
         // 1. Scrub Secrets & API keys using SecuritySanitizer
         result = SecuritySanitizer.sanitizeSecrets(result).sanitized;
@@ -178,6 +182,8 @@ export class AnonymizedLogger {
         // 6. Scrub IP Addresses (IPv4)
         result = result.replace(/\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/g, '<ip_redacted>');
 
+        // Retain line/column diagnostics without exporting private POSIX roots or UNC paths.
+        result = result.replace(/(?:\\\\[^\s:]+|\/[^\s:()]*)/g, '<path>');
         return result;
     }
 
@@ -193,6 +199,12 @@ export class AnonymizedLogger {
 
     private escapeRegExp(str: string): string {
         return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    private stackFramesOnly(stack?: string): string | undefined {
+        if (!stack) return undefined;
+        const frames = stack.split(/\r?\n/).slice(1).filter(line => /^\s*at\s/.test(line)).slice(0, 20);
+        return frames.length ? frames.join('\n') : undefined;
     }
 
     /**

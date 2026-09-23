@@ -69,7 +69,7 @@ export class LatencyBreakdownProfiler {
         }
         stages.push(this.calcMetrics('Lexical Retrieval (BM25)', bm25Cold, bm25Warm));
 
-        // 3. Dense Vector Retrieval
+        // 3. Hashed structural vector retrieval
         const dense = new DenseVectorIndex();
         for (let d = 0; d < 200; d++) {
             dense.addVector(`vec_${d}`, [Math.sin(d), Math.cos(d), Math.sin(d * 2), Math.cos(d * 2)]);
@@ -83,7 +83,7 @@ export class LatencyBreakdownProfiler {
             dense.search([0.5, 0.5, 0.5, 0.5], 10);
             denseWarm.push(performance.now() - t0);
         }
-        stages.push(this.calcMetrics('Dense Vector Search', denseCold, denseWarm));
+        stages.push(this.calcMetrics('Hashed Structural Vector Search', denseCold, denseWarm));
 
         // 4. Reranking & MMR Diversity
         const mmr = new MmrDiversityRanker();

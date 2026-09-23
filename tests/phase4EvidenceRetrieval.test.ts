@@ -9,8 +9,50 @@ import { EvidenceContractBuilder } from '../src/retrieval/evidenceContract';
 import { EvidenceAwareRetriever } from '../src/retrieval/evidenceRetriever';
 import { StructuredPreservationGate } from '../src/retrieval/structuredPreservation';
 import { VersionedWorkspaceIndex } from '../src/workspace/workspaceIndex';
+import { candidateCeilingForBudget, DEFAULT_MAX_CANDIDATES, MAX_CANDIDATE_CEILING } from '../src/retrieval/evidenceRetriever';
+import { SUBSCRIPTION_INPUT_BUDGET_TOKENS } from '../src/subscriptions/subscriptionModels';
+import { isConversationalOnly } from '../src/engine/conversationalPrompt';
 
 export async function runPhase4EvidenceRetrievalTests(): Promise<void> {
+    // A greeting is not a task. Retrieving for one inflated "Hi" from 7 tokens to 514 and attached
+    // eight files, and the model answered by describing the bundle instead of saying hello - a
+    // context optimizer failing at its own purpose twice over.
+    for (const social of ['Hi', 'hello!', 'hey there', 'thanks', 'Thank you so much', 'thanks a lot',
+        'ok', 'got it', 'Cool, thanks', 'bye', 'good morning', 'yes', 'no', '\u{1F44B}', '!!']) {
+        assert.strictEqual(isConversationalOnly(social), true, `Social turn treated as a task: ${social}`);
+    }
+    // Everything else retrieves. The two mistakes are not symmetric: skipping retrieval on a real
+    // task produces a confidently uninformed answer, so anything unrecognised is treated as a task.
+    for (const task of ['fix the bug', 'why is this failing?', 'hi, can you check the solver',
+        'explain aligner.ts', 'run the tests', 'ok now refactor this', 'thanks - now fix the budget',
+        'what is this', 'show me', '```ts\nconst a = 1;\n```', 'good morning, please review the diff',
+        'no, use the other approach', 'yes please update src/cost/pricingCatalog.ts']) {
+        assert.strictEqual(isConversationalOnly(task), false, `Task treated as social: ${task}`);
+    }
+    assert.strictEqual(isConversationalOnly(''), false, 'An empty prompt is not a greeting to answer');
+    assert.strictEqual(isConversationalOnly('   '), false);
+    assert.strictEqual(isConversationalOnly('thanks '.repeat(20)), false, 'Length alone rules a prompt out');
+
+    // The retrieval ceiling must follow the model's window. It was a constant 10 that no production
+    // caller ever overrode, so a 1M-token window and a 32k one retrieved the same ten chunks and the
+    // packer had most of its budget left with nothing to put in it.
+    assert.strictEqual(candidateCeilingForBudget(undefined), DEFAULT_MAX_CANDIDATES,
+        'A caller that declares no budget gets the conservative default');
+    assert.strictEqual(candidateCeilingForBudget(0), DEFAULT_MAX_CANDIDATES);
+    assert.strictEqual(candidateCeilingForBudget(Number.NaN), DEFAULT_MAX_CANDIDATES);
+    assert.strictEqual(candidateCeilingForBudget(4_000), DEFAULT_MAX_CANDIDATES,
+        'A window too small to afford more never drops below the default');
+    assert.ok(candidateCeilingForBudget(200_000) > candidateCeilingForBudget(32_000),
+        'A larger window must retrieve more, which is the whole defect this guards');
+    assert.strictEqual(candidateCeilingForBudget(10_000_000), MAX_CANDIDATE_CEILING,
+        'Nomination stays bounded however large the window claims to be');
+    // Subscription chat compiles against this budget, so a regression there silently re-narrows
+    // every /claude and /codex request.
+    assert.ok(SUBSCRIPTION_INPUT_BUDGET_TOKENS >= 100_000,
+        'A CLI-backed model must not declare a window far below what the provider serves');
+    assert.ok(candidateCeilingForBudget(SUBSCRIPTION_INPUT_BUDGET_TOKENS) > DEFAULT_MAX_CANDIDATES,
+        'Subscription requests must retrieve more than the no-budget default');
+
     console.log('Running Phase 4 evidence-aware retrieval and preservation tests...');
     const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'tokonomics-phase4-'));
     const sourceDir = path.join(temp, 'src');
@@ -149,7 +191,11 @@ export async function runPhase4EvidenceRetrievalTests(): Promise<void> {
         ].join('\n');
         const dynamic = await orchestrator.compileContext({ messages: [{ role: 'user', content: dynamicCode }], deferSideEffects: true });
         assert.ok(dynamic.optimizedMessages[0].content.includes('eval("payload")'), 'dynamic-risk slice was not preserved verbatim');
-        assert.ok(dynamic.trace.decisions.some(decision => decision.itemId.startsWith('slice_safety_')));
+        for (const controlFlow of ['if (!selected)', 'throw new Error', 'return selected.call']) {
+            assert.ok(dynamic.optimizedMessages[0].content.includes(controlFlow), `implementation task lost ${controlFlow}`);
+        }
+        assert.ok(!dynamic.trace.decisions.some(decision => decision.itemId.startsWith('slice_safety_')),
+            'implementation-critical tasks should bypass lossy slicing instead of repairing it afterwards');
     } finally {
         FeatureFlagRegistry.resetToDefault();
         index.dispose();

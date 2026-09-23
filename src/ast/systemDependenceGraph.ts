@@ -56,13 +56,13 @@ export class SystemDependenceGraph {
             if (eqIdx !== -1) {
                 const lhs = lineText.substring(0, eqIdx).trim();
                 rhsText = lineText.substring(eqIdx + 1);
-                const lhsVarMatch = lhs.match(/(?:(?:const|let|var)\s+|this\.)?([a-zA-Z0-9_]+)$/);
+                const lhsVarMatch = lhs.match(/(?<![a-zA-Z0-9_])(?:(?:const|let|var)\s+|this\.)?([a-zA-Z0-9_]+)$/);
                 if (lhsVarMatch) {
                     definedVars.push(lhsVarMatch[1]);
                 }
             } else {
                 // Mutations like x++ or x--
-                const mutMatch = lineText.match(/(?:this\.)?([a-zA-Z0-9_]+)\s*(?:\+\+|--|\+=|-=)/);
+                const mutMatch = lineText.match(/(?<![a-zA-Z0-9_])(?:this\.)?([a-zA-Z0-9_]+)\s*(?:\+\+|--|\+=|-=)/);
                 if (mutMatch) {
                     definedVars.push(mutMatch[1]);
                     usedVars.push(mutMatch[1]);

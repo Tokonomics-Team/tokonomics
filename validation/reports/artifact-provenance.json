@@ -2,9 +2,9 @@
   "_type": "https://in-toto.io/Statement/v1",
   "subject": [
     {
-      "name": "tokonomics-6.0.0.vsix",
+      "name": "tokonomics-8.0.0.vsix",
       "digest": {
-        "sha256": "2ca661eeda14e69c6257e0b3e7ea23b169031b181415c060a73a2cd9aa2629a7"
+        "sha256": "ac0992720dbfc7c0b207c7dc63b53794f49a3384d5d56663f8a86e3fba9b81fb"
       }
     }
   ],
@@ -13,53 +13,58 @@
     "buildDefinition": {
       "buildType": "https://tokonomics.dev/build/vsix/v1",
       "externalParameters": {
-        "package": "tokonomics@6.0.0",
+        "package": "tokonomics@8.0.0",
         "command": "npm run vsce:package -- --no-dependencies"
       },
       "internalParameters": {
         "signed": false,
+        "environment": "local-developer-draft",
         "networkRequiredForBuild": false
       },
       "resolvedDependencies": [
         {
           "uri": "package.json",
           "digest": {
-            "sha256": "27dc59383b9fb458d3e458b4d449c6ca7352e9edfd0f8c3871006ad3e8c960e2"
+            "sha256": "23e93dc8fac1a701fe72cc6270ea6fd2938f28060301898402c9702e0987d1a0"
           }
         },
         {
           "uri": "package-lock.json",
           "digest": {
-            "sha256": "5b81f69b30e0713da6ca7319e57dba5e94057bf5b92f1f605de7edc8d1602e33"
+            "sha256": "b795d2276f068b5824334c503c18a81960d3ab3fb2d0cb1a0d2470d1d89c5ffa"
           }
         },
         {
           "uri": "esbuild.js",
           "digest": {
-            "sha256": "0363739032f094cca193b0a8dfa021f705a14505636e0b304c2cd7ad88c9d4f3"
+            "sha256": "037554791c73a37833adf19b6ae5e8b9438a2d63fde66c763b55fad136772131"
           }
         },
         {
           "uri": ".vscodeignore",
           "digest": {
-            "sha256": "c3a388a02ffaa837abeb1864fde9cda760cc5db55719de0984de8e856b2c1c99"
+            "sha256": "c8befd72aef31e912e27c101d092af889c0299f59837c19eabbdc09048e39b8c"
           }
         }
       ]
     },
     "runDetails": {
       "builder": {
-        "id": "https://tokonomics.dev/local-builder/v1"
+        "id": "https://tokonomics.dev/local-developer-draft/v1"
       },
       "metadata": {
-        "invocationId": "014c7e20-4489-4d17-9cdf-863cc5b30996",
-        "startedOn": "2026-09-04T02:51:19.368Z",
-        "finishedOn": "2026-09-04T02:51:19.369Z"
+        "invocationId": "04675b9c-9ae3-4bd2-b428-3847b6ac4f30",
+        "startedOn": "2026-09-14T07:47:03.669Z",
+        "finishedOn": "2026-09-14T07:47:03.670Z"
       },
       "byproducts": [
         {
+          "name": "provenance-status",
+          "content": "local-unsigned-draft"
+        },
+        {
           "name": "repository-commit",
-          "content": "1fcc71872b4021d59fce80f9b0284119a399040d"
+          "content": "902ec16cd85fbc1fcd02834fd8a6e75b714cb70a"
         },
         {
           "name": "node",

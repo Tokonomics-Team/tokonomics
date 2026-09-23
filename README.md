@@ -54,15 +54,17 @@ The `@tokonomics` participant also provides short commands for dashboard, live s
 
 ## Chat conversations and native panel
 
-Open **Tokonomics: Open Chat** from the Command Palette (or select the Tokonomics chat icon in the Secondary Side Bar) to use the dedicated chat interface. You can also run **Tokonomics: Open Chat in Editor** to keep the conversation visible side-by-side with your code; click **Open in sidebar** to return to the sidebar at any time.
+Open **Tokonomics: Open Chat** from the Command Palette (or click the Tokonomics icon in the Secondary Side Bar) to use the dedicated chat interface, or run **Tokonomics: Open Chat in Editor** for a split editor tab.
 
-Both surfaces share your conversation state and model selection:
-- **Direct prompts:** Ask coding questions or request refactorings directly in the prompt input.
-- **Rich Markdown replies:** Answers stream with formatted tables, lists, and syntax-highlighted code blocks.
-- **Session management:** Click **New Session** to start a clean turn, or click **History** to revisit and restore up to 10 saved workspace conversations.
-- **Subscription CLI routing:** Use `@tokonomics /claude` or `@tokonomics /codex` to route prompts through your authenticated local CLI tools.
+Both surfaces share conversation state and model selection:
+- **Codex, Claude & Antigravity Aesthetics:** Sleek native interface with formatted Markdown streaming and syntax-highlighted code blocks.
+- **Model-Aware Status:** Live indicators for **Thinking**, **Analyzing**, and **Working** with a collapsible activity timeline.
+- **14-Language Context:** AST context preparation supporting TypeScript, Python, Go, Rust, Java, C/C++, Ruby, Swift, Kotlin, and more.
+- **Sub-15ms Local Retrieval:** Fast on-device candidate indexing with a strict zero-leak local boundary.
+- **Session History:** Restore up to 10 saved workspace conversations across editor restarts.
+- **Subscription CLI Routing:** Routes prompts through official local CLIs (**Codex** via ChatGPT or **Claude** via Claude Pro).
 
-The panel saves up to 10 recent chats locally for this workspace, including prompts and replies, with up to 40 recent messages and bounded text per chat. Known secret patterns are redacted before saving. Saved chats return after restarting VS Code; unfinished requests are marked interrupted and are not resent automatically. Changing workspace folders clears these chats. This history is separate from usage records and other extensions' conversations.
+The panel saves up to 10 recent chats locally for this workspace with secret redaction. Unfinished requests are marked interrupted and are not resent automatically.
 
 ## Economic value and ROI disclaimers
 

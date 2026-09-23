@@ -23,7 +23,7 @@ export class StructuredPreservationGate {
         const declarations = [...originalText.matchAll(/\b(?:class|interface|type|enum|function|def|struct)\s+([A-Za-z_$][\w$]*)/g)]
             .map(match => match[1]).filter(symbol => userIntent.includes(symbol));
         for (const symbol of declarations) this.require(`declaration:${symbol}`, symbol, optimizedText, obligations, missing);
-        for (const citation of originalText.match(/(?:[^\s:]+):L?\d+(?:-L?\d+)?/g) || []) {
+        for (const citation of originalText.match(/(?<![^\s:])(?:[^\s:]+):L?\d+(?:-L?\d+)?/g) || []) {
             if (userIntent.includes(citation)) this.require(`range:${citation}`, citation, optimizedText, obligations, missing);
         }
         for (const line of originalText.split(/\r?\n/).filter(line => /\b(?:Error|Exception|Traceback|TS\d{3,5})\b/.test(line))) {

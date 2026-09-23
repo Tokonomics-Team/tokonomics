@@ -1,0 +1,36 @@
+{
+  "promptChars": 9073,
+  "hasCodeFence": false,
+  "asksForWorkspaceSource": true,
+  "taskType": "debug",
+  "cases": [
+    {
+      "injectedError": "No project source was prepared. Set Token Optimizer: Workspace Context to Automatic in a trusted workspace, or paste the relevant code.",
+      "displayedError": "No project source was prepared. Set Token Optimizer: Workspace Context to Automatic in a trusted workspace, or paste the relevant code."
+    },
+    {
+      "injectedError": "No project source was prepared: no workspace files are indexed yet. Open a folder in a trusted window, or paste the relevant code.",
+      "displayedError": "The request failed before a reply was produced."
+    },
+    {
+      "injectedError": "No project source was prepared: retrieval admitted nothing from 172 indexed file(s) for this request. Attach the files you mean, or paste the relevant code.",
+      "displayedError": "The request failed before a reply was produced."
+    }
+  ],
+  "renderPolicy": {
+    "callerSuppliedContext": true,
+    "retrievalIsSoleContext": false,
+    "shouldRender": false,
+    "shortfallCategories": [],
+    "emptyContextWarning": false
+  },
+  "withExplicitSourceProvenance": {
+    "callerSuppliedContext": false,
+    "retrievalIsSoleContext": true,
+    "shouldRender": true,
+    "shortfallCategories": [
+      "errorStackTrace"
+    ],
+    "emptyContextWarning": false
+  }
+}

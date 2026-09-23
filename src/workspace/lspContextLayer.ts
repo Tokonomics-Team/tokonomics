@@ -6,6 +6,7 @@
 
 import { WorkspaceGraph } from './workspaceGraph';
 import { ScipIndexer } from './scipIndexer';
+import { ILanguageServerAdapter, VsCodeLanguageServerAdapter } from './lspAdapter';
 
 export interface LspSymbol {
     name: string;
@@ -29,42 +30,43 @@ export interface LspCallHierarchy {
 }
 
 export class LspContextLayer {
-    private isVsCodeAvailable: boolean = false;
+    private adapter: ILanguageServerAdapter;
 
     constructor(
         private workspaceGraph?: WorkspaceGraph,
-        private scipIndexer?: ScipIndexer
+        private scipIndexer?: ScipIndexer,
+        adapter?: ILanguageServerAdapter
     ) {
-        try {
-            const vscodeModule = require('vscode');
-            this.isVsCodeAvailable = !!(vscodeModule && vscodeModule.commands && vscodeModule.commands.executeCommand);
-        } catch {
-            this.isVsCodeAvailable = false;
-        }
+        this.adapter = adapter ?? new VsCodeLanguageServerAdapter();
+    }
+
+    public get isVsCodeAvailable(): boolean {
+        return this.adapter.isAvailable;
     }
 
     /**
      * Resolves definitions for a symbol at a given file and position
      */
     public async getDefinitions(filePath: string, line: number, character: number, symbolName?: string): Promise<LspLocation[]> {
-        if (this.isVsCodeAvailable) {
+        if (this.adapter.isAvailable) {
             try {
-                const vscode = require('vscode');
-                const uri = vscode.Uri.file(filePath);
-                const pos = new vscode.Position(line, character);
-
                 const result = await Promise.race([
-                    vscode.commands.executeCommand('vscode.executeDefinitionProvider', uri, pos),
-                    new Promise((_, reject) => setTimeout(() => reject(new Error('LSP timeout')), 400))
-                ]) as any[];
+                    this.adapter.getDefinitions(filePath, { line, character }),
+                    new Promise<any[]>((_, reject) => setTimeout(() => reject(new Error('LSP timeout')), 400))
+                ]);
 
                 if (result && Array.isArray(result) && result.length > 0) {
-                    return result.map(loc => ({
-                        filePath: loc.uri?.fsPath || loc.targetUri?.fsPath || filePath,
-                        line: loc.range?.start?.line ?? loc.targetRange?.start?.line ?? 0,
-                        character: loc.range?.start?.character ?? loc.targetRange?.start?.character ?? 0,
-                        symbolName
-                    }));
+                    return result.map(loc => {
+                        const targetPath = (typeof loc.uri === 'string' ? loc.uri : loc.uri?.fsPath) ||
+                                           (typeof loc.targetUri === 'string' ? loc.targetUri : loc.targetUri?.fsPath) ||
+                                           filePath;
+                        return {
+                            filePath: targetPath,
+                            line: loc.range?.start?.line ?? loc.targetRange?.start?.line ?? 0,
+                            character: loc.range?.start?.character ?? loc.targetRange?.start?.character ?? 0,
+                            symbolName
+                        };
+                    });
                 }
             } catch {
                 // Fall through to deterministic SCIP / Tree-sitter fallback
@@ -91,24 +93,23 @@ export class LspContextLayer {
      * Resolves downstream references for a symbol across workspace files
      */
     public async getReferences(filePath: string, line: number, character: number, symbolName?: string): Promise<LspLocation[]> {
-        if (this.isVsCodeAvailable) {
+        if (this.adapter.isAvailable) {
             try {
-                const vscode = require('vscode');
-                const uri = vscode.Uri.file(filePath);
-                const pos = new vscode.Position(line, character);
-
                 const result = await Promise.race([
-                    vscode.commands.executeCommand('vscode.executeReferenceProvider', uri, pos),
-                    new Promise((_, reject) => setTimeout(() => reject(new Error('LSP timeout')), 400))
-                ]) as any[];
+                    this.adapter.getReferences(filePath, { line, character }),
+                    new Promise<any[]>((_, reject) => setTimeout(() => reject(new Error('LSP timeout')), 400))
+                ]);
 
                 if (result && Array.isArray(result) && result.length > 0) {
-                    return result.map(loc => ({
-                        filePath: loc.uri?.fsPath || filePath,
-                        line: loc.range?.start?.line ?? 0,
-                        character: loc.range?.start?.character ?? 0,
-                        symbolName
-                    }));
+                    return result.map(loc => {
+                        const targetPath = (typeof loc.uri === 'string' ? loc.uri : loc.uri?.fsPath) || filePath;
+                        return {
+                            filePath: targetPath,
+                            line: loc.range?.start?.line ?? 0,
+                            character: loc.range?.start?.character ?? 0,
+                            symbolName
+                        };
+                    });
                 }
             } catch {
                 // Fall through to deterministic SCIP fallback
@@ -133,31 +134,27 @@ export class LspContextLayer {
      * Resolves incoming callers and outgoing callees via Call Hierarchy API
      */
     public async getCallHierarchy(filePath: string, line: number, character: number, symbolId?: string): Promise<LspCallHierarchy> {
-        if (this.isVsCodeAvailable) {
+        if (this.adapter.isAvailable) {
             try {
-                const vscode = require('vscode');
-                const uri = vscode.Uri.file(filePath);
-                const pos = new vscode.Position(line, character);
-
                 const items = await Promise.race([
-                    vscode.commands.executeCommand('vscode.prepareCallHierarchy', uri, pos),
-                    new Promise((_, reject) => setTimeout(() => reject(new Error('LSP timeout')), 400))
-                ]) as any[];
+                    this.adapter.prepareCallHierarchy(filePath, { line, character }),
+                    new Promise<any[]>((_, reject) => setTimeout(() => reject(new Error('LSP timeout')), 400))
+                ]);
 
                 if (items && Array.isArray(items) && items.length > 0) {
                     const item = items[0];
-                    const incomingCalls = await vscode.commands.executeCommand('vscode.provideIncomingCalls', item) as any[] || [];
-                    const outgoingCalls = await vscode.commands.executeCommand('vscode.provideOutgoingCalls', item) as any[] || [];
+                    const incomingCalls = await this.adapter.getIncomingCalls(item);
+                    const outgoingCalls = await this.adapter.getOutgoingCalls(item);
 
-                    const incoming: LspLocation[] = incomingCalls.map(c => ({
-                        filePath: c.from?.uri?.fsPath || filePath,
+                    const incoming: LspLocation[] = (incomingCalls || []).map(c => ({
+                        filePath: (typeof c.from?.uri === 'string' ? c.from.uri : c.from?.uri?.fsPath) || filePath,
                         line: c.from?.range?.start?.line ?? 0,
                         character: c.from?.range?.start?.character ?? 0,
                         symbolName: c.from?.name
                     }));
 
-                    const outgoing: LspLocation[] = outgoingCalls.map(c => ({
-                        filePath: c.to?.uri?.fsPath || filePath,
+                    const outgoing: LspLocation[] = (outgoingCalls || []).map(c => ({
+                        filePath: (typeof c.to?.uri === 'string' ? c.to.uri : c.to?.uri?.fsPath) || filePath,
                         line: c.to?.range?.start?.line ?? 0,
                         character: c.to?.range?.start?.character ?? 0,
                         symbolName: c.to?.name

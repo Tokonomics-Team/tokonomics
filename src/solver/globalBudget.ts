@@ -22,6 +22,7 @@ export interface PayloadBudgetPlan {
     projectedTotalTokens: number;
     withinBudget: boolean;
     tokenizer: 'tokonomics-error-bounded-estimator-v1';
+    measurementType: 'heuristic_estimate';
     renderedAssignments: readonly RenderedBudgetAssignment[];
 }
 
@@ -59,6 +60,7 @@ export class GlobalTokenBudgeter {
             projectedTotalTokens: baseInputTokens + outputReserve + tokenizerSafetyMargin + estimatorErrorMargin,
             withinBudget: baseInputTokens <= inputTokenLimit,
             tokenizer: 'tokonomics-error-bounded-estimator-v1',
+            measurementType: 'heuristic_estimate',
             renderedAssignments: Object.freeze([])
         };
         if (!plan.withinBudget) {

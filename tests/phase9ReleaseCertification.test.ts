@@ -55,8 +55,10 @@ export async function runPhase9ReleaseCertificationTests(): Promise<void> {
 
     const manifest = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'package.json'), 'utf8'));
     const properties = manifest.contributes.configuration.properties;
-    assert.strictEqual(properties['tokenOptimizer.emergencyDisableOptimization'].default, false);
-    assert.strictEqual(properties['tokenOptimizer.releaseChannel'].default, 'stable');
+    assert.strictEqual(properties['tokenOptimizer.optimizationMode'].default, 'balanced');
+    assert.strictEqual(properties['tokenOptimizer.workspaceContext'].default, 'selection');
+    assert.strictEqual(properties['tokenOptimizer.emergencyDisableOptimization'], undefined,
+        'Internal release controls must not be exposed as public settings.');
     const ignored = fs.readFileSync(path.join(process.cwd(), '.vscodeignore'), 'utf8');
     for (const excluded of ['.github/**', 'tests/**', 'validation/**', 'scripts/**', 'package-lock.json']) assert.ok(ignored.includes(excluded));
     const matrix = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'validation', 'compatibility-matrix.json'), 'utf8'));

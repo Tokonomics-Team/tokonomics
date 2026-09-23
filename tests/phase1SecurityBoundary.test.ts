@@ -41,7 +41,7 @@ export async function runPhase1SecurityBoundaryTests(): Promise<void> {
     const prepared = ModelRequestBoundary.prepare(
         [{ role: 'user', content: `Inspect ${path.join(workspace, 'src', 'auth.ts')} password=anothersecretvalue` }],
         { tools: [{ description: 'uses ghp_abcdefghijklmnopqrstuvwxyz1234567890' }] },
-        { workspaceRoots: [workspace], workspaceTrusted: true, containsWorkspaceData: true }
+        { workspaceRoots: [workspace], workspaceTrusted: true, containsWorkspaceData: true, workspaceConsent: true, sourcePolicySatisfied: true }
     );
     assert.ok(prepared.messages[0].content.includes('<workspace>/src/auth.ts'));
     assert.ok(!JSON.stringify(prepared).includes('anothersecretvalue'));
@@ -79,7 +79,7 @@ export async function runPhase1SecurityBoundaryTests(): Promise<void> {
         const safe = policy.readText(path.join(tempRoot, 'src', 'safe.ts'));
         assert.strictEqual(safe.displayPath, 'src/safe.ts');
         expectCode(() => policy.readText(outside), 'OUTSIDE_WORKSPACE');
-        expectCode(() => policy.readText(path.join(tempRoot, '.env')), 'IGNORED');
+        expectCode(() => policy.readText(path.join(tempRoot, '.env')), 'SENSITIVE_NAME');
         expectCode(() => policy.readText(path.join(tempRoot, 'binary.ts')), 'BINARY');
         expectCode(() => new WorkspaceSourcePolicy([tempRoot], false).readText(path.join(tempRoot, 'src', 'safe.ts')), 'UNTRUSTED_WORKSPACE');
     } finally {
@@ -111,7 +111,7 @@ export async function runPhase1SecurityBoundaryTests(): Promise<void> {
 
     const manifest = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'package.json'), 'utf8'));
     assert.strictEqual(manifest.capabilities.untrustedWorkspaces.supported, 'limited');
-    assert.strictEqual(manifest.contributes.configuration.properties['tokenOptimizer.workspaceContextMode'].default, 'selection');
+    assert.strictEqual(manifest.contributes.configuration.properties['tokenOptimizer.workspaceContext'].default, 'selection');
 
     mockVscode.clearLastModelRequest();
     const proxy = new TokenOptimizerLanguageModelProvider(new CanonicalRequestCompiler(new PipelineOrchestrator()), () => undefined);

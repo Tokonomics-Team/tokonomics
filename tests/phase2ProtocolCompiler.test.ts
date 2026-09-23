@@ -5,7 +5,10 @@ import { prepareCanonicalEgress } from '../src/protocol/canonicalEgress';
 import { CompilationCancelledError, PipelineOrchestrator } from '../src/engine/pipelineOrchestrator';
 import { OptimizationEventBus } from '../src/events/optimizationEvent';
 import { TraceLogger } from '../src/engine/traceLogger';
-import { TokenOptimizerLanguageModelProvider } from '../src/proxy/modelProvider';
+import {
+    CHAT_REQUEST_ID_OPTION, CHAT_SESSION_ID_OPTION, TokenOptimizerLanguageModelProvider,
+    UPSTREAM_TARGET_MODEL_OPTION
+} from '../src/proxy/modelProvider';
 import * as mock from './mock-vscode';
 
 export async function runPhase2ProtocolCompilerTests(): Promise<void> {
@@ -106,7 +109,12 @@ export async function runPhase2ProtocolCompilerTests(): Promise<void> {
     ]);
     await proxy.provideLanguageModelChatResponse(
         { family: 'auto' }, providerMessages, {
-            modelOptions: { temperature: 0 },
+            modelOptions: {
+                temperature: 0,
+                [UPSTREAM_TARGET_MODEL_OPTION]: 'claude-3-7-sonnet',
+                [CHAT_REQUEST_ID_OPTION]: 'req_phase2_provider',
+                [CHAT_SESSION_ID_OPTION]: 'chat_phase2_provider'
+            },
             tools: [{ name: 'search', description: 'password=schemasecretvalue', inputSchema: { type: 'object' } }],
             toolMode: 1
         }, { report: part => emittedParts.push(part) } as any, { isCancellationRequested: false } as any
@@ -120,9 +128,31 @@ export async function runPhase2ProtocolCompilerTests(): Promise<void> {
     assert.strictEqual(captured.messages[0].content[1].callId, 'call-1');
     assert.deepStrictEqual([...captured.messages[0].content[2].data], [...imageBytes]);
     assert.ok(!JSON.stringify(captured.options).includes('schemasecretvalue'));
+    assert.strictEqual(captured.options.modelOptions.temperature, 0);
+    assert.ok(!JSON.stringify(captured.options).includes('tokonomics.'),
+        'Extension-private routing metadata must never reach the upstream provider');
     const lifecycle = bus.getRecentEvents(2);
     assert.strictEqual(new Set(lifecycle.map(event => event.id)).size, 1, 'compile and reconciliation must share one request ID');
+    assert.strictEqual(lifecycle[0].id, 'req_phase2_provider');
+    assert.strictEqual(lifecycle[0].sessionId, 'chat_phase2_provider');
     assert.deepStrictEqual(lifecycle.map(event => event.state), ['OPTIMIZATION_COMPLETED', 'COST_RECONCILED']);
+
+    // If an explicit selection disappeared, fail before compilation/commit instead of reporting
+    // a diagnostic response as a successful optimization.
+    mock.setChatModelOverride([{
+        id: 'different-model', name: 'Different', vendor: 'anthropic', family: 'other',
+        sendRequest: async () => ({ text: [] })
+    }]);
+    const eventCountBeforeStale = bus.getRecentEvents(10_000).length;
+    await assert.rejects(() => proxy.provideLanguageModelChatResponse(
+        { family: 'auto' }, providerMessages,
+        { modelOptions: { [UPSTREAM_TARGET_MODEL_OPTION]: 'removed-model' } },
+        { report: () => assert.fail('A stale selection must not produce response output') } as any,
+        { isCancellationRequested: false } as any
+    ), /not available/i);
+    assert.strictEqual(bus.getRecentEvents(10_000).length, eventCountBeforeStale,
+        'A stale explicit model must not create a successful accounting event');
+    mock.setChatModelOverride(undefined);
 
     const equivalencePrompt = 'Explain canonical entrypoint equivalence marker 98231.';
     assert.ok(mock.activeChatParticipantHandler, 'the activated chat participant must be available for equivalence testing');
