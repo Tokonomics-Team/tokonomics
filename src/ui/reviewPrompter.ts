@@ -12,7 +12,7 @@
 import * as vscode from 'vscode';
 
 const REVIEW_STATE_KEY = 'tokonomics_review_prompt_state';
-const MARKETPLACE_URL = 'https://marketplace.visualstudio.com/items?itemName=tokonomics.tokonomics&ssr=false#review-details';
+const MARKETPLACE_URL = 'https://marketplace.visualstudio.com/items?itemName=tokonomics.tokonomics-ai&ssr=false#review-details';
 
 interface ReviewPromptState {
     /** Whether the user has already been prompted and either reviewed or permanently dismissed */

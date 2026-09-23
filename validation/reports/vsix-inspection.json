@@ -1,15 +1,15 @@
 {
   "schemaVersion": 1,
   "classification": "artifact-inspection-evidence",
-  "generatedAt": "2026-09-23T14:07:41.976Z",
+  "generatedAt": "2026-09-23T14:32:35.776Z",
   "artifact": {
-    "path": "tokonomics-8.0.0.vsix",
-    "sha256": "db3c5bb53b565dfdcc265329f9ba06d5b95a8ab0b8199cd0f3e81909da1c55af",
-    "sizeBytes": 1375694,
-    "totalUncompressedBytes": 4181012
+    "path": "tokonomics-ai-8.0.0.vsix",
+    "sha256": "5ed080cb29c5d7201c7223c564aba43ab3f8974429c52cd0a1109d7556efaa4f",
+    "sizeBytes": 1375704,
+    "totalUncompressedBytes": 4181027
   },
   "package": {
-    "name": "tokonomics",
+    "name": "tokonomics-ai",
     "version": "8.0.0",
     "vscodeEngine": "^1.106.0"
   },
@@ -26,9 +26,9 @@
   "entries": [
     {
       "name": "extension.vsixmanifest",
-      "sizeBytes": 4139,
-      "compressedSizeBytes": 1279,
-      "sha256": "b8e745ff3ec2a35291baf764ce08f556112700040b6a716fc221d093a8e7721f"
+      "sizeBytes": 4142,
+      "compressedSizeBytes": 1282,
+      "sha256": "e12d8c5dde000757f579622c293726e47c84ae08ae3ea36c806ce176a7d7be73"
     },
     {
       "name": "[Content_Types].xml",
@@ -50,9 +50,9 @@
     },
     {
       "name": "extension/package.json",
-      "sizeBytes": 14979,
-      "compressedSizeBytes": 3517,
-      "sha256": "58299ec0dff922869e034edea2e4d5bf90a1d677f5b5eae4eeb959c1d91da37a"
+      "sizeBytes": 14988,
+      "compressedSizeBytes": 3522,
+      "sha256": "790f0f5d04c646d8de4d635e06f77081e381e50d157d4dea4b9b90cf36675edf"
     },
     {
       "name": "extension/LICENSE.txt",
@@ -97,6 +97,18 @@
       "sha256": "5fb488d0cabb4775a594bab85682de5ad6ce83c0d6ac997a9f82dd084d571240"
     },
     {
+      "name": "extension/dist/markdown-licenses.txt",
+      "sizeBytes": 7917,
+      "compressedSizeBytes": 1472,
+      "sha256": "c5c62fc9b4d393efbd3753e97db6da1c0f80f352fbdd5d3e091a80e16ac9b8a6"
+    },
+    {
+      "name": "extension/dist/extension.js",
+      "sizeBytes": 899087,
+      "compressedSizeBytes": 273173,
+      "sha256": "45e48633e36eac916c0fef79decd5f2a423be690de760bfa45ad4f6d6ba89ebe"
+    },
+    {
       "name": "extension/assets/icon.png",
       "sizeBytes": 62744,
       "compressedSizeBytes": 62764,
@@ -113,18 +125,6 @@
       "sizeBytes": 669700,
       "compressedSizeBytes": 662182,
       "sha256": "b2a82106701303ca8190998186620767535843ed3cc27da602b5dde73d694db2"
-    },
-    {
-      "name": "extension/dist/markdown-licenses.txt",
-      "sizeBytes": 7917,
-      "compressedSizeBytes": 1472,
-      "sha256": "c5c62fc9b4d393efbd3753e97db6da1c0f80f352fbdd5d3e091a80e16ac9b8a6"
-    },
-    {
-      "name": "extension/dist/extension.js",
-      "sizeBytes": 899084,
-      "compressedSizeBytes": 273171,
-      "sha256": "d10f729350999bdde59139514c441546431801e33ba3b1ab9e55d1bca0681386"
     }
   ]
 }

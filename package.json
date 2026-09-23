@@ -1,5 +1,5 @@
 {
-  "name": "tokonomics",
+  "name": "tokonomics-ai",
   "displayName": "Tokonomics 8.0.0 — AI Context Efficiency for VS Code",
   "description": "A local context-compilation and token-analysis extension for VS Code. Optimization results vary by task, model, and workspace.",
   "version": "8.0.0",
@@ -421,9 +421,9 @@
     "audit:clean-room": "node scripts/clean-room-audit.js",
     "measure:savings": "node scripts/measure-savings.js",
     "download-parsers": "node scripts/download-parsers.js",
-    "vsce:package": "npx @vscode/vsce package --no-dependencies --out tokonomics-8.0.0.vsix",
+    "vsce:package": "npx @vscode/vsce package --no-dependencies --out tokonomics-ai-8.0.0.vsix",
     "publish:vsce": "npx @vscode/vsce publish --no-dependencies",
-    "publish:ovsx": "npx ovsx publish tokonomics-8.0.0.vsix",
+    "publish:ovsx": "npx ovsx publish tokonomics-ai-8.0.0.vsix",
     "publish:all": "npm run publish:vsce && npm run publish:ovsx",
     "sync:public": "powershell -ExecutionPolicy Bypass -File ./scripts/sync-public-repo.ps1",
     "measure:ablation": "node scripts/measure-ablation.js",

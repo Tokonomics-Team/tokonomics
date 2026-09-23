@@ -428,7 +428,7 @@ export async function runPhase19UnifiedCertificationTests(): Promise<void> {
         assert.ok(fs.existsSync(pkgPath), 'package.json must exist');
         const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
 
-        assert.strictEqual(pkg.name, 'tokonomics');
+        assert.strictEqual(pkg.name, 'tokonomics-ai');
         assert.strictEqual(pkg.version, '8.0.0');
 
         // Check CycloneDX SBOM
@@ -436,7 +436,7 @@ export async function runPhase19UnifiedCertificationTests(): Promise<void> {
         assert.ok(fs.existsSync(sbomPath), 'validation/reports/sbom.cdx.json must exist');
         const sbom = JSON.parse(fs.readFileSync(sbomPath, 'utf8'));
         assert.strictEqual(sbom.bomFormat, 'CycloneDX');
-        assert.strictEqual(sbom.metadata?.component?.name || sbom.component?.name, 'tokonomics');
+        assert.strictEqual(sbom.metadata?.component?.name || sbom.component?.name, 'tokonomics-ai');
 
         // Check in-toto / SLSA Provenance
         const provPath = path.join(rootDir, 'validation', 'reports', 'artifact-provenance.json');

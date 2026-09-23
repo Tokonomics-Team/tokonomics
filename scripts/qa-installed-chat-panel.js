@@ -21,7 +21,7 @@ async function main() {
     const installed = spawnSync(code, [cli, '--install-extension', artifact, '--force', '--user-data-dir', user, '--extensions-dir', extensions],
         { encoding: 'utf8', windowsHide: true, timeout: 60000, env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' } });
     if (installed.status !== 0) throw Error('Isolated VSIX install failed: ' + installed.stdout + installed.stderr);
-    const installedPath = path.join(extensions, fs.readdirSync(extensions).find(n => n.startsWith('tokonomics.tokonomics-')));
+    const installedPath = path.join(extensions, fs.readdirSync(extensions).find(n => n.startsWith('tokonomics.tokonomics-ai-')));
     if (!inspected.entries.get('extension/dist/extension.js').bytes.equals(fs.readFileSync(path.join(installedPath, 'dist/extension.js')))) throw Error('Installed bytes differ');
     fs.writeFileSync(path.join(harness, 'package.json'), JSON.stringify({ name: 'installed-panel-check', publisher: 'localtest',
         version: '0.0.1', engines: { vscode: '^1.106.0' }, activationEvents: ['*'], main: 'empty.js' }));
@@ -87,7 +87,7 @@ async function main() {
         exports.run=async()=>{
             const check=(ok,message)=>{if(!ok)throw Error(message)};
             try {
-                const extension=vscode.extensions.getExtension('tokonomics.tokonomics');check(extension,'Installed extension absent');
+                const extension=vscode.extensions.getExtension('tokonomics.tokonomics-ai');check(extension,'Installed extension absent');
                 // Set paths in the actual extension's Memento during activation, before any CLI call.
                 const module=require(${JSON.stringify(path.join(installedPath, 'dist/extension.js'))});
                 const activate=module.activate;

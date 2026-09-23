@@ -10,8 +10,8 @@ const EXPECTED_COMMANDS = [
 ];
 
 export async function run(): Promise<void> {
-    const extension = vscode.extensions.getExtension('tokonomics.tokonomics');
-    assert.ok(extension, 'The installed tokonomics.tokonomics extension must be discoverable.');
+    const extension = vscode.extensions.getExtension('tokonomics.tokonomics-ai');
+    assert.ok(extension, 'The installed tokonomics.tokonomics-ai extension must be discoverable.');
     assert.strictEqual(extension.packageJSON.version, process.env.TOKONOMICS_EXPECTED_VERSION);
     const expectedPath = fs.realpathSync(process.env.TOKONOMICS_EXPECTED_EXTENSION_PATH!);
     assert.strictEqual(fs.realpathSync(extension.extensionPath), expectedPath, 'Host must activate the isolated VSIX installation.');

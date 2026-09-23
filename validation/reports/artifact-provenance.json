@@ -2,9 +2,9 @@
   "_type": "https://in-toto.io/Statement/v1",
   "subject": [
     {
-      "name": "tokonomics-8.0.0.vsix",
+      "name": "tokonomics-ai-8.0.0.vsix",
       "digest": {
-        "sha256": "ac0992720dbfc7c0b207c7dc63b53794f49a3384d5d56663f8a86e3fba9b81fb"
+        "sha256": "5ed080cb29c5d7201c7223c564aba43ab3f8974429c52cd0a1109d7556efaa4f"
       }
     }
   ],
@@ -13,7 +13,7 @@
     "buildDefinition": {
       "buildType": "https://tokonomics.dev/build/vsix/v1",
       "externalParameters": {
-        "package": "tokonomics@8.0.0",
+        "package": "tokonomics-ai@8.0.0",
         "command": "npm run vsce:package -- --no-dependencies"
       },
       "internalParameters": {
@@ -25,13 +25,13 @@
         {
           "uri": "package.json",
           "digest": {
-            "sha256": "23e93dc8fac1a701fe72cc6270ea6fd2938f28060301898402c9702e0987d1a0"
+            "sha256": "790f0f5d04c646d8de4d635e06f77081e381e50d157d4dea4b9b90cf36675edf"
           }
         },
         {
           "uri": "package-lock.json",
           "digest": {
-            "sha256": "b795d2276f068b5824334c503c18a81960d3ab3fb2d0cb1a0d2470d1d89c5ffa"
+            "sha256": "11d10da92855f4a89c3d16754e818fec6023d1ad809f3c5866ef11673063ee1c"
           }
         },
         {
@@ -43,7 +43,7 @@
         {
           "uri": ".vscodeignore",
           "digest": {
-            "sha256": "c8befd72aef31e912e27c101d092af889c0299f59837c19eabbdc09048e39b8c"
+            "sha256": "e19d546b70714a0fcb47e6a9a0578831b15490effe289dbcb74a553e80c13b2f"
           }
         }
       ]
@@ -53,9 +53,9 @@
         "id": "https://tokonomics.dev/local-developer-draft/v1"
       },
       "metadata": {
-        "invocationId": "04675b9c-9ae3-4bd2-b428-3847b6ac4f30",
-        "startedOn": "2026-09-14T07:47:03.669Z",
-        "finishedOn": "2026-09-14T07:47:03.670Z"
+        "invocationId": "35418f1e-1fe2-40f6-8f70-06a25f8c79cb",
+        "startedOn": "2026-09-23T14:33:16.986Z",
+        "finishedOn": "2026-09-23T14:33:16.987Z"
       },
       "byproducts": [
         {
@@ -64,7 +64,7 @@
         },
         {
           "name": "repository-commit",
-          "content": "902ec16cd85fbc1fcd02834fd8a6e75b714cb70a"
+          "content": "7552c507582c53a6dd719d62dbf8c2cd0e2cf2eb"
         },
         {
           "name": "node",

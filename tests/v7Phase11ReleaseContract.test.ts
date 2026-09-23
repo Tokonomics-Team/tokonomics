@@ -11,8 +11,8 @@ export function runV7Phase11ReleaseContractTests(): void {
     assert.strictEqual(lock.version, '8.0.0');
     assert.strictEqual(lock.packages[''].version, '8.0.0');
     assert.ok(pkg.displayName.includes('8.0.0'));
-    assert.ok(pkg.scripts['vsce:package'].includes('tokonomics-8.0.0.vsix'));
-    assert.ok(pkg.scripts['publish:ovsx'].includes('tokonomics-8.0.0.vsix'));
+    assert.ok(pkg.scripts['vsce:package'].includes('tokonomics-ai-8.0.0.vsix'));
+    assert.ok(pkg.scripts['publish:ovsx'].includes('tokonomics-ai-8.0.0.vsix'));
     for (const script of ['compile', 'test', 'package', 'validate:all', 'audit:clean-room', 'certify:deep', 'certify:release']) {
         assert.ok(pkg.scripts[script], `Required release script missing: ${script}`);
     }
