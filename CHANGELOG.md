@@ -6,6 +6,7 @@
 - Added Context X-Ray for bounded estimates from one immutable workspace-index snapshot.
 - Added an opt-in active selection/editor Context Meter with a 300 KiB safety limit.
 - Added editor right-click context menu options and a dedicated Tokonomics submenu for instant token inspection, selection optimization, and diff comparisons.
+- Modernized the dashboard into Overview, Context, and Activity tabs with ARIA tablist semantics, keyboard focus traps, host-native modal reset confirmation, and responsive layouts.
 - Added one-shot, read-only health analysis for an explicitly selected supported session log.
 - Added bounded, redacted handoff drafts for the active Tokonomics-owned chat.
 - Added read-only structural overhead audits for explicitly selected OpenAI, MCP, or Claude tool-schema JSON.
@@ -25,14 +26,14 @@ These insights run only after an explicit action. File reads require a trusted w
 
 ## 8.0.0
 
-- Documented the verified economic ROI model: 3x–4x prompt capacity headroom for fixed subscriptions ($20/mo) and direct token invoice savings for API teams.
-- Expanded structural context preparation across 14 languages, adding Ruby, Swift, Kotlin, and C/C++ support with safe non-brace block preservation.
-- Enhanced AST pruner with lexical quote/comment tracking, decorator preservation (@Injectable, @dataclass), and calibrated BPE tokenizer parity (cl100k_base / o200k_base).
-- Restored and certified dockable native chat in the Secondary Side Bar and dedicated independent Editor Tab with streaming Markdown reply formatting and session history restoration.
-- Added a live panel activity log for provider-reported command, file, tool and plan events with real-time status indicators.
-- Added `/codex` and `/claude` subscription chat commands using official CLI logins, with context preparation and dashboard usage reporting.
-- Simplified the dashboard into Usage, Context, and Diagnostics views with explicit task spend tracking, advisory budgets, and opt-in Claude usage log importing/watching.
-- Streamlined conservative compression with bounded rolling deduplication on large inputs, strengthened observation masking, and prefix cache boundary alignment.
+- Documented the verified economic ROI model: prompt capacity headroom and direct token invoice savings.
+- Expanded structural context preparation across 14 languages, adding Ruby, Swift, Kotlin, and C/C++ support.
+- Enhanced AST pruner with lexical quote/comment tracking and calibrated BPE tokenizer parity.
+- Restored and certified dockable native chat in the Secondary Side Bar and dedicated Editor Tab with streaming Markdown and session history.
+- Added a live panel activity log for provider-reported command, file, tool and plan events.
+- Added `/codex` and `/claude` subscription chat commands using official CLI logins.
+- Provided task spend tracking, advisory budgets, and opt-in Claude usage log importing/watching.
+- Streamlined conservative compression with bounded deduplication, observation masking, and prefix cache alignment.
 - Preserved the four public settings and zero-leak local processing boundary with fail-closed safety fallbacks.
 
 ## 7.0.1

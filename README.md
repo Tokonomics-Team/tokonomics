@@ -4,16 +4,16 @@ Tokonomics is a Visual Studio Code extension that prepares leaner context for AI
 
 Removes avoidable repetition while keeping required context. Results vary by workspace, model, and provider.
 
-Subscription chat: in VS Code Chat (Ask), use `@tokonomics /codex your question` or `@tokonomics /claude your question` after signing in to the official provider CLI. Tokonomics prepares context and returns an answer using that login without applying edits. Use **Tokonomics: Configure subscription CLI** if discovery fails. Provider-reported tokens appear on the dashboard; charges and quota are unavailable.
+Subscription chat: in VS Code Chat (Ask), use `@tokonomics /codex your question` or `@tokonomics /claude your question` with an official provider CLI login. Tokonomics prepares context and returns answers without edits. Use **Tokonomics: Configure subscription CLI** if needed. Provider tokens appear on the dashboard; charges and quota are unavailable.
 
 ## What you get
 
 - Context preparation for everyday coding requests.
 - Workspace-aware assistance in trusted workspaces.
-- A live dashboard for token activity, request status, and available cost estimates.
+- Task-oriented dashboard organized into Overview, Context, and Activity views.
 - Clear explanations when pricing or provider usage is unavailable.
 - Conservative fallbacks when a feature cannot run safely.
-- Local diagnostics with privacy safeguards.
+- Local diagnostics with privacy safeguards and modal confirmation on reset.
 - Read-only Context X-Ray, active-buffer estimates, session-log health, chat handoffs, and tool-schema audits.
 - Optional encrypted project memory that you control.
 
@@ -80,15 +80,18 @@ The panel saves up to 10 recent chats locally for this workspace with secret red
 
 Tokonomics can reduce context payloads, but it does not guarantee a reduction, a billing saving, more subscription quota, or a better model response. Fixed-seat subscriptions are not refunded when fewer tokens are used. Dashboard dollar values are estimates, not invoices; actual outcomes depend on the request, workspace, model, provider, pricing, and billing arrangement.
 
-## Dashboard values
+## Dashboard values and navigation
 
-The dashboard updates after handled requests. Token figures may be measured or estimated. Dollar values appear only when Tokonomics has a recognized provider/model price and enough request usage information. When it does not, the dashboard shows an unavailable reason instead of inventing a value.
+The activity dashboard organizes token metrics into three tabs:
+- **Overview**: Active task status, core token/cost metrics, latest request, and advisory budget alerts.
+- **Context**: Active editor diagnostics, context skeleton copying, diff preview, workspace scan, Context X-Ray, and local tool shortcuts.
+- **Activity**: Request ledger with accessible decision trace dialogs, model tables, daily trend charts with accessible labels, export, and confirmed metric reset.
 
-The **Task spend & efficiency** panel separates observed usage costs, input-only projections, and estimated avoided cost. Use **Start task** to group subsequent requests in this window, **Set budget** for advisory task/day/month limits, and **Rate outcome** to track self-reported task success. Alerts do not stop an agent. Model comparisons are explicit and never switch your selected model.
+The dashboard updates after handled requests without reloading the view. Token figures distinguish measured counts from local estimates. Dollar values appear only when Tokonomics has a recognized provider/model price and enough request usage information; otherwise, an unavailable reason is shown.
 
-Use **Import Claude usage** for a Claude Code assistant JSONL log, or **Watch a log** to follow one selected file. Only usage metadata is retained; source prompts and code are not stored. Watching is opt-in, resumes for that workspace, and can be stopped from the panel. In WSL, SSH or containers, select a file on the extension host. Imports and watching require a trusted workspace. No telemetry receiver or background pricing download is enabled.
+The **Task spend & efficiency** panel separates observed usage costs, input-only projections, and estimated avoided cost. Use **Start task** to group requests in this window, **Set budget** for advisory limits, and **Rate outcome** for self-reported success. Resetting session metrics requires modal confirmation to prevent accidental loss.
 
-History retains up to 10,000 requests for 90 days and daily aggregates for one year. **Export usage** opens a local JSON document you can save. **Data & pricing** provides reviewed price-snapshot import and history deletion. Prices are estimates rather than invoices; hypothetical savings do not establish what an unsent request would have cost or whether it would have succeeded.
+Use **Import Claude usage** for Claude Code assistant JSONL logs, or **Watch a log** to follow one selected file. Only usage metadata is retained; source prompts and code are never stored. History retains up to 10,000 requests for 90 days and daily aggregates for one year. Data and pricing controls provide reviewed price-snapshot import and history deletion.
 
 ## Privacy
 
