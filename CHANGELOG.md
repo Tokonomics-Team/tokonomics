@@ -5,6 +5,7 @@
 - Added a local First Context Check that sends nothing until the user explicitly submits a chat request.
 - Added Context X-Ray for bounded estimates from one immutable workspace-index snapshot.
 - Added an opt-in active selection/editor Context Meter with a 300 KiB safety limit.
+- Added editor right-click context menu options and a dedicated Tokonomics submenu for instant token inspection, selection optimization, and diff comparisons.
 - Added one-shot, read-only health analysis for an explicitly selected supported session log.
 - Added bounded, redacted handoff drafts for the active Tokonomics-owned chat.
 - Added read-only structural overhead audits for explicitly selected OpenAI, MCP, or Claude tool-schema JSON.
