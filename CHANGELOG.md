@@ -1,5 +1,27 @@
 # Tokonomics release notes
 
+## 8.1.0
+
+- Added a local First Context Check that sends nothing until the user explicitly submits a chat request.
+- Added Context X-Ray for bounded estimates from one immutable workspace-index snapshot.
+- Added an opt-in active selection/editor Context Meter with a 300 KiB safety limit.
+- Added one-shot, read-only health analysis for an explicitly selected supported session log.
+- Added bounded, redacted handoff drafts for the active Tokonomics-owned chat.
+- Added read-only structural overhead audits for explicitly selected OpenAI, MCP, or Claude tool-schema JSON.
+- Kept the canonical request, provider, retrieval, accounting, native-chat, FinOps, and four-setting contracts unchanged.
+- Tightened packaged contents and release evidence for the exact Marketplace VSIX.
+
+### Using the 8.1.0 insights
+
+- Run **Tokonomics: Run First Context Check** with a text editor open for a guided, local introduction. It estimates the active selection or editor and does not send a request.
+- Run **Tokonomics: Run Context X-Ray** in a trusted workspace, then approve the one-time index snapshot to rank context-heavy indexed files locally.
+- Run **Tokonomics: Start Context Meter** for a status-bar estimate of the active selection or text buffer. The input limit is 300 KiB; click the meter or run **Tokonomics: Stop Context Meter** when finished.
+- Run **Tokonomics: Analyze Session Log Health**, select a supported `.json` or `.jsonl` log, and review its content-free health summary on the dashboard.
+- Open a Tokonomics conversation and run **Tokonomics: Create Chat Handoff** to generate a bounded, redacted, unsaved Markdown checkpoint.
+- Select tool-schema JSON—or choose a `.json` file after running **Tokonomics: Audit Tool-Schema Overhead**—to open a read-only structural report for supported OpenAI, MCP, and Claude shapes.
+
+These insights run only after an explicit action. File reads require a trusted workspace and confirmation; inputs are not modified or sent to a model, and estimates are not recorded as actual savings.
+
 ## 8.0.0
 
 - Documented the verified economic ROI model: 3x–4x prompt capacity headroom for fixed subscriptions ($20/mo) and direct token invoice savings for API teams.

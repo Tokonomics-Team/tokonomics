@@ -1,8 +1,8 @@
 {
   "name": "tokonomics-ai",
-  "displayName": "Tokonomics 8.0.0 — AI Context Efficiency for VS Code",
+  "displayName": "Tokonomics — AI Context Efficiency for VS Code",
   "description": "A local context-compilation and token-analysis extension for VS Code. Optimization results vary by task, model, and workspace.",
-  "version": "8.0.0",
+  "version": "8.1.0",
   "publisher": "tokonomics",
   "license": "SEE LICENSE IN LICENSE.txt",
   "icon": "assets/icon.png",
@@ -94,7 +94,7 @@
         "id": "token-optimizer-participant",
         "name": "tokonomics",
         "fullName": "Tokonomics",
-        "description": "Tokonomics 8.0.0: AI context efficiency and usage visibility for VS Code",
+        "description": "Tokonomics: AI context efficiency and usage visibility for VS Code",
         "isSticky": true,
         "commands": [
           {
@@ -185,6 +185,48 @@
         "command": "tokenOptimizer.showDashboard",
         "title": "Tokonomics: Show Savings Dashboard",
         "category": "Tokonomics"
+      },
+      {
+        "command": "tokenOptimizer.runContextXray",
+        "title": "Tokonomics: Run Context X-Ray",
+        "category": "Tokonomics",
+        "enablement": "tokonomics.insights.contextXrayEnabled"
+      },
+      {
+        "command": "tokenOptimizer.startContextMeter",
+        "title": "Tokonomics: Start Context Meter",
+        "category": "Tokonomics",
+        "enablement": "tokonomics.insights.contextMeterEnabled && !tokonomics.insights.contextMeterActive"
+      },
+      {
+        "command": "tokenOptimizer.stopContextMeter",
+        "title": "Tokonomics: Stop Context Meter",
+        "category": "Tokonomics",
+        "enablement": "tokonomics.insights.contextMeterEnabled && tokonomics.insights.contextMeterActive"
+      },
+      {
+        "command": "tokenOptimizer.auditSessionHealth",
+        "title": "Tokonomics: Analyze Session Log Health",
+        "category": "Tokonomics",
+        "enablement": "tokonomics.insights.sessionHealthEnabled"
+      },
+      {
+        "command": "tokenOptimizer.exportSessionHandoff",
+        "title": "Tokonomics: Create Chat Handoff",
+        "category": "Tokonomics",
+        "enablement": "tokonomics.insights.sessionHandoffEnabled && tokonomics.chatSurfaceEnabled"
+      },
+      {
+        "command": "tokenOptimizer.auditToolSchema",
+        "title": "Tokonomics: Audit Tool-Schema Overhead",
+        "category": "Tokonomics",
+        "enablement": "tokonomics.insights.toolSchemaAuditEnabled"
+      },
+      {
+        "command": "tokenOptimizer.runFirstContextCheck",
+        "title": "Tokonomics: Run First Context Check",
+        "category": "Tokonomics",
+        "enablement": "tokonomics.insights.firstContextCheckEnabled"
       },
       {
         "command": "tokenOptimizer.showAnalyticsWebview",
@@ -300,6 +342,34 @@
       "commandPalette": [
         {
           "command": "tokenOptimizer.showDashboard"
+        },
+        {
+          "command": "tokenOptimizer.runContextXray",
+          "when": "tokonomics.insights.contextXrayEnabled"
+        },
+        {
+          "command": "tokenOptimizer.startContextMeter",
+          "when": "tokonomics.insights.contextMeterEnabled && !tokonomics.insights.contextMeterActive"
+        },
+        {
+          "command": "tokenOptimizer.stopContextMeter",
+          "when": "tokonomics.insights.contextMeterEnabled && tokonomics.insights.contextMeterActive"
+        },
+        {
+          "command": "tokenOptimizer.auditSessionHealth",
+          "when": "tokonomics.insights.sessionHealthEnabled"
+        },
+        {
+          "command": "tokenOptimizer.exportSessionHandoff",
+          "when": "tokonomics.insights.sessionHandoffEnabled && tokonomics.chatSurfaceEnabled"
+        },
+        {
+          "command": "tokenOptimizer.auditToolSchema",
+          "when": "tokonomics.insights.toolSchemaAuditEnabled"
+        },
+        {
+          "command": "tokenOptimizer.runFirstContextCheck",
+          "when": "tokonomics.insights.firstContextCheckEnabled"
         },
         {
           "command": "tokenOptimizer.showAnalyticsWebview"
@@ -421,9 +491,9 @@
     "audit:clean-room": "node scripts/clean-room-audit.js",
     "measure:savings": "node scripts/measure-savings.js",
     "download-parsers": "node scripts/download-parsers.js",
-    "vsce:package": "npx @vscode/vsce package --no-dependencies --out tokonomics-ai-8.0.0.vsix",
+    "vsce:package": "npx @vscode/vsce package --no-dependencies --out tokonomics-ai-8.1.0.vsix",
     "publish:vsce": "npx @vscode/vsce publish --no-dependencies",
-    "publish:ovsx": "npx ovsx publish tokonomics-ai-8.0.0.vsix",
+    "publish:ovsx": "npx ovsx publish tokonomics-ai-8.1.0.vsix",
     "publish:all": "npm run publish:vsce && npm run publish:ovsx",
     "sync:public": "powershell -ExecutionPolicy Bypass -File ./scripts/sync-public-repo.ps1",
     "measure:ablation": "node scripts/measure-ablation.js",

@@ -1,4 +1,4 @@
-# Tokonomics 8.0.0
+# Tokonomics 8.1.0
 
 Tokonomics is a Visual Studio Code extension that prepares leaner context for AI-assisted development and shows clear request-level usage information.
 
@@ -14,14 +14,15 @@ Subscription chat: in VS Code Chat (Ask), use `@tokonomics /codex your question`
 - Clear explanations when pricing or provider usage is unavailable.
 - Conservative fallbacks when a feature cannot run safely.
 - Local diagnostics with privacy safeguards.
+- Read-only Context X-Ray, active-buffer estimates, session-log health, chat handoffs, and tool-schema audits.
 - Optional encrypted project memory that you control.
 
 ## Get started
 
-1. Install the extension from your approved source.
-2. Open VS Code Chat.
-3. Ask `@tokonomics` a coding question.
-4. Run `Tokonomics: Show Savings Dashboard` from the Command Palette to view activity.
+1. Install Tokonomics from the Visual Studio Marketplace.
+2. Run **Tokonomics: Run First Context Check** for a local, no-send introduction.
+3. Open VS Code Chat and ask `@tokonomics` a coding question.
+4. Run **Tokonomics: Show Savings Dashboard** to view activity.
 
 Example:
 
@@ -52,31 +53,32 @@ Balanced mode and Selection workspace context are the recommended defaults.
 
 The `@tokonomics` participant also provides short commands for dashboard, live statistics, explanations, workspace maps, context packs, analysis, compaction, logs, and memory status.
 
+## Local context insights
+
+Open the Command Palette (`Ctrl+Shift+P`/`Cmd+Shift+P`) and run:
+
+| Feature | How to use it | What it produces |
+| --- | --- | --- |
+| **First Context Check** | Open or select text, run **Tokonomics: Run First Context Check**, and follow the dashboard steps. | A local estimate and guided path to chat; Context X-Ray is optional. |
+| **Context X-Ray** | Run **Tokonomics: Run Context X-Ray** and approve its one-time workspace snapshot. | A bounded ranking of indexed files likely to consume the most context. |
+| **Context Meter** | Run **Tokonomics: Start Context Meter**. Click its status item or run **Tokonomics: Stop Context Meter** to stop. | A local estimate for the active selection or text buffer, up to 300 KiB. |
+| **Session Health** | Run **Tokonomics: Analyze Session Log Health** and select a supported `.json` or `.jsonl` log. | Content-free Claude Code health aggregates on the dashboard. |
+| **Chat Handoff** | Open a Tokonomics chat and run **Tokonomics: Create Chat Handoff**. | A bounded, redacted checkpoint in a new unsaved Markdown document. |
+| **Tool-Schema Audit** | Select JSON or choose a `.json` file with **Tokonomics: Audit Tool-Schema Overhead**. | An unsaved report for supported OpenAI, MCP, and Claude shapes. |
+
+Insights are explicit, bounded, and local. File analysis requires a trusted workspace and confirmation. Inputs are not changed or sent to a model, and estimates are not counted as actual savings.
+
 ## Chat conversations and native panel
 
 Open **Tokonomics: Open Chat** from the Command Palette (or click the Tokonomics icon in the Secondary Side Bar) to use the dedicated chat interface, or run **Tokonomics: Open Chat in Editor** for a split editor tab.
 
-Both surfaces share conversation state and model selection:
-- **Codex, Claude & Antigravity Aesthetics:** Sleek native interface with formatted Markdown streaming and syntax-highlighted code blocks.
-- **Model-Aware Status:** Live indicators for **Thinking**, **Analyzing**, and **Working** with a collapsible activity timeline.
-- **14-Language Context:** AST context preparation supporting TypeScript, Python, Go, Rust, Java, C/C++, Ruby, Swift, Kotlin, and more.
-- **Sub-15ms Local Retrieval:** Fast on-device candidate indexing with a strict zero-leak local boundary.
-- **Session History:** Restore up to 10 saved workspace conversations across editor restarts.
-- **Subscription CLI Routing:** Routes prompts through official local CLIs (**Codex** via ChatGPT or **Claude** via Claude Pro).
+Both surfaces share conversation state and model selection. They provide streamed Markdown, syntax highlighting, activity status, context preparation across 14 languages, local candidate indexing, up to 10 saved conversations, and subscription routing through the official Codex and Claude CLIs.
 
 The panel saves up to 10 recent chats locally for this workspace with secret redaction. Unfinished requests are marked interrupted and are not resent automatically.
 
 ## Economic value and ROI disclaimers
 
-Tokonomics reduces context payload size by up to 70% to 75% on multi-file requests through code skeletonization and dependency pruning. Value depends on your billing structure:
-
-- **Fixed-seat subscription developers (Claude Pro, ChatGPT Plus at $20/month):**
-  - **Prompt capacity multiplier:** Smaller payloads provide approximately 3x to 4x more prompt turns before reaching provider 5-hour rate limits and lockouts.
-  - **No cash refunds:** Fixed subscriptions remain billed at their regular rate ($20/month). Tokonomics does not provide cash refunds for subscriptions; it delivers equivalent enterprise API throughput within your consumer cap.
-- **Metered API users and teams (Anthropic / OpenAI API):**
-  - **Direct invoice savings:** Teams paying per input token see direct cash reductions on monthly API invoices (saving $1,500 to $4,500+ annually per active developer depending on volume).
-- **Engineering productivity:**
-  - Concise context reduces attention degradation and debugging cycles. Dashboard dollar figures are hypothetical baseline estimates rather than invoices. Actual results vary by workspace, prompt complexity, model choice, and rate limits.
+Tokonomics can reduce context payloads, but it does not guarantee a reduction, a billing saving, more subscription quota, or a better model response. Fixed-seat subscriptions are not refunded when fewer tokens are used. Dashboard dollar values are estimates, not invoices; actual outcomes depend on the request, workspace, model, provider, pricing, and billing arrangement.
 
 ## Dashboard values
 
