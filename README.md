@@ -2,7 +2,7 @@
 
 Tokonomics is a Visual Studio Code extension that prepares leaner context for AI-assisted development and shows clear request-level usage information. Interactive guide & simulator: [tokonomics-team.github.io/tokonomics](https://tokonomics-team.github.io/tokonomics/).
 
-It is designed to remove avoidable repetition while keeping required instructions and useful coding context. Results vary by request, workspace, model, and provider.
+Removes avoidable repetition while keeping required context. Results vary by workspace, model, and provider.
 
 Subscription chat: in VS Code Chat (Ask), use `@tokonomics /codex your question` or `@tokonomics /claude your question` after signing in to the official provider CLI. Tokonomics prepares context and returns an answer using that login without applying edits. Use **Tokonomics: Configure subscription CLI** if discovery fails. Provider-reported tokens appear on the dashboard; charges and quota are unavailable.
 
