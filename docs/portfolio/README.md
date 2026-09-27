@@ -1,19 +1,20 @@
 # Tokonomics — AI Technical Product Management Portfolio
 
-**Product:** Tokonomics 8.0.0, a Visual Studio Code extension for AI context efficiency, FinOps governance, and native chat
+**Product:** Tokonomics 8.1.0, a Visual Studio Code extension for AI context efficiency, FinOps governance, agentic handoff, and native chat
 **Portfolio owner:** Tokonomics Product Leadership
 **Role represented:** Principal AI Technical Product Manager / 0-to-1 Product Lead
-**Status:** Comprehensive technical product portfolio grounded in working systems architecture and empirical evaluation
-**Last updated:** 2026-09-20
+**Status:** Comprehensive technical product portfolio grounded in working systems architecture, Google PM frameworks (HEART & GSM), and empirical evaluation
+**Last updated:** 2026-09-27
 
 ## Read this first
 
-This portfolio shows the full product lifecycle from problem discovery through release readiness. It is deliberately evidence-led:
+This portfolio shows the full product lifecycle from problem discovery through release readiness as of v8.1.0. It is deliberately evidence-led and structured to align with Google Product Management evaluation standards:
 
 - **Verified** means supported by repository code, automated tests, or a recorded artifact.
 - **Controlled evidence** means measured in a reproducible benchmark but not production telemetry.
 - **Hypothesis** means a product assumption that still requires customer or market validation.
 - **Proposal** means future work, not a shipped capability.
+- **Google PM Standards:** Incorporates Google's **HEART Metrics Framework**, **Goals-Signals-Metrics (GSM)** rigor, Pareto-frontier trade-offs, and first-principles Responsible AI governance.
 
 No customer interviews, adoption numbers, revenue, production savings, or launch outcomes are invented. Where primary research has not occurred, the relevant document contains a research plan and an explicit evidence gap.
 

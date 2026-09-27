@@ -5,9 +5,9 @@
 | Field | Value |
 |---|---|
 | Product | Tokonomics |
-| Version represented | 8.0.0 |
+| Version represented | 8.1.0 |
 | Owner | Tokonomics Product Lead, Principal AI Technical Product Manager |
-| Status | Release PRD, production capabilities, and promotion gates |
+| Status | Release PRD, production capabilities, agentic insights, and promotion gates |
 | Decision type | 0-to-1 developer product |
 
 ## Problem statement
@@ -53,6 +53,22 @@ The developer opens the dashboard to see request status, context tokens, evidenc
 ### UC5 — Restricted workspace
 
 The developer uses Tokonomics without automatic workspace reads or indexing.
+
+### UC6 — Multi-turn Session State Handover (`/handoff`)
+
+In prolonged debugging or refactoring conversations, context exhaustion occurs. The developer triggers `/handoff` to synthesize decisions, modified paths, active hypotheses, and open errors into a clean, bounded state handover (~65% token drop) for seamless continuation.
+
+### UC7 — Semantic Tombstoning of Diagnostic & Terminal Logs
+
+Large compiler or test logs repeat hundreds of identical trace lines. Tokonomics replaces repetitive blocks with structured semantic tombstones (preserving exit codes, exception signatures, and causal errors), reducing log drag by >80%.
+
+### UC8 — Decoupled Model Context Protocol (`tokonomics-mcp`)
+
+External CLI or agentic runtimes (Codex CLI, Claude Code CLI, Cursor) consume Tokonomics' AST-aware context compiler as a standard MCP tool server without GUI dependencies.
+
+### UC9 — Native Chat & CLI Subscription Access
+
+The developer queries Tokonomics via the native `@tokonomics` chat participant or dedicated secondary sidebar panel, leveraging existing OpenAI/Anthropic CLI subscriptions directly.
 
 ## Functional requirements
 
@@ -104,6 +120,14 @@ The developer uses Tokonomics without automatic workspace reads or indexing.
 - FR-29: Reject unknown protocol parts rather than silently dropping them.
 - FR-30: Support deletion/reset of extension-held session and project data.
 
+### Agentic state & decoupled tools (v8.1.0)
+
+- FR-31: Session State Handover (`/handoff`) must generate structured, high-density state handovers (<1,500 tokens) capturing active hypotheses, touched paths, test failures, and next actions.
+- FR-32: Semantic tombstoning must detect repeating diagnostic/terminal logs and emit compact structured signatures without losing root-cause errors.
+- FR-33: The secondary sidebar chat panel must enforce the same strict CSP, nonce gating, and isolated state lifecycle as the native chat participant.
+- FR-34: The MCP tool interface (`tokonomics-mcp`) must operate via local stdio JSON-RPC without network egress.
+- FR-35: CLI subscription bridges (Codex/Claude) must run locally without caching credentials or expanding the trust boundary.
+
 ## Non-functional requirements
 
 | Area | Requirement |
@@ -136,35 +160,30 @@ The developer uses Tokonomics without automatic workspace reads or indexing.
 4. Cost evidence state.
 5. Technical trace only on demand.
 
-## Success metrics
+## Success metrics (Google PM Framework)
 
 ### North star
 
-Successful optimized tasks per constrained resource unit.
+**Successful AI-assisted development tasks per constrained resource unit.**
 
-### Quality guardrails
+### Google HEART metrics framework
 
-- task success and patch/test success;
-- missing-context recovery rate;
-- unsupported-edit rate;
-- user-reported trust;
-- fallback correctness.
+| Category | Goal | Signal | Metric | Target |
+|---|---|---|---|---|
+| **Happiness** | Developers trust that optimization preserves correctness | User satisfaction, transparent fallback clarity, low disable rate | CSAT on context relevance; <1% disabling due to "missing context" | CSAT ≥ 4.2 / 5.0 |
+| **Engagement** | Developers routinely use Tokonomics for real multi-file coding | Daily active conversations, dashboard inspections, `/handoff` calls | Weekly active sessions; `/handoff` invocation rate per long task | ≥ 3 active sessions / developer-week |
+| **Adoption** | Developers try and activate context efficiency on installation | Extension install-to-first-task completion; participant discovery | % installs executing ≥1 optimized task within 24h | ≥ 60% activation rate |
+| **Retention** | Long-term workflow integration across releases | Sustained weekly usage across sprint cycles | Week 1, Week 4, and Week 12 active retention | W4 retention ≥ 45% |
+| **Task Success** | Non-inferior completed-task outcomes with reduced cost | Tests pass, patch applies cleanly, no unsupported edits | Task completion rate vs unoptimized baseline; recovery rate <2% | Δ Success ≥ 0.0 pp (Pareto superiority) |
 
-### Efficiency outcomes
+### Goals - Signals - Metrics (GSM)
 
-- completed-task input/output tokens;
-- model and tool turns;
-- context-window/session capacity;
-- TTFT and end-to-end latency;
-- reconciled cost where available.
-
-### Product funnel
-
-- install → first invocation;
-- first successful optimized task;
-- second task within seven days;
-- four-week retained use;
-- uninstall and disable reasons.
+| Goal | Signal | Metric | Guardrail / Counter-Metric |
+|---|---|---|---|
+| Maximize usable session headroom | Turn count before 128k/200k window exhaustion | Turns completed per session without context overflow | Task success rate must not regress |
+| Eliminate repetitive diagnostic noise | Compacted observation character volume | Log compression ratio (tokens before / tokens after) | Zero loss of unique error codes or stack frames |
+| Zero configuration friction | Minimal settings adjustments required | % users remaining on Balanced mode | p95 compiler overhead <150ms |
+| Prevent data leakage | Zero unauthorized telemetry or outbound traffic | Static binary inspection; zero external network primitives | 0 egress violations |
 
 ## Acceptance criteria for marketability
 

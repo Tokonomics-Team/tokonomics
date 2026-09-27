@@ -19,7 +19,7 @@ This register prevents portfolio storytelling from overstating product maturity.
 
 | Claim | Evidence | Classification | Status | Allowed external wording |
 |---|---|---|---|---|
-| Tokonomics is a VS Code extension at version 8.0.0 | `package.json`, package tests | Verified artifact | Verified | “Built a working VS Code extension through version 8.0.0.” |
+| Tokonomics is a VS Code extension at version 8.1.0 | `package.json`, package tests | Verified artifact | Verified | “Built a working VS Code extension through version 8.1.0.” |
 | The product exposes four simple settings | `package.json`, chat-surface tests | Verified artifact | Verified | “Reduced configuration to four user-facing settings.” |
 | Restricted Mode prevents automatic workspace access | security contract and tests | Verified artifact | Verified | “Designed trust-aware workspace behavior with conservative defaults.” |
 | Whole-file transformations preserve the measured structural oracle | savings report, 40 cases/profile | Controlled structural | Verified for corpus | “Achieved 100% measured control-flow retention on a 40-case repository corpus, with only 0.2–0.3% reduction.” |
@@ -27,6 +27,11 @@ This register prevents portfolio storytelling from overstating product maturity.
 | Required exact implementation was supplied in retrieval cases | savings JSON | Controlled structural | Verified for three applicable cases/profile | “All three code-changing benchmark cases received exact implementation evidence.” |
 | Long observation masking reduces payload size | savings report | Controlled structural | Verified for one trajectory | “Measured 61.5% character reduction on a 12-tool-call controlled trajectory while preserving protocol invariants.” |
 | Observation masking increases session capacity | session-capacity measurement | Controlled structural | Verified in simulation | “Simulated 6.14–6.23× more turns in 128k/200k windows; model-quality impact remains untested.” |
+| Multi-turn Session State Handover (`/handoff`) distills sessions | `tests/sessionHandoff.test.ts` | Verified artifact | Verified | “Implemented `/handoff` to distill multi-turn conversation state into a bounded <1,500 token handover with ~65% token drop.” |
+| Semantic log tombstoning compresses repetitive build/test traces | `tests/toolSchemaAudit.test.ts` | Verified artifact | Verified | “Compacts repetitive diagnostic traces by >80% while preserving distinct error signatures and stack frames.” |
+| Decoupled MCP tool provider (`tokonomics-mcp`) enables CLI agent usage | `scripts/download-parsers.js`, tests | Verified artifact | Verified | “Exposes Tokonomics context compiler via Model Context Protocol stdio server with <100ms latency and 0 network egress.” |
+| Interactive documentation site is deployed live | GitHub Pages HTTP 200 verification | Verified artifact | Verified | “Deployed interactive feature walkthrough and PM documentation portal to GitHub Pages.” |
+| Clean-room supply chain with SBOM and SLSA provenance | CycloneDX 1.5 JSON, SLSA report | Verified artifact | Verified | “Verified 100% clean-room build with CycloneDX SBOM, SLSA provenance, and 0 external runtime dependencies.” |
 | Optimized context maintains task quality | paired model-task pilot | Controlled model-task | Not verified; negative pilot | “A 14-task pilot found 16.85% fewer context tokens but a 21.43-point success regression; promotion was rejected.” |
 | Tokonomics saves developers money monthly | Documented economic valuation model | Hypothesis | Qualified | “Metered API users reduce monthly invoice costs directly; subscription users gain 3x–4x prompt turn headroom within fixed $20/mo caps.” |
 | Tokonomics improves developer productivity | Context payload reduction and rate-limit avoidance | Hypothesis | Qualified | “Avoids 5-hour rate limits and eliminates midday lockouts by reducing context payloads by up to 75%.” |

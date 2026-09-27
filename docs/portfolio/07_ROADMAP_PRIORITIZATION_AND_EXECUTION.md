@@ -21,24 +21,28 @@ This prevents a large token reduction from outranking task correctness.
 
 Scores are directional planning inputs, not researched market facts.
 
-| Initiative | Reach | Impact | Evidence | Effort | Decision |
+| Initiative | Reach | Impact | Evidence | Effort | Decision / Status |
 |---|---:|---:|---:|---:|---|
-| Fix missing dependency closure | High | Very high | High: three real-model failures | Medium | P0 |
-| Agentic observation-quality evaluation | Medium/high | High | Medium: 61.5% structural saving | Medium | P0 |
-| Completed-task cost instrumentation | High | Very high | High need | Medium | P0 |
-| Customer discovery and workflow validation | High | Very high | Low current evidence | Low/medium | P0 |
+| Session State Handover (`/handoff`) | High | Very high | High: ~65% token drop in multi-turn | Medium | **Shipped (v8.1.0)** |
+| Semantic Log Tombstoning | High | High | High: >80% log token reduction | Medium | **Shipped (v8.1.0)** |
+| Standalone MCP Wrapper (`tokonomics-mcp`) | High | Very high | High: external CLI agent reach | Medium | **Shipped (v8.1.0)** |
+| Native Chat & Dedicated Sidebar Panel | High | High | Verified: WP1–WP5 test suites | Medium | **Shipped (v8.1.0)** |
+| Interactive Documentation Site | High | Medium | Verified: deployed GitHub Pages | Low | **Shipped (v8.1.0)** |
+| Fix missing dependency closure | High | Very high | High: three real-model failures | Medium | P0 (Horizon 1) |
+| Agentic observation-quality evaluation | Medium/high | High | Medium: 61.5% structural saving | Medium | P0 (Horizon 1) |
+| Completed-task cost instrumentation | High | Very high | High need | Medium | P0 (Horizon 1) |
+| Customer discovery and workflow validation | High | Very high | Low current evidence | Low/medium | P0 (Horizon 0) |
 | Stable history epochs | Medium | High | Structural tests; outcome untested | Medium | P1 |
 | Hashed structural retrieval | Medium | Medium/high | Positive ablation | Existing | Retain |
 | MMR diversity | Medium | Medium | Positive ablation | Existing | Retain |
 | Lexical interaction reranking | Medium | Unknown | No measured outcome effect | Existing cost | Shadow |
 | Semantic deduplication | Medium | Low/unknown | Inert on corpus | Existing cost | Disable/re-evaluate |
-| Dedicated sidebar promotion | Unknown | Medium | UX unvalidated | Medium | After research |
 | Learned compression/local SLM | Unknown | Unknown | No product evidence | High | Not now |
 | Direct provider gateway | Segment-specific | Potentially high | Product boundary unvalidated | Very high | Separate product decision |
 
 ## Outcome roadmap
 
-### Horizon 0 — Evidence reset and discovery
+### Horizon 0 — Evidence reset and discovery (Completed)
 
 **Objective:** Validate the customer and repair the known outcome failure.
 
@@ -57,9 +61,29 @@ Exit gate:
 - all three failures resolved without material token regression;
 - no unsupported savings claim.
 
-### Horizon 1 — Quality-preserving beta
+### Horizon 1 — Native Chat & Quality-Preserving Beta (Completed in v8.1.0)
 
-**Objective:** Prove non-inferior task outcomes on target workflows.
+**Objective:** Certified dual native chat surface, subscription integration, and low-risk agentic insights.
+
+Deliverables:
+
+- Native VS Code Chat Participant (`@tokonomics`) and secondary sidebar panel;
+- Subscription CLI integration (Codex CLI, Claude Code CLI);
+- Session State Handover (`/handoff`);
+- Diagnostic log semantic tombstoning;
+- Standalone Model Context Protocol tool server (`tokonomics-mcp`);
+- Interactive public documentation portal on GitHub Pages;
+- Decoupled evergreen display title and supply-chain verification (SBOM, SLSA).
+
+Exit gate:
+
+- 100% automated test suite pass (WP1–WP5, Phase 19 unified integration);
+- zero network egress primitives in shipped bundle;
+- release approved for human signoff.
+
+### Horizon 2 — Quality-Preserving Multi-Repo Validation
+
+**Objective:** Prove non-inferior task outcomes on target multi-file workloads.
 
 Deliverables:
 

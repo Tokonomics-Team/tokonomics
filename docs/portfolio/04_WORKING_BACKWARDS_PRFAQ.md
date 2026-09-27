@@ -16,7 +16,7 @@ Developers can use Tokonomics through an explicit VS Code chat participant and r
 
 For metered customers, Tokonomics will report dollar benefits only when provider usage and pricing can be reconciled. For fixed-seat customers, it will focus on measurable session capacity, latency and work completed within available limits.
 
-Tokonomics 8.0.0 is currently a controlled beta. Broader availability depends on workload-specific quality and efficiency gates.
+Tokonomics 8.1.0 is currently a controlled beta featuring multi-turn Session State Handover (`/handoff`), semantic log tombstoning, and a dedicated dual native chat surface. Broader availability depends on workload-specific quality and efficiency gates.
 
 ## Customer FAQ
 

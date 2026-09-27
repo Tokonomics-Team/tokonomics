@@ -43,6 +43,28 @@ Successful tasks per resource unit
     └── privacy/security incidents
 ```
 
+## Google HEART Metrics Framework
+
+The Google HEART framework maps user-centered product dimensions into quantifiable technical signals and measurable outcomes:
+
+| Dimension | Goal | Signal | Metric | Target |
+|---|---|---|---|---|
+| **Happiness** | Developers trust that optimization preserves complete context correctness | High subjective trust ratings, transparent fallback clarity, low disable rate | CSAT on context relevance (1–5 scale); <1% disabling due to "missing context" | CSAT ≥ 4.2 / 5.0 |
+| **Engagement** | Developers routinely use Tokonomics across daily coding workflows | High session frequency, dashboard inspections, `/handoff` calls, command executions | Weekly active sessions; `/handoff` invocation rate per long task | ≥ 3 active sessions / developer-week |
+| **Adoption** | Developers activate context efficiency immediately upon installation | Extension install-to-first-task completion; participant discovery | % installs executing ≥1 optimized task within 24h | ≥ 60% activation rate |
+| **Retention** | Sustained long-term workflow integration across development cycles | Consistent weekly usage across sprints and repository switches | Week 1, Week 4, and Week 12 active cohort retention | W4 retention ≥ 45% |
+| **Task Success** | Non-inferior completed-task outcomes with reduced cost & turns | Tests pass, patch applies cleanly, no unsupported edits, no context errors | Task completion rate vs unoptimized baseline; recovery rate <2% | Δ Success ≥ 0.0 pp (Pareto superiority) |
+
+## Goals - Signals - Metrics (GSM) Mapping
+
+| Goal | Signal | Metric | Guardrail / Counter-Metric |
+|---|---|---|---|
+| Maximize session turn capacity | Turn count before 128k/200k window exhaustion | Turns completed per session without context overflow | Task success rate must not regress |
+| Eliminate repetitive diagnostic noise | Compacted observation character volume | Log compression ratio (tokens before / tokens after) | Zero loss of unique error codes or stack frames |
+| Seamless multi-turn session transfer | State handover payload size & accuracy | `/handoff` token count (<1,500) & decision preservation | Zero loss of active file references or open blockers |
+| Zero configuration friction | Minimal settings adjustments required | % users remaining on Balanced mode | p95 compiler overhead <150ms |
+| Prevent data leakage | Zero unauthorized telemetry or outbound traffic | Static binary inspection; zero external network primitives | 0 egress violations |
+
 ## Metric dictionary
 
 | Metric | Definition | Decision use |
@@ -207,6 +229,52 @@ Pass:
 
 - at least 90% correct interpretation in moderated testing;
 - no severe misleading state.
+
+### Experiment E6 — Session State Handover (`/handoff`) (v8.1.0)
+
+**Hypothesis:** Synthesizing multi-turn state (decisions, hypotheses, active file paths, open blockers) into a bounded `/handoff` payload reduces context token drag by ≥60% across sessions without degrading next-step task completion.
+
+Design:
+
+- 20 long multi-file refactoring and debugging sessions (>15 turns);
+- compare raw history carry-over vs `/handoff` continuation;
+- measure next-prompt context tokens, model comprehension of prior state, and task completion.
+
+Pass:
+
+- ≥60% reduction in context carried into the next session;
+- zero lost files, open error signatures, or critical architectural decisions;
+- non-inferior task completion on subsequent prompt.
+
+### Experiment E7 — Diagnostic Log Semantic Tombstoning (v8.1.0)
+
+**Hypothesis:** Replacing repeating terminal/compiler log lines with structured semantic tombstones preserves diagnostic accuracy while reducing observation token footprint by ≥75%.
+
+Design:
+
+- 30 terminal and build logs containing repetitive compiler, linter, or test failures (>200 lines);
+- benchmark model root-cause diagnosis accuracy with full logs vs tombstoned logs.
+
+Pass:
+
+- 100% root-cause identification parity;
+- ≥75% observation token reduction;
+- zero loss of unique exception codes or stack frames.
+
+### Experiment E8 — Decoupled MCP Tool Server Overhead (v8.1.0)
+
+**Hypothesis:** Exposing Tokonomics' context compiler via a local Model Context Protocol (`tokonomics-mcp`) stdio server allows external CLI agents (Codex, Claude Code) to achieve context compilation with <100ms IPC overhead and zero network egress.
+
+Design:
+
+- 50 synthetic and real-world tool requests from CLI agents;
+- measure JSON-RPC roundtrip latency, memory footprint, and security boundary adherence.
+
+Pass:
+
+- p95 roundtrip latency <100ms;
+- memory ceiling <80MB;
+- 100% audit pass for zero network primitives and workspace root confinement.
 
 ## Statistical plan
 

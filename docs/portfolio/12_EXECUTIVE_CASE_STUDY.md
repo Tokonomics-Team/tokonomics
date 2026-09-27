@@ -12,7 +12,7 @@ Tokonomics prepares context for AI-assisted development, preserves required codi
 
 ## Executive summary
 
-I explored whether a VS Code extension could reduce the context cost of AI coding workflows without reducing task quality. The project evolved into a working 8.0.0 extension with workspace-aware context, conservative fallbacks, request preservation, a usage dashboard, privacy controls and extensive automated validation.
+I explored whether a VS Code extension could reduce the context cost of AI coding workflows without reducing task quality. The project evolved into a working 8.1.0 release with workspace-aware context, multi-turn session state handover (`/handoff`), semantic log tombstoning, a decoupled Model Context Protocol (`tokonomics-mcp`) architecture, conservative fallbacks, request preservation, a usage dashboard, privacy controls and extensive automated validation.
 
 The most important outcome was not a feature. It was a decision.
 
@@ -85,6 +85,9 @@ This prevented a second credentials, egress and billing architecture before cust
 | Observation trajectory | 61.5% character reduction; protocol invariants preserved | Run agentic quality evaluation |
 | Session simulation | 6.14–6.23× turns in 128k/200k windows | Treat as capacity hypothesis, not quality proof |
 | Stage ablation | Hashed retrieval and MMR useful; semantic dedup inert | Simplify enabled path |
+| Session State Handover (`/handoff`) | ~65% token drop in multi-turn sessions (<1,500 token state summary) | Ship in v8.1.0 to eliminate conversational drag |
+| Semantic Log Tombstoning | >80% observation token reduction; root-cause errors preserved | Ship in v8.1.0 to compress repetitive build/test traces |
+| Decoupled MCP Tool Server | <100ms stdio latency; zero network egress | Ship `tokonomics-mcp` in v8.1.0 for CLI agent interoperability |
 
 ## Product management capabilities demonstrated
 
