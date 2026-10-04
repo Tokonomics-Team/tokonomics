@@ -5,7 +5,7 @@
 document.addEventListener('DOMContentLoaded', () => {
   initTabs();
   initCopyButtons();
-  initSimulator();
+  initStudio();
   initCommandPalette();
 });
 
@@ -65,274 +65,535 @@ function initCopyButtons() {
 }
 
 // -------------------------------------------------------------------
-// 3. Interactive Context Compiler & AST Simulator
+// 3. Interactive Feature Studio: Diff, X-Ray, Chat & Handoff
 // -------------------------------------------------------------------
 const CODE_SAMPLES = {
   ts: {
-    original: `import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { TokenOptimizerLedger, AccountingTruth } from '../finops/ledger';
-import { SecuritySanitizer } from '../security/sanitizer';
-
-export interface RouteConfig {
-  prefix: string;
-  enableTelemetry: boolean;
-  maxTurnLimit?: number;
-}
-
-export class AuthenticationGatewayController {
-  private ledger: TokenOptimizerLedger;
-  private config: RouteConfig;
-
-  constructor(ledger: TokenOptimizerLedger, config: RouteConfig) {
-    this.ledger = ledger;
-    this.config = config;
-  }
-
-  /** Validate inbound bearer token, audit rate limits, and record turn */
-  public async handleInboundTokenRequest(req: FastifyRequest, reply: FastifyReply): Promise<void> {
-    const authHeader = req.headers['authorization'];
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      reply.status(401).send({ error: 'Unauthorized: Missing or malformed bearer token' });
-      return;
-    }
-
-    const rawToken = authHeader.split(' ')[1];
-    const sanitized = SecuritySanitizer.sanitizeSecrets(rawToken);
-    
-    // Expensive authorization verification logic
-    const claims = await this.verifyJwtWithIssuer(sanitized.sanitized);
-    if (!claims.isValid) {
-      this.ledger.recordRejection('INVALID_TOKEN', claims.reason);
-      reply.status(403).send({ error: 'Forbidden: Token expired or invalid issuer' });
-      return;
-    }
-
-    // Heavy session accounting calculations
-    const turnCost = AccountingTruth.computeTurnEconomics(claims.tier, claims.quota);
-    await this.ledger.commitSpend(claims.tenantId, turnCost);
-
-    reply.status(200).send({ status: 'authenticated', tenant: claims.tenantId, quotaRemaining: turnCost.remaining });
-  }
-
-  private async verifyJwtWithIssuer(token: string): Promise<{ isValid: boolean; tenantId: string; tier: string; quota: number; reason?: string }> {
-    // 60 lines of cryptographic verification and keystore lookups
-    return { isValid: true, tenantId: 'tenant_enterprise_402', tier: 'PRO_ENTERPRISE', quota: 50000 };
-  }
-}`,
-    pruned: `import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { TokenOptimizerLedger, AccountingTruth } from '../finops/ledger';
-
-export interface RouteConfig {
-  prefix: string;
-  enableTelemetry: boolean;
-  maxTurnLimit?: number;
-}
-
-export class AuthenticationGatewayController {
-  private ledger: TokenOptimizerLedger;
-  private config: RouteConfig;
-  constructor(ledger: TokenOptimizerLedger, config: RouteConfig);
-
-  /** Validate inbound bearer token, audit rate limits, and record turn */
-  public async handleInboundTokenRequest(req: FastifyRequest, reply: FastifyReply): Promise<void> {
-    // Guard block preserved
-    if (!authHeader || !authHeader.startsWith('Bearer ')) { /* ... */ }
-    // [Tokonomics AST Sliced: 28 lines of inner token verification & reply dispatch omitted]
-  }
-
-  private async verifyJwtWithIssuer(token: string): Promise<{ isValid: boolean; tenantId: string; tier: string; quota: number; reason?: string }>;
-}`
+    rawLines: [
+      { t: "import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';", type: "neutral" },
+      { t: "import { TokenOptimizerLedger, AccountingTruth } from '../finops/ledger';", type: "neutral" },
+      { t: "import { SecuritySanitizer } from '../security/sanitizer';", type: "del" },
+      { t: "", type: "neutral" },
+      { t: "export interface RouteConfig {", type: "add" },
+      { t: "  prefix: string;", type: "add" },
+      { t: "  enableTelemetry: boolean;", type: "add" },
+      { t: "  maxTurnLimit?: number;", type: "add" },
+      { t: "}", type: "add" },
+      { t: "", type: "neutral" },
+      { t: "export class AuthenticationGatewayController {", type: "neutral" },
+      { t: "  private ledger: TokenOptimizerLedger;", type: "neutral" },
+      { t: "  private config: RouteConfig;", type: "neutral" },
+      { t: "  constructor(ledger: TokenOptimizerLedger, config: RouteConfig) {", type: "del" },
+      { t: "    this.ledger = ledger; this.config = config;", type: "del" },
+      { t: "  }", type: "del" },
+      { t: "", type: "neutral" },
+      { t: "  public async handleInboundTokenRequest(req: FastifyRequest, reply: FastifyReply): Promise<void> {", type: "add" },
+      { t: "    const authHeader = req.headers['authorization'];", type: "add" },
+      { t: "    if (!authHeader || !authHeader.startsWith('Bearer ')) {", type: "add" },
+      { t: "      reply.status(401).send({ error: 'Unauthorized: Missing token' });", type: "add" },
+      { t: "      return;", type: "add" },
+      { t: "    }", type: "add" },
+      { t: "    // Heavy cryptographic token verification & session accounting logic", type: "del" },
+      { t: "    const rawToken = authHeader.split(' ')[1];", type: "del" },
+      { t: "    const sanitized = SecuritySanitizer.sanitizeSecrets(rawToken);", type: "del" },
+      { t: "    const claims = await this.verifyJwtWithIssuer(sanitized.sanitized);", type: "del" },
+      { t: "    const turnCost = AccountingTruth.computeTurnEconomics(claims.tier, claims.quota);", type: "del" },
+      { t: "    await this.ledger.commitSpend(claims.tenantId, turnCost);", type: "del" },
+      { t: "    reply.status(200).send({ status: 'authenticated', tenant: claims.tenantId });", type: "del" },
+      { t: "  }", type: "neutral" },
+      { t: "  private async verifyJwtWithIssuer(token: string): Promise<any> { /* 50 lines omitted */ }", type: "del" },
+      { t: "}", type: "neutral" }
+    ],
+    prunedLines: [
+      { t: "import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';", type: "neutral" },
+      { t: "import { TokenOptimizerLedger, AccountingTruth } from '../finops/ledger';", type: "neutral" },
+      { t: "", type: "neutral" },
+      { t: "export interface RouteConfig {", type: "add" },
+      { t: "  prefix: string;", type: "add" },
+      { t: "  enableTelemetry: boolean;", type: "add" },
+      { t: "  maxTurnLimit?: number;", type: "add" },
+      { t: "}", type: "add" },
+      { t: "", type: "neutral" },
+      { t: "export class AuthenticationGatewayController {", type: "neutral" },
+      { t: "  private ledger: TokenOptimizerLedger;", type: "neutral" },
+      { t: "  private config: RouteConfig;", type: "neutral" },
+      { t: "  constructor(ledger: TokenOptimizerLedger, config: RouteConfig);", type: "neutral" },
+      { t: "", type: "neutral" },
+      { t: "  public async handleInboundTokenRequest(req: FastifyRequest, reply: FastifyReply): Promise<void> {", type: "add" },
+      { t: "    if (!authHeader || !authHeader.startsWith('Bearer ')) { /* guard preserved */ }", type: "add" },
+      { t: "    // [Tokonomics AST Sliced: 28 lines of inner auth verification & reply omitted]", type: "omitted" },
+      { t: "  }", type: "neutral" },
+      { t: "  private async verifyJwtWithIssuer(token: string): Promise<any>;", type: "neutral" },
+      { t: "}", type: "neutral" }
+    ],
+    rawTokens: 842,
+    prunedTokens: 215
   },
   py: {
-    original: `from typing import Dict, Any, Optional, List
-from pydantic import BaseModel, Field
-import hashlib
-import time
-
-class ModelGenerationPayload(BaseModel):
-    model_name: str
-    messages: List[Dict[str, str]]
-    temperature: float = Field(default=0.2, ge=0.0, le=2.0)
-    max_tokens: Optional[int] = None
-
-class ContextCompilationEngine:
-    """Manages high-throughput prompt compression and AST pruning."""
-    def __init__(self, workspace_path: str, max_cache_mb: int = 512):
-        self.workspace_path = workspace_path
-        self.max_cache_mb = max_cache_mb
-        self.cache = {}
-
-    def compute_sha256_digest(self, payload: str) -> str:
-        """Calculate fast SHA-256 fingerprint for KV cache continuity."""
-        hasher = hashlib.sha256()
-        hasher.update(payload.encode('utf-8'))
-        return hasher.hexdigest()
-
-    def compile_workspace_context(self, files: List[str], target_budget: int) -> Dict[str, Any]:
-        """Perform knapsack dynamic programming over symbol dependencies."""
-        start_time = time.perf_counter()
-        selected_evidence = []
-        accumulated_tokens = 0
-        
-        for file_path in files:
-            # 50 lines of AST tree traversal, token counting, and symbol extraction
-            pass
-
-        return {
-            "status": "success",
-            "evidence": selected_evidence,
-            "latency_ms": (time.perf_counter() - start_time) * 1000
-        }`,
-    pruned: `from typing import Dict, Any, Optional, List
-from pydantic import BaseModel, Field
-
-class ModelGenerationPayload(BaseModel):
-    model_name: str
-    messages: List[Dict[str, str]]
-    temperature: float = Field(default=0.2, ge=0.0, le=2.0)
-    max_tokens: Optional[int] = None
-
-class ContextCompilationEngine:
-    """Manages high-throughput prompt compression and AST pruning."""
-    def __init__(self, workspace_path: str, max_cache_mb: int = 512): ...
-
-    def compute_sha256_digest(self, payload: str) -> str: ...
-
-    def compile_workspace_context(self, files: List[str], target_budget: int) -> Dict[str, Any]:
-        # [Tokonomics AST Sliced: 22 lines of knapsack symbol extraction omitted]
-        ...`
+    rawLines: [
+      { t: "from typing import Dict, Any, Optional, List", type: "neutral" },
+      { t: "from pydantic import BaseModel, Field", type: "neutral" },
+      { t: "import hashlib, time", type: "del" },
+      { t: "", type: "neutral" },
+      { t: "class ModelGenerationPayload(BaseModel):", type: "add" },
+      { t: "    model_name: str", type: "add" },
+      { t: "    messages: List[Dict[str, str]]", type: "add" },
+      { t: "    temperature: float = Field(default=0.2, ge=0.0, le=2.0)", type: "add" },
+      { t: "    max_tokens: Optional[int] = None", type: "add" },
+      { t: "", type: "neutral" },
+      { t: "class ContextCompilationEngine:", type: "neutral" },
+      { t: "    def __init__(self, workspace_path: str, max_cache_mb: int = 512):", type: "neutral" },
+      { t: "        self.workspace_path = workspace_path", type: "del" },
+      { t: "        self.max_cache_mb = max_cache_mb", type: "del" },
+      { t: "        self.cache = {}", type: "del" },
+      { t: "", type: "neutral" },
+      { t: "    def compile_workspace_context(self, files: List[str], target_budget: int) -> Dict[str, Any]:", type: "add" },
+      { t: "        # 45 lines of parser grammar traversal and knapsack DP allocation", type: "del" },
+      { t: "        start_time = time.perf_counter()", type: "del" },
+      { t: "        selected = []", type: "del" },
+      { t: "        for f in files:", type: "del" },
+      { t: "            selected.append(self._scan_file_ast(f))", type: "del" },
+      { t: "        return {'status': 'success', 'selected': selected}", type: "del" }
+    ],
+    prunedLines: [
+      { t: "from typing import Dict, Any, Optional, List", type: "neutral" },
+      { t: "from pydantic import BaseModel, Field", type: "neutral" },
+      { t: "", type: "neutral" },
+      { t: "class ModelGenerationPayload(BaseModel):", type: "add" },
+      { t: "    model_name: str", type: "add" },
+      { t: "    messages: List[Dict[str, str]]", type: "add" },
+      { t: "    temperature: float = Field(default=0.2, ge=0.0, le=2.0)", type: "add" },
+      { t: "    max_tokens: Optional[int] = None", type: "add" },
+      { t: "", type: "neutral" },
+      { t: "class ContextCompilationEngine:", type: "neutral" },
+      { t: "    def __init__(self, workspace_path: str, max_cache_mb: int = 512): ...", type: "neutral" },
+      { t: "", type: "neutral" },
+      { t: "    def compile_workspace_context(self, files: List[str], target_budget: int) -> Dict[str, Any]:", type: "add" },
+      { t: "        # [Tokonomics AST Sliced: 24 lines of inner compilation omitted]", type: "omitted" },
+      { t: "        ...", type: "neutral" }
+    ],
+    rawTokens: 690,
+    prunedTokens: 185
   },
   go: {
-    original: `package compiler
-
-import (
-	"context"
-	"crypto/sha256"
-	"encoding/hex"
-	"errors"
-	"sync"
-)
-
-type WorkspaceIndex struct {
-	mu        sync.RWMutex
-	roots     []string
-	fileMap   map[string][]byte
-	isTrusted bool
-}
-
-func NewWorkspaceIndex(roots []string, trusted bool) *WorkspaceIndex {
-	return &WorkspaceIndex{
-		roots:     roots,
-		fileMap:   make(map[string][]byte),
-		isTrusted: trusted,
-	}
-}
-
-// ExtractExactSymbols scans the syntax tree and identifies candidate symbols
-func (w *WorkspaceIndex) ExtractExactSymbols(ctx context.Context, filePath string) ([]string, error) {
-	w.mu.RLock()
-	defer w.mu.RUnlock()
-
-	if !w.isTrusted {
-		return nil, errors.New("restricted workspace: indexing disabled")
-	}
-
-	// 40 lines of parser grammar traversal, symbol mapping and type resolution
-	data, ok := w.fileMap[filePath]
-	if !ok {
-		return nil, errors.New("file not found in active snapshot")
-	}
-
-	hasher := sha256.New()
-	hasher.Write(data)
-	fingerprint := hex.EncodeToString(hasher.Sum(nil))
-
-	return []string{fingerprint}, nil
-}`,
-    pruned: `package compiler
-
-import (
-	"context"
-	"sync"
-)
-
-type WorkspaceIndex struct {
-	mu        sync.RWMutex
-	roots     []string
-	fileMap   map[string][]byte
-	isTrusted bool
-}
-
-func NewWorkspaceIndex(roots []string, trusted bool) *WorkspaceIndex;
-
-// ExtractExactSymbols scans the syntax tree and identifies candidate symbols
-func (w *WorkspaceIndex) ExtractExactSymbols(ctx context.Context, filePath string) ([]string, error) {
-	if !w.isTrusted {
-		return nil, errors.New("restricted workspace: indexing disabled")
-	}
-	// [Tokonomics AST Sliced: 24 lines of inner parsing & hashing omitted]
-}`
+    rawLines: [
+      { t: "package compiler", type: "neutral" },
+      { t: "", type: "neutral" },
+      { t: "import (", type: "neutral" },
+      { t: "    \"context\"", type: "neutral" },
+      { t: "    \"crypto/sha256\"", type: "del" },
+      { t: "    \"sync\"", type: "neutral" },
+      { t: ")", type: "neutral" },
+      { t: "", type: "neutral" },
+      { t: "type WorkspaceIndex struct {", type: "add" },
+      { t: "    mu        sync.RWMutex", type: "add" },
+      { t: "    roots     []string", type: "add" },
+      { t: "    isTrusted bool", type: "add" },
+      { t: "}", type: "add" },
+      { t: "", type: "neutral" },
+      { t: "func (w *WorkspaceIndex) ExtractExactSymbols(ctx context.Context, path string) ([]string, error) {", type: "add" },
+      { t: "    if !w.isTrusted { return nil, errors.New(\"restricted\") }", type: "add" },
+      { t: "    // 35 lines of AST parsing and symbol hashing omitted", type: "del" },
+      { t: "    hasher := sha256.New()", type: "del" },
+      { t: "    return []string{\"sha256:4a8b9f\"}, nil", type: "del" },
+      { t: "}", type: "neutral" }
+    ],
+    prunedLines: [
+      { t: "package compiler", type: "neutral" },
+      { t: "", type: "neutral" },
+      { t: "import (", type: "neutral" },
+      { t: "    \"context\"", type: "neutral" },
+      { t: "    \"sync\"", type: "neutral" },
+      { t: ")", type: "neutral" },
+      { t: "", type: "neutral" },
+      { t: "type WorkspaceIndex struct {", type: "add" },
+      { t: "    mu        sync.RWMutex", type: "add" },
+      { t: "    roots     []string", type: "add" },
+      { t: "    isTrusted bool", type: "add" },
+      { t: "}", type: "add" },
+      { t: "", type: "neutral" },
+      { t: "func (w *WorkspaceIndex) ExtractExactSymbols(ctx context.Context, path string) ([]string, error) {", type: "add" },
+      { t: "    if !w.isTrusted { return nil, errors.New(\"restricted\") }", type: "add" },
+      { t: "    // [Tokonomics AST Sliced: 22 lines of inner symbol extraction omitted]", type: "omitted" },
+      { t: "}", type: "neutral" }
+    ],
+    rawTokens: 620,
+    prunedTokens: 170
+  },
+  rust: {
+    rawLines: [
+      { t: "use std::collections::HashMap;", type: "neutral" },
+      { t: "use std::sync::RwLock;", type: "neutral" },
+      { t: "", type: "neutral" },
+      { t: "pub struct WorkspaceIndex {", type: "add" },
+      { t: "    file_map: RwLock<HashMap<String, Vec<u8>>>,", type: "add" },
+      { t: "    is_trusted: bool,", type: "add" },
+      { t: "}", type: "add" },
+      { t: "", type: "neutral" },
+      { t: "impl WorkspaceIndex {", type: "neutral" },
+      { t: "    pub fn extract_exact_symbols(&self, path: &str) -> Result<Vec<String>, &'static str> {", type: "add" },
+      { t: "        if !self.is_trusted { return Err(\"restricted\"); }", type: "add" },
+      { t: "        // 40 lines of tree-sitter AST traversal and hash computation", type: "del" },
+      { t: "        Ok(vec![\"sha256:7f83b165\".to_string()])", type: "del" },
+      { t: "    }", type: "neutral" },
+      { t: "}", type: "neutral" }
+    ],
+    prunedLines: [
+      { t: "use std::collections::HashMap;", type: "neutral" },
+      { t: "use std::sync::RwLock;", type: "neutral" },
+      { t: "", type: "neutral" },
+      { t: "pub struct WorkspaceIndex {", type: "add" },
+      { t: "    file_map: RwLock<HashMap<String, Vec<u8>>>,", type: "add" },
+      { t: "    is_trusted: bool,", type: "add" },
+      { t: "}", type: "add" },
+      { t: "", type: "neutral" },
+      { t: "impl WorkspaceIndex {", type: "neutral" },
+      { t: "    pub fn extract_exact_symbols(&self, path: &str) -> Result<Vec<String>, &'static str> {", type: "add" },
+      { t: "        if !self.is_trusted { return Err(\"restricted\"); }", type: "add" },
+      { t: "        // [Tokonomics AST Sliced: 26 lines omitted]", type: "omitted" },
+      { t: "    }", type: "neutral" },
+      { t: "}", type: "neutral" }
+    ],
+    rawTokens: 580,
+    prunedTokens: 160
   }
 };
 
-function estimateTokens(text) {
-  // Approximate BPE tokenizer calculation (~3.8 chars per token for code)
-  if (!text) return 0;
-  return Math.ceil(text.length / 3.8);
-}
+const XRAY_DATA = [
+  { path: 'src/compiler/orchestrator.ts', raw: 4850, skeleton: 1240, savings: 3610, pct: 74.4 },
+  { path: 'src/protocol/gateway.ts', raw: 3120, skeleton: 890, savings: 2230, pct: 71.5 },
+  { path: 'src/finops/ledger.ts', raw: 2940, skeleton: 720, savings: 2220, pct: 75.5 },
+  { path: 'src/types/schemas.ts', raw: 2600, skeleton: 1950, savings: 650, pct: 25.0 },
+  { path: 'src/security/sanitizer.ts', raw: 1850, skeleton: 480, savings: 1370, pct: 74.1 },
+  { path: 'src/cache/aligner.ts', raw: 1420, skeleton: 310, savings: 1110, pct: 78.2 },
+  { path: 'src/ui/chatProtocol.ts', raw: 1150, skeleton: 410, savings: 740, pct: 64.3 }
+];
 
-function initSimulator() {
+const CHAT_SCENARIOS = {
+  test: {
+    user: "@tokonomics write unit tests for AuthenticationGatewayController",
+    advice: "💡 Tip: This unit test task can run on Claude 3.5 Haiku at ~90% lower cost.",
+    code: `describe('AuthenticationGatewayController', () => {
+  it('rejects missing or malformed bearer token with 401', async () => {
+    const res = await gateway.handleInboundTokenRequest({ headers: {} });
+    expect(res.status).toBe(401);
+  });
+
+  it('records spend in ledger on successful authentication', async () => {
+    const res = await gateway.handleInboundTokenRequest({ headers: { authorization: 'Bearer test' } });
+    expect(res.status).toBe(200);
+    expect(mockLedger.commitSpend).toHaveBeenCalled();
+  });
+});`,
+    telemetry: "Context: 1,240 tokens (Saved 3,610 tokens, -74.4%) | Latency: 420ms | Response: 280 tokens"
+  },
+  auth: {
+    user: "@tokonomics explain the inbound token verification flow",
+    advice: null,
+    code: `The AuthenticationGatewayController processes inbound tokens in 3 steps:
+1. Guard Contract: Validates 'Bearer ' header format; immediately returns 401 if missing.
+2. Sanitization: Scans token entropy and redacts sensitive credentials prior to verification.
+3. Accounting: Verifies issuer claims and records token turn spend via TokenOptimizerLedger.`,
+    telemetry: "Context: 890 tokens (Saved 2,230 tokens, -71.5%) | Latency: 310ms | Response: 190 tokens"
+  },
+  refactor: {
+    user: "@tokonomics /claude refactor error handling across gateway controllers",
+    advice: null,
+    code: `[Tokonomics Subprocess Router: Dispatched to official Claude Code CLI]
+Context Skeleton: 1,950 tokens prepared.
+Streaming response from official CLI session...
+Refactored error handling: Consolidated duplicate 401/403 responses into a centralized errorHandler middleware.`,
+    telemetry: "CLI Route: claude (Subscription Active) | Zero Metered API Cost | Context: 1,950 tokens"
+  }
+};
+
+function initStudio() {
+  // 1. Studio tab switching
+  const studioTabBtns = document.querySelectorAll('.studio-tab-btn');
+  const studioPanels = document.querySelectorAll('.studio-panel');
+
+  studioTabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.getAttribute('data-studio');
+      studioTabBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      studioPanels.forEach(p => {
+        p.classList.toggle('active', p.id === 'studio-panel-' + target);
+      });
+    });
+  });
+
+  // 2. Diff Inspector setup
   const langSelect = document.getElementById('lang-select');
-  const inputCode = document.getElementById('input-code');
-  const outputCode = document.getElementById('output-code').querySelector('code');
-  const originalTokensBadge = document.getElementById('original-tokens');
+  const btnSplit = document.getElementById('btn-split-diff');
+  const btnUnified = document.getElementById('btn-unified-diff');
+  const diffContainer = document.getElementById('diff-container');
+  const rawDiffContent = document.getElementById('raw-diff-content');
+  const prunedDiffContent = document.getElementById('pruned-diff-content');
+  const origTokensBadge = document.getElementById('original-tokens');
   const prunedTokensBadge = document.getElementById('pruned-tokens');
-  const btnRun = document.getElementById('btn-run-simulation');
   const statSaved = document.getElementById('stat-saved');
   const statPct = document.getElementById('stat-pct');
+  const statCost = document.getElementById('stat-cost');
+  const btnCompile = document.getElementById('btn-run-simulation');
 
-  function updateLanguage() {
-    const lang = langSelect.value;
-    const sample = CODE_SAMPLES[lang];
-    if (sample) {
-      inputCode.value = sample.original;
-      outputCode.textContent = sample.pruned;
-      recompute();
+  let isUnified = false;
+
+  function renderDiff() {
+    const lang = langSelect ? langSelect.value : 'ts';
+    const sample = CODE_SAMPLES[lang] || CODE_SAMPLES.ts;
+
+    // Render Raw Lines
+    if (rawDiffContent) {
+      rawDiffContent.innerHTML = sample.rawLines.map((line, idx) => {
+        const cls = line.type === 'del' ? 'del' : (line.type === 'add' ? 'add' : '');
+        return `<div class="diff-row ${cls}"><span class="diff-ln">${idx + 1}</span><span class="diff-txt">${escapeHtml(line.t)}</span></div>`;
+      }).join('');
+    }
+
+    // Render Pruned Lines
+    if (prunedDiffContent) {
+      if (isUnified) {
+        // Unified Diff View
+        prunedDiffContent.innerHTML = sample.rawLines.map((line, idx) => {
+          if (line.type === 'del') {
+            return `<div class="diff-row del"><span class="diff-ln">-</span><span class="diff-txt">${escapeHtml(line.t)}</span></div>`;
+          } else if (line.type === 'add') {
+            return `<div class="diff-row add"><span class="diff-ln">+</span><span class="diff-txt">${escapeHtml(line.t)}</span></div>`;
+          } else {
+            return `<div class="diff-row"><span class="diff-ln">${idx + 1}</span><span class="diff-txt">${escapeHtml(line.t)}</span></div>`;
+          }
+        }).join('');
+      } else {
+        // Split Diff View
+        prunedDiffContent.innerHTML = sample.prunedLines.map((line, idx) => {
+          const cls = line.type === 'omitted' ? 'omitted' : (line.type === 'add' ? 'add' : '');
+          return `<div class="diff-row ${cls}"><span class="diff-ln">${idx + 1}</span><span class="diff-txt">${escapeHtml(line.t)}</span></div>`;
+        }).join('');
+      }
+    }
+
+    const saved = sample.rawTokens - sample.prunedTokens;
+    const pct = ((saved / sample.rawTokens) * 100).toFixed(1);
+    const avoidedCost = ((saved / 1000) * 0.003).toFixed(3); // ~$3 / 1M prompt tokens
+
+    if (origTokensBadge) origTokensBadge.textContent = `${sample.rawTokens} tokens`;
+    if (prunedTokensBadge) prunedTokensBadge.textContent = `${sample.prunedTokens} tokens (-${pct}%)`;
+    if (statSaved) statSaved.textContent = saved;
+    if (statPct) statPct.textContent = `${pct}%`;
+    if (statCost) statCost.textContent = `~$${avoidedCost}`;
+  }
+
+  if (btnSplit && btnUnified && diffContainer) {
+    btnSplit.addEventListener('click', () => {
+      isUnified = false;
+      btnSplit.classList.add('active');
+      btnUnified.classList.remove('active');
+      diffContainer.classList.remove('unified-mode');
+      const winRaw = document.getElementById('window-raw');
+      if (winRaw) winRaw.style.display = 'block';
+      renderDiff();
+    });
+
+    btnUnified.addEventListener('click', () => {
+      isUnified = true;
+      btnUnified.classList.add('active');
+      btnSplit.classList.remove('active');
+      diffContainer.classList.add('unified-mode');
+      const winRaw = document.getElementById('window-raw');
+      if (winRaw) winRaw.style.display = 'none';
+      renderDiff();
+    });
+  }
+
+  if (langSelect) langSelect.addEventListener('change', renderDiff);
+  if (btnCompile) {
+    btnCompile.addEventListener('click', () => {
+      btnCompile.textContent = 'Compiling AST...';
+      btnCompile.style.opacity = '0.7';
+      setTimeout(() => {
+        btnCompile.textContent = 'AST Context Compiled!';
+        btnCompile.style.opacity = '1';
+        renderDiff();
+        setTimeout(() => {
+          btnCompile.textContent = 'Compile Context (Simulate AST Pruning)';
+        }, 1500);
+      }, 350);
+    });
+  }
+
+  renderDiff();
+
+  // 3. Context X-Ray Explorer setup
+  initXrayExplorer();
+
+  // 4. Native Chat Simulation setup
+  initChatSimulator();
+
+  // 5. Session Handoff Simulation setup
+  const btnHandoff = document.getElementById('btn-generate-handoff');
+  const handoffPreview = document.getElementById('handoff-preview-container');
+  if (btnHandoff && handoffPreview) {
+    btnHandoff.addEventListener('click', () => {
+      btnHandoff.textContent = 'Synthesizing Checkpoint...';
+      setTimeout(() => {
+        btnHandoff.textContent = '✓ Checkpoint Generated (/handoff)';
+        handoffPreview.style.display = 'block';
+        handoffPreview.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 300);
+    });
+  }
+}
+
+function initXrayExplorer() {
+  const tableBody = document.getElementById('xray-table-body');
+  const sortBtns = document.querySelectorAll('.xray-sort-btn');
+  const filterInput = document.getElementById('xray-filter-input');
+  const detailName = document.getElementById('xray-detail-name');
+  const detailText = document.getElementById('xray-detail-text');
+  const detailPill = document.getElementById('xray-detail-pill');
+
+  let currentSort = 'savings';
+  let filterText = '';
+
+  function renderXrayTable() {
+    if (!tableBody) return;
+
+    let items = [...XRAY_DATA];
+    if (filterText) {
+      const q = filterText.toLowerCase();
+      items = items.filter(i => i.path.toLowerCase().includes(q));
+    }
+
+    if (currentSort === 'savings') {
+      items.sort((a, b) => b.savings - a.savings);
+    } else if (currentSort === 'raw') {
+      items.sort((a, b) => b.raw - a.raw);
+    } else if (currentSort === 'pct') {
+      items.sort((a, b) => b.pct - a.pct);
+    }
+
+    tableBody.innerHTML = items.map((item, idx) => {
+      const isSelected = idx === 0 ? 'selected' : '';
+      return `
+        <tr class="${isSelected}" data-path="${item.path}" data-raw="${item.raw}" data-skel="${item.skeleton}" data-sav="${item.savings}" data-pct="${item.pct}">
+          <td><code>${item.path}</code></td>
+          <td>${item.raw.toLocaleString()}</td>
+          <td>${item.skeleton.toLocaleString()}</td>
+          <td class="savings-green">-${item.pct}%</td>
+          <td>
+            <div class="xray-density-bar-container">
+              <div class="xray-density-bar">
+                <div class="xray-density-fill" style="width: ${item.pct}%"></div>
+              </div>
+              <span style="font-size: 0.75rem; color: var(--text-dim);">${item.savings} saved</span>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    // Attach row click listeners
+    const rows = tableBody.querySelectorAll('tr');
+    rows.forEach(r => {
+      r.addEventListener('click', () => {
+        rows.forEach(row => row.classList.remove('selected'));
+        r.classList.add('selected');
+
+        const path = r.getAttribute('data-path');
+        const raw = r.getAttribute('data-raw');
+        const skel = r.getAttribute('data-skel');
+        const sav = r.getAttribute('data-sav');
+        const pct = r.getAttribute('data-pct');
+
+        if (detailName) detailName.textContent = path;
+        if (detailText) detailText.textContent = `Raw: ${raw} tokens → Skeleton: ${skel} tokens | Potential Savings: ${sav} tokens (-${pct}%)`;
+        if (detailPill) {
+          detailPill.textContent = parseFloat(pct) > 60 ? '✓ Prime Candidate for AST Skeletonization' : '✓ Standard Structural Reduction';
+        }
+      });
+    });
+
+    // Auto-select first row detail
+    if (items.length > 0 && detailName && detailText) {
+      detailName.textContent = items[0].path;
+      detailText.textContent = `Raw: ${items[0].raw} tokens → Skeleton: ${items[0].skeleton} tokens | Potential Savings: ${items[0].savings} tokens (-${items[0].pct}%)`;
     }
   }
 
-  function recompute() {
-    const origText = inputCode.value;
-    const prunedText = outputCode.textContent;
-
-    const origTokens = estimateTokens(origText);
-    const prunedTokens = estimateTokens(prunedText);
-    const saved = Math.max(0, origTokens - prunedTokens);
-    const pct = origTokens > 0 ? ((saved / origTokens) * 100).toFixed(1) : 0;
-
-    originalTokensBadge.textContent = `${origTokens} tokens`;
-    prunedTokensBadge.textContent = `${prunedTokens} tokens (-${pct}%)`;
-
-    statSaved.textContent = saved;
-    statPct.textContent = `${pct}%`;
-  }
-
-  langSelect.addEventListener('change', updateLanguage);
-  inputCode.addEventListener('input', recompute);
-  btnRun.addEventListener('click', () => {
-    btnRun.textContent = 'Compiling...';
-    btnRun.style.opacity = '0.7';
-    setTimeout(() => {
-      btnRun.textContent = 'Context Compiled!';
-      btnRun.style.opacity = '1';
-      setTimeout(() => {
-        btnRun.textContent = 'Compile Context (Simulate AST Pruning)';
-      }, 1500);
-    }, 300);
+  sortBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      sortBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentSort = btn.getAttribute('data-xray-sort');
+      renderXrayTable();
+    });
   });
 
-  // Initial load
-  updateLanguage();
+  if (filterInput) {
+    filterInput.addEventListener('input', (e) => {
+      filterText = e.target.value.trim();
+      renderXrayTable();
+    });
+  }
+
+  renderXrayTable();
+}
+
+function initChatSimulator() {
+  const container = document.getElementById('chat-messages-container');
+  const scenarioBtns = document.querySelectorAll('.scenario-btn');
+  const activeModel = document.getElementById('chat-active-model');
+
+  function renderScenario(scenarioKey) {
+    if (!container) return;
+    const s = CHAT_SCENARIOS[scenarioKey] || CHAT_SCENARIOS.test;
+
+    let adviceHtml = '';
+    if (s.advice) {
+      adviceHtml = `
+        <div class="chat-advice-pill">
+          <span>${s.advice}</span>
+          <button class="chat-advice-btn" id="btn-switch-model">Switch to Haiku</button>
+        </div>
+      `;
+    }
+
+    container.innerHTML = `
+      <div class="chat-bubble-user">${escapeHtml(s.user)}</div>
+      <div class="chat-bubble-assistant">
+        ${adviceHtml}
+        <pre class="code-preview" style="background: rgba(0,0,0,0.3); padding: 0.75rem; border-radius: 6px; font-family: var(--font-mono); font-size: 0.8rem;"><code>${escapeHtml(s.code)}</code></pre>
+        <div class="chat-telemetry-strip">${s.telemetry}</div>
+      </div>
+    `;
+
+    const switchBtn = document.getElementById('btn-switch-model');
+    if (switchBtn && activeModel) {
+      switchBtn.addEventListener('click', () => {
+        activeModel.textContent = 'Model: Claude 3.5 Haiku (~90% lower cost)';
+        switchBtn.textContent = '✓ Switched';
+        switchBtn.style.background = '#10b981';
+      });
+    }
+  }
+
+  scenarioBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      scenarioBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const sc = btn.getAttribute('data-scenario');
+      renderScenario(sc);
+    });
+  });
+
+  renderScenario('test');
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 // -------------------------------------------------------------------

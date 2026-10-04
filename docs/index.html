@@ -185,6 +185,35 @@
               <h3>1. First Context Check</h3>
               <p class="panel-lead">The fastest way to experience Tokonomics without sending prompts to any external AI provider or altering your workspace.</p>
             </div>
+
+            <!-- Side-by-Side Comparison -->
+            <div class="side-by-side-comparison">
+              <div class="comparison-col col-before">
+                <div class="comparison-header">
+                  <span class="comparison-title">Without Tokonomics</span>
+                  <span class="comparison-badge badge-before">Blind Prompting</span>
+                </div>
+                <ul class="comparison-list">
+                  <li>Unmeasured context size sent blindly to external LLMs</li>
+                  <li>No preview of raw token weight or token-to-dollar estimate</li>
+                  <li>Accidental dispatch of oversized files and syntax bloat</li>
+                </ul>
+                <div class="comparison-stat-pill pill-danger">⚠️ Unmeasured Token Spend</div>
+              </div>
+              <div class="comparison-col col-after">
+                <div class="comparison-header">
+                  <span class="comparison-title">With First Context Check</span>
+                  <span class="comparison-badge badge-after">Guided &amp; Local</span>
+                </div>
+                <ul class="comparison-list">
+                  <li>100% local 5-stage preview of active buffer &amp; UTF-8 byte weight</li>
+                  <li>Calibrated BPE token count before sending any prompts</li>
+                  <li>Zero-send guarantee with zero network telemetry</li>
+                </ul>
+                <div class="comparison-stat-pill pill-success">✓ 100% Local BPE Preview</div>
+              </div>
+            </div>
+
             <div class="steps-flow">
               <div class="step-item">
                 <span class="step-num">Step 1</span>
@@ -233,6 +262,35 @@
               <h3>2. Context X-Ray (Token Density Heatmap)</h3>
               <p class="panel-lead">Instantly discover which files in your repository consume the most context and identify prime candidates for AST skeletonization.</p>
             </div>
+
+            <!-- Side-by-Side Comparison -->
+            <div class="side-by-side-comparison">
+              <div class="comparison-col col-before">
+                <div class="comparison-header">
+                  <span class="comparison-title">Without Context X-Ray</span>
+                  <span class="comparison-badge badge-before">Repository Blindspot</span>
+                </div>
+                <ul class="comparison-list">
+                  <li>No visibility into which repository files consume the most tokens</li>
+                  <li>Monolithic modules (4k+ tokens) consume 80% of prompt windows</li>
+                  <li>Manual guessing of prime candidates for AST skeletonization</li>
+                </ul>
+                <div class="comparison-stat-pill pill-danger">⚠️ 4,850 tokens per unpruned file</div>
+              </div>
+              <div class="comparison-col col-after">
+                <div class="comparison-header">
+                  <span class="comparison-title">With Context X-Ray</span>
+                  <span class="comparison-badge badge-after">Multi-Criteria Sorting</span>
+                </div>
+                <ul class="comparison-list">
+                  <li>Instant token density heatmap of indexed repository files</li>
+                  <li>Quick-filter sorting by Potential Savings, Raw Tokens, or Savings %</li>
+                  <li>Identify files offering 70%–80% immediate context reduction</li>
+                </ul>
+                <div class="comparison-stat-pill pill-success">✓ 1,240 tokens (-74.4% reduction)</div>
+              </div>
+            </div>
+
             <div class="steps-flow">
               <div class="step-item">
                 <span class="step-num">Step 1</span>
@@ -279,6 +337,35 @@
               <h3>3. Live Context Meter</h3>
               <p class="panel-lead">Monitor your active text selection or editor buffer size in real time directly from the VS Code status bar.</p>
             </div>
+
+            <!-- Side-by-Side Comparison -->
+            <div class="side-by-side-comparison">
+              <div class="comparison-col col-before">
+                <div class="comparison-header">
+                  <span class="comparison-title">Without Context Meter</span>
+                  <span class="comparison-badge badge-before">Silent Token Inflation</span>
+                </div>
+                <ul class="comparison-list">
+                  <li>No feedback on how selection size affects chat prompt length</li>
+                  <li>Risk of selecting massive files causing editor lag &amp; overages</li>
+                  <li>No safety threshold before sending large buffers</li>
+                </ul>
+                <div class="comparison-stat-pill pill-danger">⚠️ Zero real-time buffer feedback</div>
+              </div>
+              <div class="comparison-col col-after">
+                <div class="comparison-header">
+                  <span class="comparison-title">With Live Context Meter</span>
+                  <span class="comparison-badge badge-after">Status Bar Pill</span>
+                </div>
+                <ul class="comparison-list">
+                  <li>Real-time token counter in status bar for active selection or file</li>
+                  <li>Zero-send local calculation with immediate update on cursor move</li>
+                  <li>Strict 300 KiB safety limit protecting UI thread responsiveness</li>
+                </ul>
+                <div class="comparison-stat-pill pill-success">✓ ⚡ 842 tokens (Live Status Bar)</div>
+              </div>
+            </div>
+
             <div class="steps-flow">
               <div class="step-item">
                 <span class="step-num">Step 1</span>
@@ -323,6 +410,35 @@
               <h3>4. Chat Handoff (/handoff)</h3>
               <p class="panel-lead">Reset your context window from 80k+ tokens down to 2.5k tokens with zero requirement amnesia.</p>
             </div>
+
+            <!-- Side-by-Side Comparison -->
+            <div class="side-by-side-comparison">
+              <div class="comparison-col col-before">
+                <div class="comparison-header">
+                  <span class="comparison-title">Turn 25 Without Handoff</span>
+                  <span class="comparison-badge badge-before">Context Amnesia &amp; Bloat</span>
+                </div>
+                <ul class="comparison-list">
+                  <li>84,200 tokens accumulated over long conversational turns</li>
+                  <li>Severe context drift, hallucination risk, and slow model responses</li>
+                  <li>~$1.26 per message re-feeding dead terminal and file dumps</li>
+                </ul>
+                <div class="comparison-stat-pill pill-danger">⚠️ 84,200 tokens (~$1.26 / turn)</div>
+              </div>
+              <div class="comparison-col col-after">
+                <div class="comparison-header">
+                  <span class="comparison-title">Turn 25 With /handoff</span>
+                  <span class="comparison-badge badge-after">Anti-Drift Checkpoint</span>
+                </div>
+                <ul class="comparison-list">
+                  <li>2,410 tokens (-97.1% context reduction) in fresh chat session</li>
+                  <li>Structured 4-part checkpoint: Objectives, Decisions, Files, Next Actions</li>
+                  <li>Crisp, sub-second responses with zero loss of task requirements</li>
+                </ul>
+                <div class="comparison-stat-pill pill-success">✓ 2,410 tokens (~$0.03 / turn, -97%)</div>
+              </div>
+            </div>
+
             <div class="steps-flow">
               <div class="step-item">
                 <span class="step-num">Step 1</span>
@@ -372,6 +488,35 @@
               <h3>5. Session Health &amp; Zombie Log Audit</h3>
               <p class="panel-lead">Analyze Claude Code session logs to detect repetitive tool outputs, dead terminal dumps, and context bloat.</p>
             </div>
+
+            <!-- Side-by-Side Comparison -->
+            <div class="side-by-side-comparison">
+              <div class="comparison-col col-before">
+                <div class="comparison-header">
+                  <span class="comparison-title">Unmonitored Agent Sessions</span>
+                  <span class="comparison-badge badge-before">Zombie Terminal Bloat</span>
+                </div>
+                <ul class="comparison-list">
+                  <li>Repeated terminal output dumps re-sent on every conversation turn</li>
+                  <li>10,000+ character compiler error traces bloating conversation state</li>
+                  <li>No diagnostic visibility into why agent chats become sluggish</li>
+                </ul>
+                <div class="comparison-stat-pill pill-danger">⚠️ 50k+ chars of repeated terminal outputs</div>
+              </div>
+              <div class="comparison-col col-after">
+                <div class="comparison-header">
+                  <span class="comparison-title">With Session Health Audit</span>
+                  <span class="comparison-badge badge-after">Diagnostic Surgery</span>
+                </div>
+                <ul class="comparison-list">
+                  <li>Read-only inspection of Claude Code JSONL logs without privacy leaks</li>
+                  <li>Trajectory growth metrics flagging repetitive commands &amp; compaction markers</li>
+                  <li>Actionable remediation to truncate zombie tool results</li>
+                </ul>
+                <div class="comparison-stat-pill pill-success">✓ Trajectory &amp; Bloat Diagnostics</div>
+              </div>
+            </div>
+
             <div class="steps-flow">
               <div class="step-item">
                 <span class="step-num">Step 1</span>
@@ -413,6 +558,35 @@
               <h3>6. Tool-Schema Overhead Audit</h3>
               <p class="panel-lead">Audit your MCP server tools or OpenAI function schemas to catch parameter bloat, verbose prompts, and missing enums.</p>
             </div>
+
+            <!-- Side-by-Side Comparison -->
+            <div class="side-by-side-comparison">
+              <div class="comparison-col col-before">
+                <div class="comparison-header">
+                  <span class="comparison-title">Unoptimized Tool Schemas</span>
+                  <span class="comparison-badge badge-before">Schema Token Drain</span>
+                </div>
+                <ul class="comparison-list">
+                  <li>15,000+ tokens consumed on every turn just for tool definitions</li>
+                  <li>Flat parameter explosion (&gt;6 args) confusing model calling accuracy</li>
+                  <li>Verbose multi-paragraph argument descriptions and deep nesting</li>
+                </ul>
+                <div class="comparison-stat-pill pill-danger">⚠️ &gt;40% of prompt window on tool JSON</div>
+              </div>
+              <div class="comparison-col col-after">
+                <div class="comparison-header">
+                  <span class="comparison-title">With Tool-Schema Linter</span>
+                  <span class="comparison-badge badge-after">Lean Function Specs</span>
+                </div>
+                <ul class="comparison-list">
+                  <li>Automated linting for OpenAI, MCP inputSchema, and Claude formats</li>
+                  <li>Dominant schema warnings when one tool eats &gt;40% of tool budget</li>
+                  <li>Actionable suggestions to group flat parameters and trim descriptions</li>
+                </ul>
+                <div class="comparison-stat-pill pill-success">✓ -65% Tool Schema Token Overhead</div>
+              </div>
+            </div>
+
             <div class="steps-flow">
               <div class="step-item">
                 <span class="step-num">Step 1</span>
@@ -454,6 +628,35 @@
               <h3>7. Dockable Native Chat Panel</h3>
               <p class="panel-lead">Use Tokonomics directly in your Secondary Side Bar or split Editor Tab with streamed Markdown and live token telemetry.</p>
             </div>
+
+            <!-- Side-by-Side Comparison -->
+            <div class="side-by-side-comparison">
+              <div class="comparison-col col-before">
+                <div class="comparison-header">
+                  <span class="comparison-title">Standard AI Chat Panels</span>
+                  <span class="comparison-badge badge-before">Unassisted Routing</span>
+                </div>
+                <ul class="comparison-list">
+                  <li>Overpaying by running simple unit tests on expensive frontier models</li>
+                  <li>No prompt secret redaction before persisting conversation history</li>
+                  <li>Locked to single sidebar view without split-editor docking</li>
+                </ul>
+                <div class="comparison-stat-pill pill-danger">⚠️ Expensive frontier pricing on routine tasks</div>
+              </div>
+              <div class="comparison-col col-after">
+                <div class="comparison-header">
+                  <span class="comparison-title">Tokonomics Native Chat</span>
+                  <span class="comparison-badge badge-after">Model Tier Guidance</span>
+                </div>
+                <ul class="comparison-list">
+                  <li>Non-intrusive tips: "💡 Run on Claude 3.5 Haiku at ~90% lower cost"</li>
+                  <li>Automatic secret redaction for persisted local conversation history</li>
+                  <li>Flexible docking in Secondary Side Bar or dedicated split Editor Tab</li>
+                </ul>
+                <div class="comparison-stat-pill pill-success">✓ Model Tier Advice (~90% Cost Reduction)</div>
+              </div>
+            </div>
+
             <div class="steps-flow">
               <div class="step-item">
                 <span class="step-num">Step 1</span>
@@ -497,6 +700,35 @@
               <h3>8. CLI Subscription Chat (/claude &amp; /codex)</h3>
               <p class="panel-lead">Route prompts through your existing $20/month flat-rate Claude Code or Codex CLI login while benefiting from Tokonomics context compilation.</p>
             </div>
+
+            <!-- Side-by-Side Comparison -->
+            <div class="side-by-side-comparison">
+              <div class="comparison-col col-before">
+                <div class="comparison-header">
+                  <span class="comparison-title">Direct API Key Billing</span>
+                  <span class="comparison-badge badge-before">Metered API Invoices</span>
+                </div>
+                <ul class="comparison-list">
+                  <li>Variable per-token bills scaling with prompt size and turn count</li>
+                  <li>Surprise end-of-month cloud invoices for teams</li>
+                  <li>Risk of accidental API key compromise in workspace files</li>
+                </ul>
+                <div class="comparison-stat-pill pill-danger">⚠️ Variable pay-per-token API fees</div>
+              </div>
+              <div class="comparison-col col-after">
+                <div class="comparison-header">
+                  <span class="comparison-title">Tokonomics /claude &amp; /codex</span>
+                  <span class="comparison-badge badge-after">Flat $20/mo Routing</span>
+                </div>
+                <ul class="comparison-list">
+                  <li>Route prompts through your existing flat-rate official CLI subscription</li>
+                  <li>Pre-compiles AST context to maximize prompt capacity headroom</li>
+                  <li>Subprocess isolation with zero API keys stored or transmitted</li>
+                </ul>
+                <div class="comparison-stat-pill pill-success">✓ Flat $20/mo Subscriptions + Lean AST</div>
+              </div>
+            </div>
+
             <div class="steps-flow">
               <div class="step-item">
                 <span class="step-num">Step 1</span>
@@ -530,6 +762,35 @@
               <h3>9. FinOps Dashboard &amp; Task Budgets</h3>
               <p class="panel-lead">Track real token consumption, group prompts by task, set advisory spend budgets, and import Claude usage.</p>
             </div>
+
+            <!-- Side-by-Side Comparison -->
+            <div class="side-by-side-comparison">
+              <div class="comparison-col col-before">
+                <div class="comparison-header">
+                  <span class="comparison-title">Without FinOps Governance</span>
+                  <span class="comparison-badge badge-before">No Cost Attribution</span>
+                </div>
+                <ul class="comparison-list">
+                  <li>Zero visibility into token spend by feature or coding session</li>
+                  <li>No budget thresholds to catch runaway agent loops</li>
+                  <li>Unable to quantify ROI or token savings across development tasks</li>
+                </ul>
+                <div class="comparison-stat-pill pill-danger">⚠️ Uncontrolled &amp; Untracked Spend</div>
+              </div>
+              <div class="comparison-col col-after">
+                <div class="comparison-header">
+                  <span class="comparison-title">With Tokonomics FinOps</span>
+                  <span class="comparison-badge badge-after">Budget &amp; Spend Ledger</span>
+                </div>
+                <ul class="comparison-list">
+                  <li>Overview, Context, and Activity ledger organized by task ID</li>
+                  <li>Non-blocking advisory budget limits (task, daily, monthly)</li>
+                  <li>Separates observed usage costs, input projections, and avoided cost</li>
+                </ul>
+                <div class="comparison-stat-pill pill-success">✓ 100% Local Spend &amp; Budget Control</div>
+              </div>
+            </div>
+
             <div class="steps-flow">
               <div class="step-item">
                 <span class="step-num">Step 1</span>
@@ -565,6 +826,35 @@
               <h3>10. Encrypted Project Memory</h3>
               <p class="panel-lead">Store key architectural decisions, conventions, and constraints locally with AES-256 encryption.</p>
             </div>
+
+            <!-- Side-by-Side Comparison -->
+            <div class="side-by-side-comparison">
+              <div class="comparison-col col-before">
+                <div class="comparison-header">
+                  <span class="comparison-title">Without Project Memory</span>
+                  <span class="comparison-badge badge-before">Repetitive Prompting</span>
+                </div>
+                <ul class="comparison-list">
+                  <li>Re-typing coding constraints, rules, and architecture on every prompt</li>
+                  <li>Model forgetting critical conventions between separate chat sessions</li>
+                  <li>Cloud memory services storing proprietary codebase rules externally</li>
+                </ul>
+                <div class="comparison-stat-pill pill-danger">⚠️ Re-prompting overhead &amp; cloud lock-in</div>
+              </div>
+              <div class="comparison-col col-after">
+                <div class="comparison-header">
+                  <span class="comparison-title">With Tokonomics Memory</span>
+                  <span class="comparison-badge badge-after">AES-256 Encrypted</span>
+                </div>
+                <ul class="comparison-list">
+                  <li>Strictly opt-in per workspace with authenticated local encryption</li>
+                  <li>Persistent project conventions automatically attached to relevant prompts</li>
+                  <li>Inspect, export, or delete stored rules anytime with one click</li>
+                </ul>
+                <div class="comparison-stat-pill pill-success">✓ Local Encrypted Architecture Rules</div>
+              </div>
+            </div>
+
             <div class="steps-flow">
               <div class="step-item">
                 <span class="step-num">Step 1</span>
@@ -597,65 +887,227 @@
       </div>
     </section>
 
-    <!-- Interactive Simulator / Playground -->
+    <!-- Interactive Feature Studio & Simulators -->
     <section class="section-container" id="playground">
       <div class="section-header">
-        <span class="section-tag">LIVE SIMULATOR</span>
-        <h2 class="section-title">Test Context Compilation in Real Time</h2>
-        <p class="section-desc">See how Tokonomics preserves control-flow contracts and type signatures while stripping function bodies.</p>
+        <span class="section-tag">INTERACTIVE STUDIO</span>
+        <h2 class="section-title">Interactive Feature Visualizer &amp; Simulators</h2>
+        <p class="section-desc">Experience Tokonomics features live in your browser: inspect side-by-side AST diffs, explore Context X-Ray sorting, test native chat model tier guidance, and compare handoff anti-drift checkpoints.</p>
       </div>
 
-      <div class="playground-widget">
-        <div class="playground-controls">
-          <div class="language-selector">
-            <label for="lang-select">Sample Language:</label>
-            <select id="lang-select">
-              <option value="ts">TypeScript / JavaScript</option>
-              <option value="py">Python</option>
-              <option value="go">Go</option>
-            </select>
-          </div>
-          <button class="btn-compile" id="btn-run-simulation">Compile Context (Simulate AST Pruning)</button>
+      <div class="studio-widget">
+        <!-- Studio Tabs -->
+        <div class="studio-tabs-bar">
+          <button class="studio-tab-btn active" data-studio="diff">
+            <span>⚖️</span> Context Diff Inspector
+          </button>
+          <button class="studio-tab-btn" data-studio="xray">
+            <span>🔍</span> Context X-Ray Explorer
+          </button>
+          <button class="studio-tab-btn" data-studio="chat">
+            <span>💬</span> Native Chat &amp; Tier Guidance
+          </button>
+          <button class="studio-tab-btn" data-studio="handoff">
+            <span>📋</span> Session Handoff Anti-Drift
+          </button>
         </div>
 
-        <div class="editor-comparison">
-          <!-- Left: Original Code -->
-          <div class="editor-pane">
-            <div class="pane-header">
-              <span class="pane-title">Original Source Context</span>
-              <span class="token-badge" id="original-tokens">842 tokens</span>
+        <!-- Studio Panel 1: Context Diff Inspector -->
+        <div class="studio-panel active" id="studio-panel-diff">
+          <div class="diff-toolbar">
+            <div class="diff-view-toggles">
+              <button class="diff-toggle-btn active" id="btn-split-diff">Side-by-Side Split</button>
+              <button class="diff-toggle-btn" id="btn-unified-diff">Unified Diff</button>
             </div>
-            <textarea id="input-code" spellcheck="false"></textarea>
-          </div>
-
-          <!-- Right: Optimized Skeleton -->
-          <div class="editor-pane">
-            <div class="pane-header">
-              <span class="pane-title">Compiled AST Skeleton (Tokonomics)</span>
-              <span class="token-badge badge-green" id="pruned-tokens">215 tokens (-74.5%)</span>
+            <div class="language-selector">
+              <label for="lang-select">Language:</label>
+              <select id="lang-select">
+                <option value="ts">TypeScript / JavaScript</option>
+                <option value="py">Python</option>
+                <option value="go">Go</option>
+                <option value="rust">Rust</option>
+              </select>
             </div>
-            <pre class="code-preview" id="output-code"><code></code></pre>
+            <button class="btn-compile" id="btn-run-simulation">Compile Context (Simulate AST Pruning)</button>
+          </div>
+
+          <div class="diff-pane-container" id="diff-container">
+            <!-- Left: Raw Context -->
+            <div class="diff-code-window" id="window-raw">
+              <div class="diff-window-header">
+                <span>Original Source Context (Raw)</span>
+                <span class="token-badge" id="original-tokens">842 tokens</span>
+              </div>
+              <div class="diff-content" id="raw-diff-content"></div>
+            </div>
+
+            <!-- Right: Compiled Skeleton -->
+            <div class="diff-code-window" id="window-pruned">
+              <div class="diff-window-header">
+                <span>Tokonomics Compiled AST Skeleton</span>
+                <span class="token-badge badge-green" id="pruned-tokens">215 tokens (-74.5%)</span>
+              </div>
+              <div class="diff-content" id="pruned-diff-content"></div>
+            </div>
+          </div>
+
+          <div class="simulation-metrics" id="sim-stats">
+            <div class="stat-box">
+              <span class="stat-number" id="stat-saved">627</span>
+              <span class="stat-name">Tokens Saved</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-number" id="stat-pct">74.5%</span>
+              <span class="stat-name">Context Reduction</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-number" id="stat-cost">~$0.019</span>
+              <span class="stat-name">Avoided Cost / Turn</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-number">100%</span>
+              <span class="stat-name">Contracts Preserved</span>
+            </div>
           </div>
         </div>
 
-        <div class="simulation-metrics" id="sim-stats">
-          <div class="stat-box">
-            <span class="stat-number" id="stat-saved">627</span>
-            <span class="stat-name">Tokens Saved</span>
-          </div>
-          <div class="stat-box">
-            <span class="stat-number" id="stat-pct">74.5%</span>
-            <span class="stat-name">Context Reduction</span>
-          </div>
-          <div class="stat-box">
-            <span class="stat-number">100%</span>
-            <span class="stat-name">Contract Preserved</span>
-          </div>
-          <div class="stat-box">
-            <span class="stat-number">0 bytes</span>
-            <span class="stat-name">Exfiltrated</span>
+        <!-- Studio Panel 2: Context X-Ray Explorer -->
+        <div class="studio-panel" id="studio-panel-xray">
+          <div class="xray-explorer">
+            <div class="xray-toolbar">
+              <div class="xray-sort-group">
+                <span class="xray-sort-label">Sort by:</span>
+                <button class="xray-sort-btn active" data-xray-sort="savings">⚡ Potential Savings</button>
+                <button class="xray-sort-btn" data-xray-sort="raw">📊 Raw Tokens</button>
+                <button class="xray-sort-btn" data-xray-sort="pct">📉 Savings %</button>
+              </div>
+              <div class="xray-search-box">
+                <input type="text" id="xray-filter-input" placeholder="Search files (e.g. gateway, auth)...">
+              </div>
+            </div>
+
+            <div class="xray-table-wrapper">
+              <table class="xray-table" id="xray-interactive-table">
+                <thead>
+                  <tr>
+                    <th>File Path</th>
+                    <th>Raw Tokens</th>
+                    <th>Skeleton Tokens</th>
+                    <th>Potential Reduction</th>
+                    <th>Token Density</th>
+                  </tr>
+                </thead>
+                <tbody id="xray-table-body">
+                  <!-- Populated by app.js -->
+                </tbody>
+              </table>
+            </div>
+
+            <div class="xray-detail-card" id="xray-file-detail">
+              <div class="xray-detail-meta">
+                <span class="xray-detail-filename" id="xray-detail-name">src/compiler/orchestrator.ts</span>
+                <span class="xray-detail-stats" id="xray-detail-text">Raw: 4,850 tokens → Skeleton: 1,240 tokens | Potential Savings: 3,610 tokens (-74.4%)</span>
+              </div>
+              <div class="comparison-stat-pill pill-success" id="xray-detail-pill">
+                ✓ Prime Candidate for AST Skeletonization
+              </div>
+            </div>
           </div>
         </div>
+
+        <!-- Studio Panel 3: Native Chat & Model Tier Guidance -->
+        <div class="studio-panel" id="studio-panel-chat">
+          <div class="chat-sim-container">
+            <div class="chat-sim-header">
+              <div class="chat-window-dots">
+                <span class="chat-window-dot dot-red"></span>
+                <span class="chat-window-dot dot-yellow"></span>
+                <span class="chat-window-dot dot-green"></span>
+              </div>
+              <span>Tokonomics Chat — Secondary Side Bar (v8.4.0)</span>
+              <span id="chat-active-model">Model: Claude 3.7 Sonnet</span>
+            </div>
+
+            <div class="chat-scenarios-bar">
+              <span style="font-size: 0.75rem; color: var(--text-dim); margin-right: 0.25rem;">Try Prompt:</span>
+              <button class="scenario-btn active" data-scenario="test">🧪 Unit Test Generation</button>
+              <button class="scenario-btn" data-scenario="auth">🔐 Auth Flow Explanation</button>
+              <button class="scenario-btn" data-scenario="refactor">⚡ Subscription CLI (/claude)</button>
+            </div>
+
+            <div class="chat-sim-messages" id="chat-messages-container">
+              <!-- Populated dynamically by app.js -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Studio Panel 4: Session Handoff Anti-Drift -->
+        <div class="studio-panel" id="studio-panel-handoff">
+          <div class="handoff-grid">
+            <div class="handoff-card handoff-card-danger">
+              <div class="comparison-header">
+                <span class="comparison-title">Turn 25 Without Handoff</span>
+                <span class="comparison-badge badge-before">Context Amnesia Risk</span>
+              </div>
+              <div class="token-gauge-bar">
+                <div class="token-gauge-fill-danger"></div>
+              </div>
+              <ul class="comparison-list">
+                <li><strong>84,200 tokens</strong> context payload re-sent on every query</li>
+                <li><strong>~$1.26 per message</strong> in repetitive context re-feed costs</li>
+                <li><strong>High latency</strong>: 8.4s response wait time</li>
+                <li><strong>High drift risk</strong>: Lost earlier edge case constraints and objectives</li>
+              </ul>
+              <div class="comparison-stat-pill pill-danger">⚠️ 84,200 tokens ($1.26 / message)</div>
+            </div>
+
+            <div class="handoff-card handoff-card-success">
+              <div class="comparison-header">
+                <span class="comparison-title">Turn 25 With Tokonomics /handoff</span>
+                <span class="comparison-badge badge-after">Clean 97% Reduction</span>
+              </div>
+              <div class="token-gauge-bar">
+                <div class="token-gauge-fill-success"></div>
+              </div>
+              <ul class="comparison-list">
+                <li><strong>2,410 tokens</strong> synthesized checkpoint across 4 structured pillars</li>
+                <li><strong>~$0.03 per message</strong> in fresh, agile conversation context</li>
+                <li><strong>Sub-second response</strong>: 0.9s response turnaround</li>
+                <li><strong>Zero requirement amnesia</strong>: Active goals, decisions, and files preserved</li>
+              </ul>
+              <div class="comparison-stat-pill pill-success">✓ 2,410 tokens ($0.03 / message, -97.1%)</div>
+            </div>
+          </div>
+
+          <div style="margin-top: 1.5rem; text-align: center;">
+            <button class="btn-primary" id="btn-generate-handoff">Simulate /handoff Checkpoint Generation</button>
+          </div>
+          <div id="handoff-preview-container" style="display: none; margin-top: 1.25rem;">
+            <div class="diff-code-window">
+              <div class="diff-window-header">
+                <span>Checkpoint Document: session-handoff-2026-10-04.md (2,410 tokens)</span>
+                <span class="token-badge badge-green">-97.1% Context Reset</span>
+              </div>
+              <pre class="code-preview" style="padding: 1rem; max-height: 280px; overflow-y: auto;"><code># Session State Handover [tokonomics-handoff/v1]
+## 1. Active Objectives &amp; Completed Tasks
+- [x] Initialized TokenOptimizerLedger with SQLite audit trail
+- [x] Implemented SecuritySanitizer fail-closed credential scanner
+- [/] In Progress: Add multi-criteria sorting to Context X-Ray UI
+
+## 2. Key Architectural Decisions
+- Preserved control-flow guard blocks across all AST reductions
+- Enforced strict 300 KiB safety limit on live context meter
+
+## 3. Touched Files &amp; Touchpoints
+- `src/compiler/orchestrator.ts` (lines 45-120: AST skeletonization)
+- `src/insights/contextXray.ts` (lines 80-140: Multi-criteria sort comparator)
+
+## 4. Next Immediate Action
+- Complete unit test verification and run build certification</code></pre>
+            </div>
+          </div>
+        </div>
+
       </div>
     </section>
 
