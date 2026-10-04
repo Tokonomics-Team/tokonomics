@@ -18,7 +18,8 @@ A clear and concise description of what the bug is.
 A clear and concise description of what you expected to happen.
 
 ### 📋 Anonymized Diagnostic Log (Crucial)
-> *Tokonomics includes a 100% private log exporter that automatically strips all usernames, local file paths, and secrets.*
+> *Tokonomics operates under a strict zero-telemetry contract. Diagnostics are stored strictly in local memory and are never automatically transmitted anywhere.*
+> *To share diagnostics with your issue, explicitly export and paste the sanitized report:*
 > 1. Press `Ctrl + Shift + P` (or `Cmd + Shift + P`) in VS Code.
 > 2. Run: **`Tokonomics: Export Anonymized Diagnostic Logs`**
 > 3. Paste the contents below between the triple backticks:
@@ -28,6 +29,6 @@ A clear and concise description of what you expected to happen.
 ```
 
 ### Environment
-- Tokonomics Version: 4.1.0
+- Tokonomics Version: 8.4.0
 - VS Code Version:
 - OS & Architecture: (e.g. Windows 11 x64, macOS Apple Silicon, Linux)

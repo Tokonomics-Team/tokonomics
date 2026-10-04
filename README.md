@@ -1,4 +1,4 @@
-# Tokonomics 8.2.0
+# Tokonomics 8.4.0
 
 Tokonomics is a Visual Studio Code extension that prepares leaner context for AI-assisted development and shows clear request-level usage information. Interactive guide & simulator: [tokonomics-team.github.io/tokonomics](https://tokonomics-team.github.io/tokonomics/).
 
@@ -60,7 +60,7 @@ Open the Command Palette (`Ctrl+Shift+P`/`Cmd+Shift+P`) and run:
 | Feature | How to use it | What it produces |
 | --- | --- | --- |
 | **First Context Check** | Open or select text, run **Tokonomics: Run First Context Check**, and follow the dashboard steps. | A local estimate and guided path to chat; Context X-Ray is optional. |
-| **Context X-Ray** | Run **Tokonomics: Run Context X-Ray** and approve its one-time workspace snapshot. | A bounded ranking of indexed files likely to consume the most context. |
+| **Context X-Ray** | Run **Tokonomics: Run Context X-Ray** and approve its one-time workspace snapshot. | A bounded ranking of indexed files with quick filters to sort by potential savings, raw tokens, or savings percentage. |
 | **Context Meter** | Run **Tokonomics: Start Context Meter**. Click its status item or run **Tokonomics: Stop Context Meter** to stop. | A local estimate for the active selection or text buffer, up to 300 KiB. |
 | **Session Health** | Run **Tokonomics: Analyze Session Log Health** and select a supported `.json` or `.jsonl` log. | Content-free Claude Code health aggregates on the dashboard. |
 | **Chat Handoff** | Open a Tokonomics chat and run **Tokonomics: Create Chat Handoff**. | A bounded, redacted checkpoint in a new unsaved Markdown document. |
@@ -72,13 +72,13 @@ Insights are explicit, bounded, and local. File analysis requires a trusted work
 
 Open **Tokonomics: Open Chat** from the Command Palette (or click the Tokonomics icon in the Secondary Side Bar) to use the dedicated chat interface, or run **Tokonomics: Open Chat in Editor** for a split editor tab.
 
-Both surfaces share conversation state and model selection. They provide streamed Markdown, syntax highlighting, activity status, context preparation across 14 languages, local candidate indexing, up to 10 saved conversations, and subscription routing through the official Codex and Claude CLIs.
+Both surfaces share conversation state and model selection. They provide streamed Markdown, syntax highlighting, activity status, contextual model tier guidance for cost-effective selection, packaged TypeScript, JavaScript, and Python parsing with bounded heuristic fallbacks elsewhere, local indexing, up to 10 saved conversations, and subscription routing through the official Codex and Claude CLIs.
 
 The panel saves up to 10 recent chats locally for this workspace with secret redaction. Unfinished requests are marked interrupted and are not resent automatically.
 
 ## Economic value and ROI disclaimers
 
-Tokonomics can reduce context payloads, but it does not guarantee a reduction, a billing saving, more subscription quota, or a better model response. Fixed-seat subscriptions are not refunded when fewer tokens are used. Dashboard dollar values are estimates, not invoices; actual outcomes depend on the request, workspace, model, provider, pricing, and billing arrangement.
+Tokonomics can reduce context payloads, but it does not guarantee a reduction, a billing saving, more subscription quota, or a better model response. Dashboard dollar values are estimates, not invoices; actual outcomes depend on the request, workspace, model, provider, pricing, and billing arrangement.
 
 ## Dashboard values and navigation
 
@@ -91,15 +91,13 @@ The dashboard updates after handled requests without reloading the view. Token f
 
 The **Task spend & efficiency** panel separates observed usage costs, input-only projections, and estimated avoided cost. Use **Start task** to group requests in this window, **Set budget** for advisory limits, and **Rate outcome** for self-reported success. Resetting session metrics requires modal confirmation to prevent accidental loss.
 
-Use **Import Claude usage** for Claude Code assistant JSONL logs, or **Watch a log** to follow one selected file. Only usage metadata is retained; source prompts and code are never stored. History retains up to 10,000 requests for 90 days and daily aggregates for one year. Data and pricing controls provide reviewed price-snapshot import and history deletion.
+Use **Import Claude usage** for Claude Code assistant JSONL logs, or **Watch a log** to follow one selected file. Only usage metadata is retained; source prompts and code are never stored. History retains up to 10,000 requests for 90 days and daily aggregates for one year. ## Privacy
 
-## Privacy
-
-Context preparation runs inside the extension. Prompts and selected context are still sent to the AI provider chosen in VS Code.
+Context preparation is local and adds no Tokonomics telemetry. Explicit requests still send prompts and selected context to the chosen provider or authenticated CLI; this traffic is not air-gapped.
 
 Automatic workspace context is unavailable in Restricted Mode. Project memory is off by default, requires explicit consent, is encrypted locally, and can be inspected, disabled, or deleted from the Command Palette.
 
-Review sensitive context before sending it. VS Code, other extensions, and AI providers have their own privacy and network behavior.
+Review sensitive context before sending.
 
 ## Compatibility
 
@@ -108,6 +106,7 @@ Tokonomics requires VS Code 1.106.0 or later. Controlled tests validate extensio
 ## Support
 
 - [Interactive feature guide & docs](https://tokonomics-team.github.io/tokonomics/)
+- [Release notes & updates](https://github.com/Tokonomics-Team/tokonomics/releases)
 - [Report a bug](https://github.com/Tokonomics-Team/tokonomics/issues)
 - [Request a feature](https://github.com/Tokonomics-Team/tokonomics/issues)
 - [Community discussions](https://github.com/Tokonomics-Team/tokonomics/discussions)

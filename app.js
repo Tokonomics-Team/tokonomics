@@ -347,7 +347,7 @@ const COMMAND_DATABASE = [
   {
     cmd: 'Tokonomics: Run Context X-Ray',
     category: 'Insights',
-    desc: 'Analyzes one immutable workspace-index snapshot to rank context-heavy files and potential reductions.'
+    desc: 'Analyzes one immutable workspace-index snapshot to rank context-heavy files with quick filters for savings and raw tokens.'
   },
   {
     cmd: 'Tokonomics: Start Context Meter',
