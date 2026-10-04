@@ -1,5 +1,11 @@
 # Tokonomics release notes
 
+## 8.5.1
+
+- Dashboard & Activity UI Evergreen Versioning: Removed hardcoded version strings from the dashboard header, webview panel title, and diff context headers, ensuring UI surfaces stay evergreen across releases.
+- Diagnostic Logger Dynamic Binding: Updated diagnostic report exporter to resolve the active extension version dynamically.
+- Release Maintenance: Bumped extension package and verification suites to v8.5.1.
+
 ## 8.5.0
 
 - Next-Gen Sticky KPI Cockpit & Configuration Tray: Introduced a unified 4-column telemetry bar presenting Cumulative Optimized Tokens, Net Avoided Cost, Active Session Compression Efficiency, and Context Density ratio. Added an inline configuration tray with direct controls for real-time polling cadence (1s, 5s, 30s, or Off), monthly advisory budget allocation, and model auto-routing.

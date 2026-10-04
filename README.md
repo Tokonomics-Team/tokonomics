@@ -1,4 +1,4 @@
-# Tokonomics 8.5.0
+# Tokonomics 8.5.1
 
 Tokonomics is a Visual Studio Code extension that prepares leaner context for AI-assisted development and shows clear request-level usage information. Interactive guide & simulator: [tokonomics-team.github.io/tokonomics](https://tokonomics-team.github.io/tokonomics/).
 

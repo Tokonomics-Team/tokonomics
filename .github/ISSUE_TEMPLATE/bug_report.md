@@ -29,6 +29,6 @@ A clear and concise description of what you expected to happen.
 ```
 
 ### Environment
-- Tokonomics Version: 8.5.0
+- Tokonomics Version: 8.5.1
 - VS Code Version:
 - OS & Architecture: (e.g. Windows 11 x64, macOS Apple Silicon, Linux)
