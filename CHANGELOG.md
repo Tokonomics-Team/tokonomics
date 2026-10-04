@@ -1,5 +1,16 @@
 # Tokonomics release notes
 
+## 8.5.0
+
+- Next-Gen Sticky KPI Cockpit & Configuration Tray: Introduced a unified 4-column telemetry bar presenting Cumulative Optimized Tokens, Net Avoided Cost, Active Session Compression Efficiency, and Context Density ratio. Added an inline configuration tray with direct controls for real-time polling cadence (1s, 5s, 30s, or Off), monthly advisory budget allocation, and model auto-routing.
+- Multi-Phase Context Pipeline Nanobar Stepper: Added a live visual execution pipeline stepper with micro-stage inspection tooltips, visualizing transformation steps from initial ingest to context skeleton compilation.
+- Spatial Context Pruning Squarified Treemap: Added an interactive directory token density heatmap using a squarified layout, weighted heat indicators, and seamless click-to-filter drilldowns integrated into Context X-Ray.
+- Git Branch & PR Financial Drift Tracker: Implemented branch-level FinOps telemetry comparing working branch context consumption against repository baselines, complete with color-coded drift severity badges (On Track, Minor Drift, Alert Drift).
+- Model Efficiency Frontier Analysis: Added an interactive log-scale latency versus cost comparative scatter plot highlighting Pareto-optimal model choices to balance response speed, quality, and context expense.
+- Budget Burn-Rate Velocity Gauge & Monthly Exhaustion Forecaster: Added dynamic burn velocity tracking with projected exhaustion horizon forecasting to protect against unplanned budget overrun.
+- Developer Engagement & Sustainability Suite: Added subtle status bar ambient sparkle feedback for real-time optimization confirmations, a 4-tier milestone achievement ledger with estimated CO2e carbon offset equivalency, and contextual prompt optimization CodeLens hints in supported editors.
+- Dynamic Real-Time Auto-Refresh Engine: Integrated event-driven UI updates across all dashboard telemetry views upon context compilation, maintaining continuous synchronization without manual reloads.
+
 ## 8.4.0
 
 - Context X-Ray Multi-Criteria Sorting: Added quick-filter sorting controls to the Context X-Ray dashboard view, enabling developers to sort workspace files by potential token savings, raw token count, or savings percentage.

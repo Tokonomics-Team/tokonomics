@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initCopyButtons();
   initStudio();
   initCommandPalette();
+  initCockpitSimulator();
 });
 
 // -------------------------------------------------------------------
@@ -601,6 +602,31 @@ function escapeHtml(str) {
 // -------------------------------------------------------------------
 const COMMAND_DATABASE = [
   {
+    cmd: 'Tokonomics: Run Pipeline Step Inspector',
+    category: 'Compiler',
+    desc: 'Opens the live multi-stage context pipeline stepper to inspect stage execution deltas and timings.'
+  },
+  {
+    cmd: 'Tokonomics: View Branch Financial Drift',
+    category: 'FinOps',
+    desc: 'Analyzes active branch token consumption drift against main repository baselines with drift severity indicators.'
+  },
+  {
+    cmd: 'Tokonomics: Inspect Model Efficiency Frontier',
+    category: 'FinOps',
+    desc: 'Visualizes 2D Pareto-optimal models in log-scale latency vs cost space to optimize model tier selection.'
+  },
+  {
+    cmd: 'Tokonomics: Show Milestone Ledger & Carbon Savings',
+    category: 'FinOps',
+    desc: 'Displays the 4-tier milestone achievement ledger with verified CO2e carbon offset grams.'
+  },
+  {
+    cmd: 'Tokonomics: Optimize Prompt via CodeLens',
+    category: 'Compiler',
+    desc: 'Contextual CodeLens action above prompt templates and context blocks to compile lean AST slices.'
+  },
+  {
     cmd: 'Tokonomics: Run First Context Check',
     category: 'Insights',
     desc: 'Starts the guided 5-step local onboarding check. Estimates active editor context without sending prompts.'
@@ -734,4 +760,198 @@ function initCommandPalette() {
 
   // Initial render
   renderCommands();
+}
+
+
+// -------------------------------------------------------------------
+// 5. Interactive Cockpit & Frontier Simulator (v8.5.0)
+// -------------------------------------------------------------------
+let pollTimer = null;
+let liveTokens = 1428950;
+let liveCost = 42.86;
+
+function initCockpitSimulator() {
+  initPollingToggles();
+  initPipelineStepper();
+  initTreemapSelection();
+  initBranchSelector();
+  initBudgetSlider();
+  initFrontierPlot();
+}
+
+function initPollingToggles() {
+  const buttons = document.querySelectorAll('#sim-poll-rate .pill-toggle-btn');
+  buttons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      buttons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const rateSec = parseInt(btn.getAttribute('data-rate'), 10);
+      if (pollTimer) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+      }
+
+      if (rateSec > 0) {
+        pollTimer = setInterval(() => {
+          liveTokens += Math.floor(Math.random() * 45) + 10;
+          liveCost += 0.0012;
+          const kpiTok = document.getElementById('kpi-tokens');
+          const kpiCst = document.getElementById('kpi-cost');
+          if (kpiTok) kpiTok.textContent = liveTokens.toLocaleString();
+          if (kpiCst) kpiCst.textContent = '$' + liveCost.toFixed(2);
+        }, rateSec * 1000);
+      }
+    });
+  });
+}
+
+function initPipelineStepper() {
+  const steps = document.querySelectorAll('#sim-pipeline-stepper .pipeline-step');
+  const stageName = document.getElementById('inspector-stage-name');
+  const stageTime = document.getElementById('inspector-stage-time');
+  const stageDesc = document.getElementById('inspector-stage-desc');
+  const stageTok = document.getElementById('inspector-stage-tok');
+  const stageSaved = document.getElementById('inspector-stage-saved');
+
+  steps.forEach(step => {
+    step.addEventListener('click', () => {
+      steps.forEach(s => s.classList.remove('active'));
+      step.classList.add('active');
+
+      const name = step.getAttribute('data-name');
+      const time = step.getAttribute('data-time');
+      const desc = step.getAttribute('data-desc');
+      const tok = parseInt(step.getAttribute('data-tok'), 10);
+      const stepIdx = parseInt(step.getAttribute('data-step'), 10);
+
+      const rawTok = 842;
+      const savedPct = rawTok > 0 ? Math.round(((rawTok - tok) / rawTok) * 100) : 0;
+
+      if (stageName) stageName.textContent = `Stage ${stepIdx + 1}: ${name}`;
+      if (stageTime) stageTime.textContent = time;
+      if (stageDesc) stageDesc.textContent = desc;
+      if (stageTok) stageTok.textContent = tok.toLocaleString();
+      if (stageSaved) stageSaved.textContent = `${savedPct}%`;
+    });
+  });
+}
+
+function initTreemapSelection() {
+  const tiles = document.querySelectorAll('#sim-treemap .treemap-tile');
+  const nameEl = document.getElementById('tm-selected-name');
+  const filesEl = document.getElementById('tm-selected-files');
+  const tokEl = document.getElementById('tm-selected-tokens');
+  const savEl = document.getElementById('tm-selected-sav');
+
+  tiles.forEach(tile => {
+    tile.addEventListener('click', () => {
+      tiles.forEach(t => t.classList.remove('selected'));
+      tile.classList.add('selected');
+
+      const name = tile.getAttribute('data-name');
+      const tok = tile.getAttribute('data-tok');
+      const pct = tile.getAttribute('data-pct');
+      const files = tile.getAttribute('data-files');
+
+      if (nameEl) nameEl.textContent = name;
+      if (filesEl) filesEl.textContent = files;
+      if (tokEl) tokEl.textContent = tok;
+      if (savEl) savEl.textContent = `${pct} Slicing Potential`;
+    });
+  });
+}
+
+function initBranchSelector() {
+  const select = document.getElementById('sim-branch-select');
+  const pill = document.getElementById('sim-drift-pill');
+  const cost = document.getElementById('sim-drift-cost');
+  const tokens = document.getElementById('sim-drift-tokens');
+
+  if (!select) return;
+  select.addEventListener('change', () => {
+    const val = select.value;
+    if (val === 'auth') {
+      if (pill) { pill.className = 'drift-pill pill-amber'; pill.textContent = '⚠️ Minor Drift (+18.4%)'; }
+      if (cost) cost.textContent = '+$4.12';
+      if (tokens) tokens.textContent = '+138k';
+    } else if (val === 'fix') {
+      if (pill) { pill.className = 'drift-pill pill-green'; pill.textContent = '✓ On Track (+1.2%)'; }
+      if (cost) cost.textContent = '+$0.24';
+      if (tokens) tokens.textContent = '+12k';
+    } else {
+      if (pill) { pill.className = 'drift-pill pill-green'; pill.textContent = '✓ High Savings (-14.0%)'; }
+      if (cost) cost.textContent = '-$2.80';
+      if (tokens) tokens.textContent = '-95k';
+    }
+  });
+}
+
+function initBudgetSlider() {
+  const slider = document.getElementById('sim-budget-slider');
+  const display = document.getElementById('sim-budget-display');
+  const velocityEl = document.getElementById('sim-burn-velocity');
+  const projectedEl = document.getElementById('sim-projected-spend');
+  const exhaustEl = document.getElementById('sim-exhaust-days');
+  const badgeEl = document.getElementById('sim-exhaust-badge');
+
+  if (!slider) return;
+  slider.addEventListener('input', () => {
+    const budget = parseInt(slider.value, 10);
+    if (display) display.textContent = `$${budget} / mo`;
+
+    const velocity = 3.42; // $/day
+    const projected = Math.round(velocity * 30 * 10) / 10;
+    const remainingDays = Math.round(budget / velocity);
+
+    if (velocityEl) velocityEl.textContent = `$${velocity.toFixed(2)} / day`;
+    if (projectedEl) projectedEl.textContent = `$${projected.toFixed(2)} / mo`;
+
+    if (remainingDays >= 30) {
+      if (exhaustEl) exhaustEl.textContent = `${remainingDays} Days (Safe)`;
+      if (badgeEl) { badgeEl.className = 'exhaustion-badge badge-green'; badgeEl.textContent = 'Safe Velocity'; }
+    } else if (remainingDays >= 20) {
+      if (exhaustEl) exhaustEl.textContent = `${remainingDays} Days (Advisory)`;
+      if (badgeEl) { badgeEl.className = 'exhaustion-badge pill-amber'; badgeEl.textContent = 'Moderate Velocity'; }
+    } else {
+      if (exhaustEl) exhaustEl.textContent = `${remainingDays} Days (Alert)`;
+      if (badgeEl) { badgeEl.className = 'exhaustion-badge pill-danger'; badgeEl.textContent = 'Budget Exceeded'; }
+    }
+  });
+}
+
+function initFrontierPlot() {
+  const dots = document.querySelectorAll('#sim-frontier-svg .frontier-dot');
+  const nameEl = document.getElementById('fc-name');
+  const costEl = document.getElementById('fc-cost');
+  const latEl = document.getElementById('fc-lat');
+  const recEl = document.getElementById('fc-rec');
+  const paretoEl = document.getElementById('fc-pareto-badge');
+
+  dots.forEach(dot => {
+    dot.addEventListener('click', () => {
+      dots.forEach(d => d.classList.remove('active-dot'));
+      dot.classList.add('active-dot');
+
+      const name = dot.getAttribute('data-name');
+      const cost = dot.getAttribute('data-cost');
+      const lat = dot.getAttribute('data-lat');
+      const rec = dot.getAttribute('data-rec');
+      const isPareto = dot.getAttribute('data-pareto') === 'true';
+
+      if (nameEl) nameEl.textContent = name;
+      if (costEl) costEl.textContent = cost;
+      if (latEl) latEl.textContent = lat;
+      if (recEl) recEl.textContent = rec;
+
+      if (paretoEl) {
+        if (isPareto) {
+          paretoEl.textContent = '✓ 2D Pareto Optimal';
+          paretoEl.style.display = 'inline-block';
+        } else {
+          paretoEl.style.display = 'none';
+        }
+      }
+    });
+  });
 }

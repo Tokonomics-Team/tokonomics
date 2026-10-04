@@ -1,4 +1,4 @@
-# Tokonomics 8.4.0
+# Tokonomics 8.5.0
 
 Tokonomics is a Visual Studio Code extension that prepares leaner context for AI-assisted development and shows clear request-level usage information. Interactive guide & simulator: [tokonomics-team.github.io/tokonomics](https://tokonomics-team.github.io/tokonomics/).
 
@@ -8,6 +8,14 @@ Subscription chat: in VS Code Chat (Ask), use `@tokonomics /codex your question`
 
 ## What you get
 
+- Next-Gen Sticky KPI Cockpit with live polling, advisory budget caps, and smart model auto-routing.
+- Multi-phase context compilation stepper with stage-by-stage inspection tooltips.
+- Spatial directory token heatmap with squarified treemap layout and Context X-Ray integration.
+- Git branch financial drift tracking with main baseline comparisons and severity indicators.
+- Model efficiency frontier analysis (log-scale latency vs cost scatter plot with Pareto detection).
+- Dynamic budget burn-rate velocity gauge and monthly exhaustion horizon forecaster.
+- Developer engagement suite: ambient status bar sparkle feedback, 4-tier milestone ledger with CO2e carbon offset equivalency, and contextual prompt optimization CodeLens.
+- Real-time event-driven auto-refresh engine syncing telemetry smoothly upon context compilation.
 - Context preparation for everyday coding requests.
 - Workspace-aware assistance in trusted workspaces.
 - Task-oriented dashboard organized into Overview, Context, and Activity views.
@@ -91,7 +99,9 @@ The dashboard updates after handled requests without reloading the view. Token f
 
 The **Task spend & efficiency** panel separates observed usage costs, input-only projections, and estimated avoided cost. Use **Start task** to group requests in this window, **Set budget** for advisory limits, and **Rate outcome** for self-reported success. Resetting session metrics requires modal confirmation to prevent accidental loss.
 
-Use **Import Claude usage** for Claude Code assistant JSONL logs, or **Watch a log** to follow one selected file. Only usage metadata is retained; source prompts and code are never stored. History retains up to 10,000 requests for 90 days and daily aggregates for one year. ## Privacy
+Use **Import Claude usage** for Claude Code assistant JSONL logs, or **Watch a log** to follow one selected file. Only usage metadata is retained; source prompts and code are never stored. History retains up to 10,000 requests for 90 days and daily aggregates for one year.
+
+## Privacy
 
 Context preparation is local and adds no Tokonomics telemetry. Explicit requests still send prompts and selected context to the chosen provider or authenticated CLI; this traffic is not air-gapped.
 
