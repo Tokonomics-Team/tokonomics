@@ -1,4 +1,4 @@
-# Tokonomics 8.5.1
+# Tokonomics 8.5.2
 
 Tokonomics is a Visual Studio Code extension that prepares leaner context for AI-assisted development and shows clear request-level usage information. Interactive guide & simulator: [tokonomics-team.github.io/tokonomics](https://tokonomics-team.github.io/tokonomics/).
 
@@ -10,7 +10,8 @@ Subscription chat: in VS Code Chat (Ask), use `@tokonomics /codex your question`
 
 - Next-Gen Sticky KPI Cockpit with live polling, advisory budget caps, and smart model auto-routing.
 - Multi-phase context compilation stepper with stage-by-stage inspection tooltips.
-- Spatial directory token heatmap with squarified treemap layout and Context X-Ray integration.
+- Spatial AST Pruning Market Treemap with nested module sectors, efficiency color chips, and Context X-Ray integration.
+- Optional, privacy-preserving aggregate telemetry (Aptabase) measuring token efficiency and runtime reliability with zero code, prompt, or personal data collection.
 - Git branch financial drift tracking with main baseline comparisons and severity indicators.
 - Model efficiency frontier analysis (log-scale latency vs cost scatter plot with Pareto detection).
 - Dynamic budget burn-rate velocity gauge and monthly exhaustion horizon forecaster.
@@ -58,6 +59,7 @@ Balanced mode and Selection workspace context are the recommended defaults.
 - `Tokonomics: Manage Project Memory`
 - `Tokonomics: Optimize & Copy Selection as Context`
 - `Tokonomics: Export Anonymized Diagnostic Logs`
+- `Tokonomics: Toggle Usage Analytics`
 
 The `@tokonomics` participant also provides short commands for dashboard, live statistics, explanations, workspace maps, context packs, analysis, compaction, logs, and memory status.
 

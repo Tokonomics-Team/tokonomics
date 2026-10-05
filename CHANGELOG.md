@@ -1,5 +1,13 @@
 # Tokonomics release notes
 
+## 8.5.2
+
+- Spatial AST Pruning Market Treemap: Upgraded the Context X-Ray spatial density heatmap into a two-level squarified market map featuring module sector frames, circular language badges, bold uppercase tickers, and an efficiency color-scale legend bar.
+- Privacy-Preserving Aggregate Telemetry: Integrated optional, anonymous usage metrics via Aptabase (Option B) measuring token savings, compression percentages, and runtime error categories with zero source code, prompt, or personal data collection.
+- Host Telemetry Compliance: Automatically respects VS Code's global telemetry setting (`telemetry.telemetryLevel`), completely muting dispatches when disabled.
+- Developer Opt-Out Toggle: Added `Tokonomics: Toggle Usage Analytics` command to provide users with direct opt-in and opt-out control.
+- Test Suite Streamlining: Curated repository test execution to focus strictly on active architectural test suites.
+
 ## 8.5.1
 
 - Dashboard & Activity UI Evergreen Versioning: Removed hardcoded version strings from the dashboard header, webview panel title, and diff context headers, ensuring UI surfaces stay evergreen across releases.
@@ -8,14 +16,14 @@
 
 ## 8.5.0
 
-- Next-Gen Sticky KPI Cockpit & Configuration Tray: Introduced a unified 4-column telemetry bar presenting Cumulative Optimized Tokens, Net Avoided Cost, Active Session Compression Efficiency, and Context Density ratio. Added an inline configuration tray with direct controls for real-time polling cadence (1s, 5s, 30s, or Off), monthly advisory budget allocation, and model auto-routing.
-- Multi-Phase Context Pipeline Nanobar Stepper: Added a live visual execution pipeline stepper with micro-stage inspection tooltips, visualizing transformation steps from initial ingest to context skeleton compilation.
-- Spatial Context Pruning Squarified Treemap: Added an interactive directory token density heatmap using a squarified layout, weighted heat indicators, and seamless click-to-filter drilldowns integrated into Context X-Ray.
-- Git Branch & PR Financial Drift Tracker: Implemented branch-level FinOps telemetry comparing working branch context consumption against repository baselines, complete with color-coded drift severity badges (On Track, Minor Drift, Alert Drift).
-- Model Efficiency Frontier Analysis: Added an interactive log-scale latency versus cost comparative scatter plot highlighting Pareto-optimal model choices to balance response speed, quality, and context expense.
-- Budget Burn-Rate Velocity Gauge & Monthly Exhaustion Forecaster: Added dynamic burn velocity tracking with projected exhaustion horizon forecasting to protect against unplanned budget overrun.
-- Developer Engagement & Sustainability Suite: Added subtle status bar ambient sparkle feedback for real-time optimization confirmations, a 4-tier milestone achievement ledger with estimated CO2e carbon offset equivalency, and contextual prompt optimization CodeLens hints in supported editors.
-- Dynamic Real-Time Auto-Refresh Engine: Integrated event-driven UI updates across all dashboard telemetry views upon context compilation, maintaining continuous synchronization without manual reloads.
+- Sticky KPI Cockpit & Controls: Unified 4-column bar for tokens, avoided cost, compression efficiency, and density ratio with polling and budget controls.
+- Context Pipeline Stepper: Visual execution stepper with stage inspection tooltips from ingest to context compilation.
+- Spatial Context Treemap: Interactive token density heatmap with weighted indicators and click-to-filter drilldowns in Context X-Ray.
+- Git Branch Drift Tracker: Branch-level telemetry comparing branch context against repository baselines with drift severity badges.
+- Model Efficiency Frontier: Interactive latency vs. cost scatter plot highlighting optimal model choices.
+- Budget Burn-Rate Forecaster: Dynamic burn velocity tracking with projected exhaustion horizon forecasting.
+- Developer Feedback Suite: Real-time optimization confirmations, milestone achievement ledger with CO2e offsets, and prompt CodeLens hints.
+- Real-Time Auto-Refresh: Event-driven UI updates across dashboard views upon context compilation.
 
 ## 8.4.0
 
