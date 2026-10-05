@@ -48,7 +48,7 @@
   <main>
     <section class="hero-section" id="hero">
       <div class="hero-badge">
-        <span class="pulse-dot"></span> 8.5.2 Released — Next-Gen FinOps Cockpit, Pipeline Stepper, Spatial Heatmap & Efficiency Frontier
+        <span class="pulse-dot"></span> 8.5.2 Released — Finviz-Style Market Treemap, Aptabase Privacy Telemetry &amp; Next-Gen FinOps Cockpit
       </div>
       <h1 class="hero-title">Step-by-Step Feature Walkthrough & Documentation</h1>
       <p class="hero-subtitle">
@@ -74,8 +74,8 @@
           <div class="metric-label">Local Exact Chunk Retrieval</div>
         </div>
         <div class="metric-card">
-          <div class="metric-value">100% Local</div>
-          <div class="metric-label">Zero Outbound Telemetry</div>
+          <div class="metric-value">100% Private</div>
+          <div class="metric-label">Zero Code/Prompt Collection</div>
         </div>
       </div>
     </section>
@@ -887,12 +887,12 @@
             </div>
           </article>
 
-          <!-- Tab 11: Next-Gen KPI Cockpit & Frontier -->
+          <!-- Tab 11: Next-Gen KPI Cockpit & Finviz Market Treemap -->
           <article class="guide-panel" id="panel-cockpit-suite">
             <div class="panel-header">
               <span class="badge-accent">Next-Gen Architecture (v8.5.2)</span>
-              <h3>11. Next-Gen KPI Cockpit &amp; Model Frontier</h3>
-              <p class="panel-lead">Real-time FinOps command center with 4-column sticky KPIs, multi-phase execution pipeline stepper, spatial treemap directory heatmap, git branch financial drift tracking, model Pareto efficiency frontier, and budget burn-rate velocity forecasting.</p>
+              <h3>11. Next-Gen KPI Cockpit &amp; Finviz Market Treemap</h3>
+              <p class="panel-lead">Real-time FinOps command center with 4-column sticky KPIs, multi-phase execution pipeline stepper, Finviz-style squarified market treemap, privacy-preserving Aptabase telemetry, git branch drift tracking, model Pareto efficiency frontier, and budget burn-rate velocity forecasting.</p>
             </div>
 
             <!-- Side-by-Side Comparison -->
@@ -905,6 +905,7 @@
                 <ul class="comparison-list">
                   <li>Static snapshot requiring manual page refreshes to see new turns</li>
                   <li>Opaque black-box compilation with zero visibility into transformation stages</li>
+                  <li>Flat unorganized directory lists without visual volume or pruning efficiency hierarchy</li>
                   <li>No git branch context: unable to know if a PR branch is blowing up context costs</li>
                   <li>Ad-hoc model selection without Pareto-optimal latency vs cost trade-off insights</li>
                   <li>Surprise end-of-month budget exhaustion without burn velocity projections</li>
@@ -919,7 +920,8 @@
                 <ul class="comparison-list">
                   <li>Unified 4-column sticky KPI bar with live polling (1s/5s/30s/off) and instant event-bus auto-refresh</li>
                   <li>Interactive 10-stage nanobar pipeline stepper showing micro-timings and token drops</li>
-                  <li>Spatial AST directory token heatmap with squarified treemap and click-to-filter X-Ray</li>
+                  <li>Finviz-Style Market Treemap: 2-level squarified layout with sector headers, language badges, tickers, and color legend</li>
+                  <li>Privacy-Preserving Aggregate Telemetry: anonymous metrics via Aptabase with zero code/prompt collection and user opt-out</li>
                   <li>Git branch financial drift tracking with baseline comparison and colored severity pills</li>
                   <li>Model Efficiency Frontier: log-scale 2D Pareto scatter plot for smart model routing</li>
                   <li>Burn-rate velocity gauge (V_b = Spend / Days) with monthly exhaustion forecaster</li>
@@ -1326,41 +1328,111 @@
 
           <!-- Dual Grid: Spatial Treemap & FinOps Analyzers -->
           <div class="cockpit-dual-grid">
-            <!-- Spatial Directory Token Heatmap -->
+            <!-- Spatial Finviz-Style Market Treemap -->
             <div class="cockpit-section-card">
               <div class="section-card-header">
                 <div>
-                  <h4 class="section-card-title">Spatial Directory Token Heatmap</h4>
-                  <p class="section-card-desc">Squarified treemap by token density. Click any module to inspect savings or drill into Context X-Ray.</p>
+                  <h4 class="section-card-title">Spatial AST Pruning Market Treemap</h4>
+                  <p class="section-card-desc">Two-level squarified Finviz-style market map by token volume. Click any file ticker to inspect savings or drill into Context X-Ray.</p>
                 </div>
               </div>
 
-              <div class="treemap-container" id="sim-treemap">
-                <div class="treemap-tile tile-lg selected" data-name="src/compiler/" data-tok="42,500" data-pct="78%" data-files="8 files">
-                  <div class="tile-label">src/compiler/</div>
-                  <div class="tile-meta">42.5k tok • 78% sav</div>
+              <!-- Finviz Market Map Grid -->
+              <div class="market-treemap-board" id="sim-treemap">
+                <!-- Sector: COMPILER -->
+                <div class="market-sector sector-lg">
+                  <div class="market-sector-header">
+                    <span class="sector-title">COMPILER</span>
+                    <span class="sector-meta">42.5k tok • 78% sav</span>
+                  </div>
+                  <div class="market-sector-body">
+                    <div class="market-tile tile-lg selected" data-name="src/compiler/pruner.ts" data-tok="26,800" data-pct="84%" data-files="1 file">
+                      <div class="market-tile-top">
+                        <span class="lang-badge badge-ts">TS</span>
+                        <span class="tile-ticker">PRUNER.TS</span>
+                      </div>
+                      <div class="market-tile-bottom">
+                        <span class="tile-pct badge-green">-84.2%</span>
+                        <span class="tile-tok">26.8k</span>
+                      </div>
+                    </div>
+                    <div class="market-tile tile-md" data-name="src/compiler/blobCache.ts" data-tok="15,700" data-pct="72%" data-files="1 file">
+                      <div class="market-tile-top">
+                        <span class="lang-badge badge-ts">TS</span>
+                        <span class="tile-ticker">CACHE.TS</span>
+                      </div>
+                      <div class="market-tile-bottom">
+                        <span class="tile-pct badge-green">-72.0%</span>
+                        <span class="tile-tok">15.7k</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div class="treemap-tile tile-md" data-name="src/finops/" data-tok="28,100" data-pct="64%" data-files="6 files">
-                  <div class="tile-label">src/finops/</div>
-                  <div class="tile-meta">28.1k tok • 64% sav</div>
+
+                <!-- Sector: FINOPS & TELEMETRY -->
+                <div class="market-sector sector-md">
+                  <div class="market-sector-header">
+                    <span class="sector-title">FINOPS &amp; TELEMETRY</span>
+                    <span class="sector-meta">28.1k tok • 64% sav</span>
+                  </div>
+                  <div class="market-sector-body">
+                    <div class="market-tile tile-half" data-name="src/finops/ledger.ts" data-tok="16,200" data-pct="68%" data-files="1 file">
+                      <div class="market-tile-top">
+                        <span class="lang-badge badge-ts">TS</span>
+                        <span class="tile-ticker">LEDGER.TS</span>
+                      </div>
+                      <div class="market-tile-bottom">
+                        <span class="tile-pct badge-green">-68.0%</span>
+                        <span class="tile-tok">16.2k</span>
+                      </div>
+                    </div>
+                    <div class="market-tile tile-half" data-name="src/telemetry/telemetryService.ts" data-tok="11,900" data-pct="58%" data-files="1 file">
+                      <div class="market-tile-top">
+                        <span class="lang-badge badge-ts">TS</span>
+                        <span class="tile-ticker">TELEMETRY.TS</span>
+                      </div>
+                      <div class="market-tile-bottom">
+                        <span class="tile-pct badge-cyan">-58.5%</span>
+                        <span class="tile-tok">11.9k</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div class="treemap-tile tile-sm" data-name="src/ui/" data-tok="18,400" data-pct="52%" data-files="7 files">
-                  <div class="tile-label">src/ui/</div>
-                  <div class="tile-meta">18.4k tok • 52% sav</div>
+
+                <!-- Sector: UI & DASHBOARD -->
+                <div class="market-sector sector-sm">
+                  <div class="market-sector-header">
+                    <span class="sector-title">UI &amp; DASHBOARD</span>
+                    <span class="sector-meta">18.4k tok • 52% sav</span>
+                  </div>
+                  <div class="market-sector-body">
+                    <div class="market-tile tile-full" data-name="src/ui/dashboardWebview.ts" data-tok="18,400" data-pct="52%" data-files="1 file">
+                      <div class="market-tile-top">
+                        <span class="lang-badge badge-ts">TS</span>
+                        <span class="tile-ticker">DASHBOARD.TS</span>
+                      </div>
+                      <div class="market-tile-bottom">
+                        <span class="tile-pct badge-cyan">-52.0%</span>
+                        <span class="tile-tok">18.4k</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div class="treemap-tile tile-xs" data-name="src/security/" data-tok="7,200" data-pct="45%" data-files="3 files">
-                  <div class="tile-label">src/security/</div>
-                  <div class="tile-meta">7.2k • 45%</div>
-                </div>
-                <div class="treemap-tile tile-xs" data-name="src/parsers/" data-tok="4,800" data-pct="82%" data-files="2 files">
-                  <div class="tile-label">src/parsers/</div>
-                  <div class="tile-meta">4.8k • 82%</div>
+              </div>
+
+              <!-- Finviz Color Scale Legend Bar -->
+              <div class="treemap-legend-bar">
+                <span class="legend-label">Efficiency Scale:</span>
+                <div class="legend-chips">
+                  <span class="legend-chip chip-high"><span class="chip-dot dot-green"></span> &gt;70% (High Slicing)</span>
+                  <span class="legend-chip chip-mid"><span class="chip-dot dot-cyan"></span> 40–70% (Balanced)</span>
+                  <span class="legend-chip chip-low"><span class="chip-dot dot-slate"></span> &lt;40% (Preserved Core)</span>
                 </div>
               </div>
 
               <div class="treemap-detail-pill" id="treemap-selected-pill">
-                <span>Selected: <strong id="tm-selected-name">src/compiler/</strong> (<span id="tm-selected-files">8 files</span>, <span id="tm-selected-tokens">42,500</span> tokens)</span>
-                <span class="badge-green" id="tm-selected-sav">78% Slicing Potential</span>
+                <span>Selected: <strong id="tm-selected-name">src/compiler/pruner.ts</strong> (<span id="tm-selected-files">1 file</span>, <span id="tm-selected-tokens">26,800</span> tokens)</span>
+                <span class="badge-green" id="tm-selected-sav">84% Slicing Potential</span>
               </div>
             </div>
 
@@ -1550,9 +1622,9 @@
           <p>Context compilation, AST pruning, and token counting run entirely on your local machine. No external servers or proxies sit between you and your AI model.</p>
         </div>
         <div class="privacy-card">
-          <div class="card-icon">🚫</div>
-          <h3>Zero Telemetry Sinks</h3>
-          <p>We do not collect prompt text, source code, filenames, or usage analytics. There are no tracking scripts, third-party analytics, or background pricing downloads.</p>
+          <div class="card-icon">🔒</div>
+          <h3>Privacy-Preserving Telemetry</h3>
+          <p>Optional, strictly anonymous usage metrics (via Aptabase) measure aggregate token savings, compression percentages, and runtime error categories. Zero prompts, source code, diffs, filenames, or personal identifiers are ever collected. Fully respects VS Code's global telemetry settings and provides direct opt-out control via <code>Tokonomics: Toggle Usage Analytics</code>.</p>
         </div>
         <div class="privacy-card">
           <div class="card-icon">🛡️</div>

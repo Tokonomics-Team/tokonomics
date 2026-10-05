@@ -602,6 +602,16 @@ function escapeHtml(str) {
 // -------------------------------------------------------------------
 const COMMAND_DATABASE = [
   {
+    cmd: 'Tokonomics: Toggle Usage Analytics',
+    category: 'Privacy',
+    desc: 'Toggles anonymous, privacy-preserving aggregate usage telemetry (Aptabase) with zero code or prompt collection.'
+  },
+  {
+    cmd: 'Tokonomics: Export Anonymized Diagnostic Logs',
+    category: 'Privacy',
+    desc: 'Generates and exports locally sanitized diagnostic logs with automatic secret redaction and path neutralization.'
+  },
+  {
     cmd: 'Tokonomics: Run Pipeline Step Inspector',
     category: 'Compiler',
     desc: 'Opens the live multi-stage context pipeline stepper to inspect stage execution deltas and timings.'
@@ -838,7 +848,7 @@ function initPipelineStepper() {
 }
 
 function initTreemapSelection() {
-  const tiles = document.querySelectorAll('#sim-treemap .treemap-tile');
+  const tiles = document.querySelectorAll('#sim-treemap .market-tile, #sim-treemap .treemap-tile');
   const nameEl = document.getElementById('tm-selected-name');
   const filesEl = document.getElementById('tm-selected-files');
   const tokEl = document.getElementById('tm-selected-tokens');
