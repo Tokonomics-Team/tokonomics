@@ -1,5 +1,12 @@
 # Tokonomics release notes
 
+## 8.5.3
+
+- Privacy Telemetry Reliability: Aligned event payloads and session identification with Aptabase's numeric epoch protocol for accurate session lifecycle and duration tracking.
+- Periodic Session Pulse: Added background 30-minute heartbeat pings to maintain real-time active user and session metrics while the editor remains open.
+- Environment-Aware Debug Routing: Automatically detects development mode to route development traffic to Aptabase's debug environment, keeping production release analytics clean.
+- Comprehensive Feature Interaction Telemetry: Wired anonymous interaction tracking across chat participant commands and core dashboard actions.
+
 ## 8.5.2
 
 - Spatial AST Pruning Market Treemap: Upgraded the Context X-Ray spatial density heatmap into a two-level squarified market map featuring module sector frames, circular language badges, bold uppercase tickers, and an efficiency color-scale legend bar.
@@ -52,32 +59,21 @@
 
 ## 8.1.0
 
-- Added a local First Context Check that sends nothing until the user explicitly submits a chat request.
-- Added Context X-Ray for bounded estimates from one immutable workspace-index snapshot.
-- Added an opt-in active selection/editor Context Meter with a 300 KiB safety limit.
-- Added editor right-click context menu options and a dedicated Tokonomics submenu.
-- Added one-shot, read-only health analysis for an explicitly selected supported session log.
-- Added bounded, redacted handoff drafts for the active Tokonomics-owned chat.
-- Added read-only structural overhead audits for explicitly selected tool-schema JSON.
-- Tightened packaged contents and release evidence for the exact Marketplace VSIX.
+- Added local First Context Check, read-only Context X-Ray estimates, and opt-in Context Meter with 300 KiB safety limit.
+- Added editor right-click context menu options and dedicated Tokonomics submenu.
+- Added session health analysis, chat handoffs, and tool-schema structural audits.
+- Tightened packaged contents and release evidence for Marketplace VSIX distribution.
 
 ## 8.0.0
 
 - Documented the verified economic ROI model: prompt capacity headroom and direct token savings.
 - Expanded structural context preparation across 14 languages, adding Ruby, Swift, Kotlin, and C/C++ support.
 - Restored dockable native chat in Secondary Side Bar and dedicated Editor Tab with session history.
-- Added live panel activity log for provider-reported command, file, tool and plan events.
-- Added /codex and /claude subscription chat commands using official CLI logins.
-- Provided task spend tracking, advisory budgets, and opt-in Claude usage log importing/watching.
+- Added live panel activity log, /codex and /claude subscription chat, and task spend tracking.
 
 ## 7.0.1
 
-- Refreshed context preparation with simplified four-setting configuration.
-- Improved dashboard updates, status explanations, and token/cost visibility.
-- Improved workspace awareness, request preservation, and fallback behavior.
-- Added encrypted project memory with inspect, disable, export, and delete controls.
-
-Optional local-model assistance is not enabled or advertised in this release.
+- Refreshed context preparation with simplified configuration, improved dashboard updates, and encrypted project memory.
 
 ## Earlier releases
 
