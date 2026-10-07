@@ -8,11 +8,39 @@ document.addEventListener('DOMContentLoaded', () => {
   initStudio();
   initCommandPalette();
   initCockpitSimulator();
+  initBenchmarkTabs();
 });
 
 // -------------------------------------------------------------------
 // 1. Tab Switching Logic for Step-by-Step Guide
 // -------------------------------------------------------------------
+
+
+// -------------------------------------------------------------------
+// 0. Tab Switching for Empirical Benchmark Showcase
+// -------------------------------------------------------------------
+function initBenchmarkTabs() {
+  const tabButtons = document.querySelectorAll('.benchmark-tab-btn');
+  const panels = document.querySelectorAll('.benchmark-panel');
+
+  tabButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetId = 'bench-panel-' + btn.getAttribute('data-bench-tab');
+
+      tabButtons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      panels.forEach(p => {
+        if (p.id === targetId) {
+          p.classList.add('active');
+        } else {
+          p.classList.remove('active');
+        }
+      });
+    });
+  });
+}
+
 function initTabs() {
   const tabButtons = document.querySelectorAll('.guide-tab-btn');
   const panels = document.querySelectorAll('.guide-panel');
