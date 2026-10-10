@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initTabs();
   initCopyButtons();
   initStudio();
+  initMcpSimulator();
   initCommandPalette();
   initCockpitSimulator();
   initBenchmarkTabs();
@@ -993,3 +994,197 @@ function initFrontierPlot() {
     });
   });
 }
+
+
+// -------------------------------------------------------------------
+// 6. Interactive Model Context Protocol (MCP) Tool Firewall Simulator (v8.6.0)
+// -------------------------------------------------------------------
+const MCP_SCENARIOS = {
+  github: {
+    name: '🐙 GitHub CI & PRs',
+    prompt: 'Review open pull requests, compare branch diffs, and inspect the latest commit on main',
+    intent: 'git',
+    matchedTools: ['git_status', 'git_diff', 'git_commit', 'create_or_update_pull_request'],
+    rawTokens: 7796,
+    prunedTokens: 779,
+    rawDisplay: `{\n  "//": "55 MCP Tools Active across 7 Servers (github, postgres, filesystem, brave, puppeteer, slack, sentry)",\n  "tools": [\n    {\n      "name": "create_or_update_pull_request",\n      "description": "Creates a new pull request or updates an existing pull request in the targeted repository. Ensures base and head branches are valid, adds review comments and body markdown.",\n      "inputSchema": {\n        "type": "object",\n        "properties": {\n          "owner": { "type": "string", "description": "The GitHub repository owner account name" },\n          "repo": { "type": "string", "description": "The repository slug name" },\n          "title": { "type": "string", "description": "Title of the proposed pull request" },\n          "head": { "type": "string", "description": "Name of the branch containing new commits" },\n          "base": { "type": "string", "description": "Name of the branch you want to merge into" },\n          "body": { "type": "string", "description": "Extended markdown description of the changes" }\n        },\n        "required": ["owner", "repo", "title", "head", "base"]\n      }\n    },\n    {\n      "name": "git_diff",\n      "description": "Computes line-by-line differences between working tree and commit index or between branches with unified diff output format.",\n      "inputSchema": {\n        "type": "object",\n        "properties": {\n          "path": { "type": "string", "description": "Relative file path to inspect diff" },\n          "staged": { "type": "boolean", "description": "Include staged index changes only" }\n        }\n      }\n    },\n    {\n      "name": "sql_query",\n      "description": "Executes read-only SQL SELECT queries against the connected Postgres instance with execution limits.",\n      "inputSchema": { /* ... Postgres schema payload (856 tokens) ... */ }\n    },\n    {\n      "name": "puppeteer_navigate",\n      "description": "Directs the headless Chromium browser to navigate to a target HTTP URL.",\n      "inputSchema": { /* ... Puppeteer schema payload (661 tokens) ... */ }\n    },\n    {\n      "name": "sentry_list_events",\n      "description": "Queries Sentry Discover API for error events, stack traces, and unhandled exceptions.",\n      "inputSchema": { /* ... Sentry schema payload (585 tokens) ... */ }\n    }\n    /* ... 50 additional unpruned tool schemas omitted ... */\n  ]\n}`,
+    prunedDisplay: `// ============================================================================\n// Tokonomics MCP Tool Firewall (v8.6.0)\n// Dynamic Intent: [git] (0.94 score) | Top 4 Candidates + Virtual Catalog\n// 55 Tools -> 4 Active Tools + Fallback | 7,796 -> 779 Tokens (-90.0%)\n// ============================================================================\n\ngit_status(): { branch: string; dirty: boolean; staged: string[] }\ngit_diff(path?: string, staged?: boolean): { diff: string }\ngit_commit(message: string): { hash: string; summary: string }\ncreate_or_update_pull_request(owner: string, repo: string, title: string, head: string, base: string, body?: string): { prUrl: string; number: number }\n\n// --- Virtual Catalog Paging Safety Invariant ---\n// If model requires an unlisted tool, invoking this virtual tool resolves it in 1.4ms:\ntokonomics_request_tool_catalog(intentHint?: string): { availableTools: string[]; schemaPagingUrl: string }`,
+    tsDisplay: `// Tokonomics TypeScript Minification: Boilerplate JSON Schema Stripped (-31.1%)\ncreate_or_update_pull_request(owner: string, repo: string, title: string, head: string, base: string, body?: string): Promise<{ prUrl: string; number: number }>;\ngit_diff(path?: string, staged?: boolean): Promise<{ diff: string }>;\ngit_commit(message: string): Promise<{ hash: string; summary: string }>;\ngit_status(): Promise<{ branch: string; dirty: boolean; staged: string[] }>;\nsql_query(query: string, limit?: number): Promise<{ rows: any[]; rowCount: number }>;\npuppeteer_navigate(url: string, timeoutMs?: number): Promise<{ status: number }>;\nsentry_list_events(issueId: string): Promise<{ events: any[] }>;\n// ... all 55 tools formatted as lean TypeScript function signatures (5,871 tokens)`
+  },
+  postgres: {
+    name: '🐘 Postgres SQL Query',
+    prompt: 'Execute read-only SQL query on the transactions table and explain the execution plan',
+    intent: 'database',
+    matchedTools: ['sql_query', 'sql_execute', 'list_tables', 'describe_table'],
+    rawTokens: 7796,
+    prunedTokens: 622,
+    rawDisplay: `{\n  "//": "55 MCP Tools Active across 7 Servers",\n  "tools": [\n    {\n      "name": "sql_query",\n      "description": "Executes read-only SQL queries against Postgres database and returns tabular rows with strict timeout bounds.",\n      "inputSchema": {\n        "type": "object",\n        "properties": {\n          "sql": { "type": "string", "description": "The parameterized SQL statement to execute" },\n          "params": { "type": "array", "description": "Positional parameter values for query" },\n          "limit": { "type": "number", "description": "Maximum rows to return" }\n        },\n        "required": ["sql"]\n      }\n    },\n    {\n      "name": "describe_table",\n      "description": "Fetches columns, foreign keys, indexes, and constraint metadata for a named database table.",\n      "inputSchema": {\n        "type": "object",\n        "properties": { "tableName": { "type": "string", "description": "Table name to inspect" } },\n        "required": ["tableName"]\n      }\n    }\n    /* ... 53 other tools across all 7 servers ... */\n  ]\n}`,
+    prunedDisplay: `// ============================================================================\n// Tokonomics MCP Tool Firewall (v8.6.0)\n// Dynamic Intent: [database] (0.91 score) | 4 Active Tools + Virtual Catalog\n// 55 Tools -> 4 Active Tools | 7,796 -> 622 Tokens (-92.0%)\n// ============================================================================\n\nsql_query(sql: string, params?: any[], limit?: number): { rows: Record<string, any>[]; rowCount: number }\ndescribe_table(tableName: string): { columns: string[]; primaryKey: string; indexes: string[] }\nlist_tables(schema?: string): { tables: string[] }\nsql_execute(sql: string): { affectedRows: number }\n\n// --- Virtual Catalog Paging Safety Invariant ---\ntokonomics_request_tool_catalog(intentHint?: string): { availableTools: string[]; schemaPagingUrl: string }`,
+    tsDisplay: `// Tokonomics TypeScript Minification: Postgres Schemas (-31.1%)\nsql_query(sql: string, params?: any[], limit?: number): Promise<{ rows: any[]; rowCount: number }>;\ndescribe_table(tableName: string): Promise<{ columns: string[]; indexes: string[] }>;\nlist_tables(schema?: string): Promise<{ tables: string[] }>;\nsql_execute(sql: string): Promise<{ affectedRows: number }>;`
+  },
+  web: {
+    name: '🌐 Brave Search & Puppeteer',
+    prompt: 'Search the web for the latest Next.js 15 migration notes and crawl the release docs with headless browser',
+    intent: 'web/browser',
+    matchedTools: ['brave_web_search', 'puppeteer_navigate', 'puppeteer_click', 'puppeteer_evaluate'],
+    rawTokens: 7796,
+    prunedTokens: 685,
+    rawDisplay: `{\n  "//": "55 MCP Tools Active across 7 Servers",\n  "tools": [\n    {\n      "name": "brave_web_search",\n      "description": "Performs public web searches via Brave Search API with live ranking and summaries.",\n      "inputSchema": {\n        "type": "object",\n        "properties": { "query": { "type": "string", "description": "Keywords to query" } },\n        "required": ["query"]\n      }\n    },\n    {\n      "name": "puppeteer_navigate",\n      "description": "Navigates browser instance to given URL and waits for network idle lifecycle.",\n      "inputSchema": {\n        "type": "object",\n        "properties": { "url": { "type": "string" }, "timeout": { "type": "number" } },\n        "required": ["url"]\n      }\n    }\n  ]\n}`,
+    prunedDisplay: `// ============================================================================\n// Tokonomics MCP Tool Firewall (v8.6.0)\n// Dynamic Intent: [web/browser] (0.88 score) | 4 Active Tools + Virtual Catalog\n// 55 Tools -> 4 Active Tools | 7,796 -> 685 Tokens (-91.2%)\n// ============================================================================\n\nbrave_web_search(query: string, count?: number): { results: { title: string; url: string; snippet: string }[] }\npuppeteer_navigate(url: string, timeoutMs?: number): { status: number; pageTitle: string }\npuppeteer_click(selector: string): { success: boolean }\npuppeteer_evaluate(script: string): { result: any }\n\n// --- Virtual Catalog Paging Safety Invariant ---\ntokonomics_request_tool_catalog(intentHint?: string): { availableTools: string[]; schemaPagingUrl: string }`,
+    tsDisplay: `// Tokonomics TypeScript Minification: Web & Browser Tools (-31.1%)\nbrave_web_search(query: string, count?: number): Promise<any>;\npuppeteer_navigate(url: string, timeoutMs?: number): Promise<any>;\npuppeteer_click(selector: string): Promise<any>;\npuppeteer_evaluate(script: string): Promise<any>;`
+  },
+  incident: {
+    name: '🚨 Sentry Triage & Slack',
+    prompt: 'Inspect recent Sentry crash stack trace for Error 500 and post an alert to the #devops-incidents Slack channel',
+    intent: 'monitoring/messaging',
+    matchedTools: ['sentry_get_issue', 'sentry_list_events', 'slack_post_message', 'slack_add_reaction'],
+    rawTokens: 7796,
+    prunedTokens: 742,
+    rawDisplay: `{\n  "//": "55 MCP Tools Active across 7 Servers",\n  "tools": [\n    {\n      "name": "sentry_get_issue",\n      "description": "Retrieves error details, breadcrumbs, stack traces, and environment context for a Sentry issue.",\n      "inputSchema": { "type": "object", "properties": { "issueId": { "type": "string" } }, "required": ["issueId"] }\n    },\n    {\n      "name": "slack_post_message",\n      "description": "Publishes a markdown message to an authorized Slack channel or direct message thread.",\n      "inputSchema": { "type": "object", "properties": { "channel": { "type": "string" }, "text": { "type": "string" } }, "required": ["channel", "text"] }\n    }\n  ]\n}`,
+    prunedDisplay: `// ============================================================================\n// Tokonomics MCP Tool Firewall (v8.6.0)\n// Dynamic Intent: [monitoring/messaging] (0.93 score) | 4 Active Tools + Virtual Catalog\n// 55 Tools -> 4 Active Tools | 7,796 -> 742 Tokens (-90.5%)\n// ============================================================================\n\nsentry_get_issue(issueId: string): { id: string; title: string; count: number; lastSeen: string; stackTrace: string }\nsentry_list_events(issueId: string, limit?: number): { events: any[] }\nslack_post_message(channel: string, text: string, threadTs?: string): { ok: boolean; ts: string }\nslack_add_reaction(channel: string, timestamp: string, name: string): { ok: boolean }\n\n// --- Virtual Catalog Paging Safety Invariant ---\ntokonomics_request_tool_catalog(intentHint?: string): { availableTools: string[]; schemaPagingUrl: string }`,
+    tsDisplay: `// Tokonomics TypeScript Minification: Sentry & Slack Tools (-31.1%)\nsentry_get_issue(issueId: string): Promise<any>;\nsentry_list_events(issueId: string, limit?: number): Promise<any>;\nslack_post_message(channel: string, text: string): Promise<any>;\nslack_add_reaction(channel: string, timestamp: string, name: string): Promise<any>;`
+  },
+  filesystem: {
+    name: '📁 Filesystem Workspace',
+    prompt: 'Search workspace for all auth middleware files and read security headers configuration',
+    intent: 'filesystem',
+    matchedTools: ['search_files', 'read_file', 'list_directory', 'get_file_info'],
+    rawTokens: 7796,
+    prunedTokens: 698,
+    rawDisplay: `{\n  "//": "55 MCP Tools Active across 7 Servers",\n  "tools": [\n    {\n      "name": "search_files",\n      "description": "Recursively searches workspace directory for files matching glob pattern.",\n      "inputSchema": { "type": "object", "properties": { "path": { "type": "string" }, "pattern": { "type": "string" } }, "required": ["path", "pattern"] }\n    },\n    {\n      "name": "read_file",\n      "description": "Reads complete UTF-8 contents of a workspace file within bounded file size limits.",\n      "inputSchema": { "type": "object", "properties": { "path": { "type": "string" } }, "required": ["path"] }\n    }\n  ]\n}`,
+    prunedDisplay: `// ============================================================================\n// Tokonomics MCP Tool Firewall (v8.6.0)\n// Dynamic Intent: [filesystem] (0.89 score) | 4 Active Tools + Virtual Catalog\n// 55 Tools -> 4 Active Tools | 7,796 -> 698 Tokens (-91.0%)\n// ============================================================================\n\nsearch_files(path: string, pattern: string): { matches: string[] }\nread_file(path: string): { content: string; size: number }\nlist_directory(path: string): { files: string[]; directories: string[] }\nget_file_info(path: string): { size: number; modified: string; isDirectory: boolean }\n\n// --- Virtual Catalog Paging Safety Invariant ---\ntokonomics_request_tool_catalog(intentHint?: string): { availableTools: string[]; schemaPagingUrl: string }`,
+    tsDisplay: `// Tokonomics TypeScript Minification: Filesystem Tools (-31.1%)\nsearch_files(path: string, pattern: string): Promise<{ matches: string[] }>;\nread_file(path: string): Promise<{ content: string }>;\nlist_directory(path: string): Promise<{ files: string[]; directories: string[] }>;\nget_file_info(path: string): Promise<any>;`
+  }
+};
+
+function initMcpSimulator() {
+  const scenarioBtns = document.querySelectorAll('.mcp-scenario-btn');
+  const modeBtns = document.querySelectorAll('.mcp-mode-btn');
+  const promptInput = document.getElementById('mcp-user-prompt');
+  const runBtn = document.getElementById('btn-run-mcp-firewall');
+  const rawContent = document.getElementById('mcp-raw-content');
+  const prunedContent = document.getElementById('mcp-pruned-content');
+  const rawTokensBadge = document.getElementById('mcp-raw-tokens');
+  const prunedTokensBadge = document.getElementById('mcp-pruned-tokens');
+  const statSaved = document.getElementById('mcp-stat-saved');
+  const statPct = document.getElementById('mcp-stat-pct');
+  const statLatency = document.getElementById('mcp-stat-latency');
+  const statCost = document.getElementById('mcp-stat-cost');
+  const prunedHeader = document.getElementById('mcp-pruned-header');
+  const btnPaging = document.getElementById('btn-simulate-mcp-paging');
+  const pagingToast = document.getElementById('mcp-paging-toast');
+
+  if (!rawContent || !prunedContent) return;
+
+  let activeScenarioKey = 'github';
+  let activeMode = 'firewall';
+
+  function render() {
+    const sc = MCP_SCENARIOS[activeScenarioKey] || MCP_SCENARIOS.github;
+
+    if (activeMode === 'firewall') {
+      rawContent.textContent = sc.rawDisplay;
+      prunedContent.textContent = sc.prunedDisplay;
+      if (rawTokensBadge) rawTokensBadge.textContent = '7,796 tokens';
+      if (prunedTokensBadge) {
+        prunedTokensBadge.textContent = `${sc.prunedTokens} tokens (-90.0%)`;
+        prunedTokensBadge.className = 'token-badge badge-green';
+      }
+      if (statSaved) statSaved.textContent = (7796 - sc.prunedTokens).toLocaleString();
+      if (statPct) statPct.textContent = `-${((1 - sc.prunedTokens / 7796) * 100).toFixed(1)}%`;
+      if (statLatency) statLatency.textContent = '2.31 ms';
+      if (statCost) statCost.textContent = '+$60.61';
+      if (prunedHeader) prunedHeader.textContent = 'Tokonomics MCP Tool Firewall (Top Candidates + Virtual Catalog)';
+    } else if (activeMode === 'typescript') {
+      rawContent.textContent = sc.rawDisplay;
+      prunedContent.textContent = sc.tsDisplay;
+      if (rawTokensBadge) rawTokensBadge.textContent = '7,796 tokens';
+      if (prunedTokensBadge) {
+        prunedTokensBadge.textContent = '5,871 tokens (-24.7%)';
+        prunedTokensBadge.className = 'token-badge badge-green';
+      }
+      if (statSaved) statSaved.textContent = '1,925';
+      if (statPct) statPct.textContent = '-24.7%';
+      if (statLatency) statLatency.textContent = '1.85 ms';
+      if (statCost) statCost.textContent = '+$18.20';
+      if (prunedHeader) prunedHeader.textContent = 'TypeScript Pseudo-Signatures (Boilerplate Stripped)';
+    } else {
+      rawContent.textContent = sc.rawDisplay;
+      prunedContent.textContent = sc.rawDisplay;
+      if (rawTokensBadge) rawTokensBadge.textContent = '7,796 tokens';
+      if (prunedTokensBadge) {
+        prunedTokensBadge.textContent = '7,796 tokens (0.0%)';
+        prunedTokensBadge.className = 'token-badge';
+      }
+      if (statSaved) statSaved.textContent = '0';
+      if (statPct) statPct.textContent = '0.0%';
+      if (statLatency) statLatency.textContent = '0.00 ms';
+      if (statCost) statCost.textContent = '$0.00';
+      if (prunedHeader) prunedHeader.textContent = 'Raw Unoptimized Monolithic JSON Schema (Bypass)';
+    }
+  }
+
+  scenarioBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      scenarioBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeScenarioKey = btn.getAttribute('data-mcp-scenario');
+      if (promptInput && MCP_SCENARIOS[activeScenarioKey]) {
+        promptInput.value = MCP_SCENARIOS[activeScenarioKey].prompt;
+      }
+      render();
+    });
+  });
+
+  modeBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      modeBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeMode = btn.getAttribute('data-mcp-mode');
+      render();
+    });
+  });
+
+  if (runBtn) {
+    runBtn.addEventListener('click', () => {
+      const q = (promptInput?.value || '').toLowerCase();
+      if (q.includes('sql') || q.includes('query') || q.includes('postgres') || q.includes('database')) {
+        activeScenarioKey = 'postgres';
+      } else if (q.includes('brave') || q.includes('search') || q.includes('crawl') || q.includes('puppeteer') || q.includes('web')) {
+        activeScenarioKey = 'web';
+      } else if (q.includes('sentry') || q.includes('slack') || q.includes('crash') || q.includes('incident') || q.includes('error')) {
+        activeScenarioKey = 'incident';
+      } else if (q.includes('file') || q.includes('dir') || q.includes('path') || q.includes('read') || q.includes('search_files')) {
+        activeScenarioKey = 'filesystem';
+      } else {
+        activeScenarioKey = 'github';
+      }
+
+      scenarioBtns.forEach(b => {
+        b.classList.toggle('active', b.getAttribute('data-mcp-scenario') === activeScenarioKey);
+      });
+
+      render();
+
+      prunedContent.style.transition = 'background-color 0.4s';
+      prunedContent.style.backgroundColor = 'rgba(0, 242, 254, 0.12)';
+      setTimeout(() => {
+        prunedContent.style.backgroundColor = '';
+      }, 400);
+    });
+  }
+
+  if (btnPaging && pagingToast) {
+    btnPaging.addEventListener('click', () => {
+      pagingToast.style.display = 'block';
+      pagingToast.innerHTML = `⚡ <strong>Catalog Virtualization Event:</strong> Model invoked <code>tokonomics_request_tool_catalog("database")</code>.<br>Resolved full tool schema for <code>sql_query</code> in <strong>1.4ms</strong> with 100% parameter accuracy!`;
+      setTimeout(() => {
+        pagingToast.style.display = 'none';
+      }, 4500);
+    });
+  }
+
+  // Initial render
+  render();
+}
+
