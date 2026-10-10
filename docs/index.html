@@ -1090,9 +1090,13 @@
               <label for="lang-select">Language:</label>
               <select id="lang-select">
                 <option value="ts">TypeScript / JavaScript</option>
+                <option value="cpp">C++ (Modern C++17/20)</option>
+                <option value="c">C (ANSI / C99 / C11)</option>
                 <option value="py">Python</option>
                 <option value="go">Go</option>
                 <option value="rust">Rust</option>
+                <option value="java">Java</option>
+                <option value="cs">C# (.NET)</option>
               </select>
             </div>
             <button class="btn-compile" id="btn-run-simulation">Compile Context (Simulate AST Pruning)</button>
@@ -2163,8 +2167,8 @@
           </div>
           <div class="fidelity-card glass-card">
             <div class="fidelity-icon">⚡</div>
-            <h4>Sub-10ms Tree-sitter WASM Engine</h4>
-            <p>Runs in-memory via version-pinned Microsoft Tree-sitter WASM grammars. Zero network round-trips, zero external dependencies, zero latency penalty.</p>
+            <h4>Sub-10ms Multi-Language AST Engine</h4>
+            <p>Runs in-memory with dedicated parsers for C, C++, Python, TypeScript, JavaScript, Go, Rust, Java, C#, Ruby, Swift, and Kotlin. Zero network round-trips, zero external dependencies.</p>
           </div>
           <div class="fidelity-card glass-card">
             <div class="fidelity-icon">🔄</div>

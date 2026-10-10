@@ -79,7 +79,7 @@ Insights are explicit, bounded, and local. File analysis requires a trusted work
 
 Open **Tokonomics: Open Chat** from the Command Palette (or click the Tokonomics icon in the Secondary Side Bar) to use the dedicated chat interface, or run **Tokonomics: Open Chat in Editor** for a split editor tab.
 
-Both surfaces share conversation state and model selection. They provide streamed Markdown, syntax highlighting, activity status, contextual model tier guidance for cost-effective selection, packaged TypeScript, JavaScript, and Python parsing with bounded heuristic fallbacks elsewhere, local indexing, up to 10 saved conversations, and subscription routing through the official Codex and Claude CLIs.
+Both surfaces share conversation state and model selection. They provide streamed Markdown, syntax highlighting, activity status, contextual model tier guidance for cost-effective selection, native multi-language AST context slicing across C, C++, Python, TypeScript, JavaScript, Go, Rust, Java, C#, Ruby, Swift, Kotlin, PHP, and SQL, local indexing, up to 10 saved conversations, and subscription routing through the official Codex and Claude CLIs.
 
 The panel saves up to 10 recent chats locally for this workspace with secret redaction. Unfinished requests are marked interrupted and are not resent automatically.
 

@@ -2,6 +2,7 @@
 
 ## 8.6.0
 
+- Universal Multi-Language AST Engine: Added native AST context compilation and slicing for all top programming languages: C (`.c`, `.h`), C++ (`.cpp`, `.hpp`, `.cc`, `.cxx`), Python (`.py`, `.pyi`), TypeScript/JavaScript (`.ts`, `.tsx`, `.js`, `.jsx`), Go (`.go`), Rust (`.rs`), Java (`.java`), C# (`.cs`), Ruby (`.rb`), Swift (`.swift`), and Kotlin (`.kt`). Supports Allman and K&R brace conventions, multi-line function headers, `typedef struct` aliases, templates, and preprocessor directives with 40%–60% token reduction.
 - Model Context Protocol (MCP) Tool Firewall: Dynamic tool intent classification, catalog virtualization (`tokonomics_request_tool_catalog`), and compact minification pruning up to 90.0% of tool context overhead in 2.3ms.
 - Community MCP Server Validation: Automated benchmark suite across 7 canonical community servers (55 tools: GitHub, Postgres, Filesystem, Brave Search, Puppeteer, Slack, Sentry) with 100% parameter accuracy and zero tool call misfires.
 - Open-Source Benchmark Arena: Evaluated against canonical production repositories (Redux, Express, Axios, Fastify, React, Flask) achieving 66.2% average context reduction in Balanced mode.
@@ -48,26 +49,18 @@
 
 ## 8.3.0
 
-- Fail-closed secret boundary with high-entropy token scanning and syntax-preserving redaction.
-- Restricted Mode containment, blocking workspace reads, and bounded 300 KiB editor streaming.
-- Subprocess isolation for /claude and /codex with minimal environment allowlists.
+- High-entropy secret scanning, Restricted Mode containment, and subprocess isolation for /claude and /codex.
 - Authenticated project memory with per-workspace keys and atomic replacement.
-- Truthful 14-language syntax matrix with native parsers for TypeScript, JavaScript, and Python.
-- Dedicated background worker boundaries for syntax pruning and streaming session log framing.
 - Dockable native chat panel in Secondary Side Bar and Editor Tab with 10-session history and /handoff.
-- Deterministic packaging, CycloneDX 1.5 SBOM, and signed release attestation verification in CI.
-- Updated public documentation.
+- Deterministic packaging, CycloneDX 1.5 SBOM, and signed release attestation verification.
 
 ## 8.2.0
 
-- Modernized the dashboard into Overview, Context, and Activity tabs with responsive layouts.
-- Centralized client/host webview messaging in a typed protocol with runtime length validation.
-- Added responsive stacked cell formatting and explicit cell labeling for narrow split-editor panes.
+- Modernized dashboard into Overview, Context, and Activity tabs with responsive layouts and typed webview messaging.
 - Unified asynchronous operation feedback across active-file optimization, diff comparison, and workspace scans.
 
 ## Earlier releases
 
-- 8.1.0: Added First Context Check, Context X-Ray estimates, opt-in Context Meter, chat handoffs, and tool-schema audits.
-- 8.0.0: Documented verified economic ROI model, expanded 14-language context preparation, restored dockable native chat, and added task spend tracking.
-- 7.0.1: Refreshed context preparation with simplified configuration, dashboard updates, and encrypted project memory.
-- Initial releases: Introduced the Tokonomics chat participant, code-context tools, and usage visibility.
+- 8.1.0: First Context Check, Context X-Ray estimates, opt-in Context Meter, chat handoffs, and tool-schema audits.
+- 8.0.0: Verified economic ROI model, expanded language context preparation, and task spend tracking.
+- 7.0.1: Refreshed context preparation with simplified configuration and encrypted project memory.
