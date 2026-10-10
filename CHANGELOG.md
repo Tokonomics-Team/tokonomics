@@ -1,5 +1,13 @@
 # Tokonomics release notes
 
+## 8.6.0
+
+- Model Context Protocol (MCP) Tool Firewall: Dynamic tool intent classification, catalog virtualization (`tokonomics_request_tool_catalog`), and compact minification pruning up to 90.0% of tool context overhead in 2.3ms.
+- Community MCP Server Validation: Automated benchmark suite across 7 canonical community servers (55 tools: GitHub, Postgres, Filesystem, Brave Search, Puppeteer, Slack, Sentry) with 100% parameter accuracy and zero tool call misfires.
+- Open-Source Benchmark Arena: Evaluated against canonical production repositories (Redux, Express, Axios, Fastify, React, Flask) achieving 66.2% average context reduction in Balanced mode.
+- Direct Google Gemini API Provider: Native integration for Gemini models (`gemini-2.5-pro`, `gemini-2.5-flash`, `gemini-2.5-flash-lite`) via `Tokonomics: Configure Gemini API Key` alongside official Claude and Codex CLI transports.
+- Context Savings Measurement Framework: Reproducible CLI validation runner and public evidence governance reports.
+
 ## 8.5.3
 
 - Privacy Telemetry Reliability: Aligned event payloads and session identification with Aptabase's numeric epoch protocol for accurate session lifecycle and duration tracking.
@@ -40,15 +48,15 @@
 
 ## 8.3.0
 
-- Authoritative fail-closed secret boundary with high-entropy token scanning and syntax-preserving redaction.
-- Strict Restricted Mode fail-closed containment, blocking workspace reads, and bounded 300 KiB editor streaming.
-- Subprocess isolation for /claude and /codex with minimal environment allowlists and executable verification.
-- Authenticated project memory with per-workspace keys, authenticated encryption, and verified atomic replacement.
-- Truthful 14-language syntax capability matrix with native parsers for TypeScript, JavaScript, and Python.
+- Fail-closed secret boundary with high-entropy token scanning and syntax-preserving redaction.
+- Restricted Mode containment, blocking workspace reads, and bounded 300 KiB editor streaming.
+- Subprocess isolation for /claude and /codex with minimal environment allowlists.
+- Authenticated project memory with per-workspace keys and atomic replacement.
+- Truthful 14-language syntax matrix with native parsers for TypeScript, JavaScript, and Python.
 - Dedicated background worker boundaries for syntax pruning and streaming session log framing.
-- Dockable native chat panel in Secondary Side Bar and Editor Tab with 10-session history and /handoff command.
+- Dockable native chat panel in Secondary Side Bar and Editor Tab with 10-session history and /handoff.
 - Deterministic packaging, CycloneDX 1.5 SBOM, and signed release attestation verification in CI.
-- Updated documentation (tokonomics-team.github.io/tokonomics).
+- Updated public documentation.
 
 ## 8.2.0
 
@@ -57,24 +65,9 @@
 - Added responsive stacked cell formatting and explicit cell labeling for narrow split-editor panes.
 - Unified asynchronous operation feedback across active-file optimization, diff comparison, and workspace scans.
 
-## 8.1.0
-
-- Added local First Context Check, read-only Context X-Ray estimates, and opt-in Context Meter with 300 KiB safety limit.
-- Added editor right-click context menu options and dedicated Tokonomics submenu.
-- Added session health analysis, chat handoffs, and tool-schema structural audits.
-- Tightened packaged contents and release evidence for Marketplace VSIX distribution.
-
-## 8.0.0
-
-- Documented the verified economic ROI model: prompt capacity headroom and direct token savings.
-- Expanded structural context preparation across 14 languages, adding Ruby, Swift, Kotlin, and C/C++ support.
-- Restored dockable native chat in Secondary Side Bar and dedicated Editor Tab with session history.
-- Added live panel activity log, /codex and /claude subscription chat, and task spend tracking.
-
-## 7.0.1
-
-- Refreshed context preparation with simplified configuration, improved dashboard updates, and encrypted project memory.
-
 ## Earlier releases
 
-- Introduced the Tokonomics chat participant, code-context tools, and usage visibility.
+- 8.1.0: Added First Context Check, Context X-Ray estimates, opt-in Context Meter, chat handoffs, and tool-schema audits.
+- 8.0.0: Documented verified economic ROI model, expanded 14-language context preparation, restored dockable native chat, and added task spend tracking.
+- 7.0.1: Refreshed context preparation with simplified configuration, dashboard updates, and encrypted project memory.
+- Initial releases: Introduced the Tokonomics chat participant, code-context tools, and usage visibility.

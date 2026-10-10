@@ -1,13 +1,16 @@
-# Tokonomics 8.5.3
+# Tokonomics 8.6.0
 
 Tokonomics is a Visual Studio Code extension that prepares leaner context for AI-assisted development and shows clear request-level usage information. Interactive guide & simulator: [tokonomics-team.github.io/tokonomics](https://tokonomics-team.github.io/tokonomics/).
 
 Removes avoidable repetition while keeping required context. Results vary by workspace, model, and provider.
 
-Subscription chat: in VS Code Chat (Ask), use `@tokonomics /codex your question` or `@tokonomics /claude your question` with an official provider CLI login. Tokonomics prepares context and returns answers without edits. Use **Tokonomics: Configure subscription CLI** if needed. Provider tokens appear on the dashboard; charges and quota are unavailable.
+Subscription chat: in VS Code Chat (Ask), use `@tokonomics /codex your question` or `@tokonomics /claude your question` with an official provider CLI login. Tokonomics prepares context and returns answers without edits. Use **Tokonomics: Configure subscription CLI** if needed. Direct Google Gemini API support is also available via **Tokonomics: Configure Gemini API Key**. Provider tokens appear on the dashboard; charges and quota are unavailable.
 
 ## What you get
 
+- Model Context Protocol (MCP) Tool Firewall & Schema Pruner: Dynamic intent classification, on-demand catalog paging (`tokonomics_request_tool_catalog`), and compact minification saving up to 90.0% of tool context tokens in 2.3ms.
+- Empirical Community MCP Validation: Tested across 7 canonical community servers (55 tools: GitHub, Postgres, Filesystem, Brave Search, Puppeteer, Slack, Sentry) with 100% parameter accuracy and zero tool call misfires.
+- Open-Source Benchmark Arena: Evaluated on canonical production code from Redux, Express, Axios, Fastify, React, and Flask with 66.2% average context reduction in Balanced mode.
 - Next-Gen Sticky KPI Cockpit with live polling, advisory budget caps, and smart model auto-routing.
 - Multi-phase context compilation stepper with stage-by-stage inspection tooltips.
 - Spatial AST Pruning Market Treemap with nested module sectors, efficiency color chips, and Context X-Ray integration.
@@ -17,14 +20,8 @@ Subscription chat: in VS Code Chat (Ask), use `@tokonomics /codex your question`
 - Dynamic budget burn-rate velocity gauge and monthly exhaustion horizon forecaster.
 - Developer engagement suite: ambient status bar sparkle feedback, 4-tier milestone ledger with CO2e carbon offset equivalency, and contextual prompt optimization CodeLens.
 - Real-time event-driven auto-refresh engine syncing telemetry smoothly upon context compilation.
-- Context preparation for everyday coding requests.
-- Workspace-aware assistance in trusted workspaces.
-- Task-oriented dashboard organized into Overview, Context, and Activity views.
-- Clear explanations when pricing or provider usage is unavailable.
-- Conservative fallbacks when a feature cannot run safely.
-- Local diagnostics with privacy safeguards and modal confirmation on reset.
-- Read-only Context X-Ray, active-buffer estimates, session-log health, chat handoffs, and tool-schema audits.
-- Optional encrypted project memory that you control.
+- Task-oriented dashboard organized into Overview, Context, and Activity views with clear pricing explanations.
+- Local diagnostics, conservative fallbacks, and optional encrypted project memory.
 
 ## Get started
 

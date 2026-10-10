@@ -802,7 +802,7 @@ function initCommandPalette() {
 
 
 // -------------------------------------------------------------------
-// 5. Interactive Cockpit & Frontier Simulator (v8.5.0)
+// 5. Interactive Cockpit & Frontier Simulator (v8.6.0)
 // -------------------------------------------------------------------
 let pollTimer = null;
 let liveTokens = 1428950;
