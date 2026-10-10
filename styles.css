@@ -44,6 +44,38 @@ html {
   color-scheme: dark;
 }
 
+/* ================= Custom Premium Dark-Mode Scrollbars ================= */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 242, 254, 0.25) rgba(15, 23, 42, 0.6);
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(10, 15, 29, 0.7);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 242, 254, 0.22);
+  border-radius: 999px;
+  border: 1px solid rgba(0, 242, 254, 0.1);
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 242, 254, 0.55);
+  box-shadow: 0 0 10px rgba(0, 242, 254, 0.35);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
 body {
   font-family: var(--font-body);
   background-color: var(--bg-primary);
@@ -1060,22 +1092,27 @@ body {
 .studio-tabs-bar {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
-  background: rgba(15, 23, 42, 0.9);
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding: 0.55rem 0.85rem;
+  background: rgba(15, 23, 42, 0.95);
   border-bottom: 1px solid var(--border-color);
-  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.studio-tabs-bar::-webkit-scrollbar {
+  display: none;
 }
 .studio-tab-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.6rem 1rem;
+  gap: 0.35rem;
+  padding: 0.45rem 0.72rem;
   border-radius: var(--radius-sm);
-  border: 1px solid transparent;
-  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.02);
   color: var(--text-muted);
-  font-size: 0.85rem;
+  font-size: 0.81rem;
   font-weight: 500;
   cursor: pointer;
   white-space: nowrap;
@@ -1083,12 +1120,25 @@ body {
 }
 .studio-tab-btn:hover {
   color: #fff;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 .studio-tab-btn.active {
   color: var(--primary);
-  background: rgba(0, 242, 254, 0.1);
-  border-color: rgba(0, 242, 254, 0.3);
+  background: rgba(0, 242, 254, 0.12);
+  border-color: rgba(0, 242, 254, 0.35);
+  box-shadow: 0 0 12px rgba(0, 242, 254, 0.15);
+}
+.tab-version-badge {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  background: rgba(0, 242, 254, 0.15);
+  color: var(--primary);
+  border: 1px solid rgba(0, 242, 254, 0.3);
+  margin-left: 2px;
 }
 .studio-panel {
   display: none;
@@ -1533,6 +1583,11 @@ body {
     padding-bottom: 1.5rem;
     flex-direction: row;
     overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .guide-menu::-webkit-scrollbar {
+    display: none;
   }
   .guide-tab-btn {
     white-space: nowrap;
