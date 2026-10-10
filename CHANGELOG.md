@@ -1,8 +1,13 @@
 # Tokonomics release notes
 
+## 8.6.1
+
+- Multi-Language AST Pruning Engine: Native context compilation and slicing for C (`.c`, `.h`), C++ (`.cpp`, `.hpp`, `.cc`, `.cxx`), and top compiled languages. Full support for Allman and K&R brace conventions, multi-line function headers, `typedef struct` aliases, templates, and preprocessor directives with 55%–57% verified token reduction.
+- Header File Support: Extended language detection and file mapping to recognize C/C++ header files (`.h`, `.hpp`, `.hh`, `.hxx`, `.inl`, `.cu`) and Python interface files (`.pyi`).
+- Interactive Studio Playground: Added live C, C++, Java, and C# simulation playgrounds to the web documentation suite.
+
 ## 8.6.0
 
-- Universal Multi-Language AST Engine: Added native AST context compilation and slicing for all top programming languages: C (`.c`, `.h`), C++ (`.cpp`, `.hpp`, `.cc`, `.cxx`), Python (`.py`, `.pyi`), TypeScript/JavaScript (`.ts`, `.tsx`, `.js`, `.jsx`), Go (`.go`), Rust (`.rs`), Java (`.java`), C# (`.cs`), Ruby (`.rb`), Swift (`.swift`), and Kotlin (`.kt`). Supports Allman and K&R brace conventions, multi-line function headers, `typedef struct` aliases, templates, and preprocessor directives with 40%–60% token reduction.
 - Model Context Protocol (MCP) Tool Firewall: Dynamic tool intent classification, catalog virtualization (`tokonomics_request_tool_catalog`), and compact minification pruning up to 90.0% of tool context overhead in 2.3ms.
 - Community MCP Server Validation: Automated benchmark suite across 7 canonical community servers (55 tools: GitHub, Postgres, Filesystem, Brave Search, Puppeteer, Slack, Sentry) with 100% parameter accuracy and zero tool call misfires.
 - Open-Source Benchmark Arena: Evaluated against canonical production repositories (Redux, Express, Axios, Fastify, React, Flask) achieving 66.2% average context reduction in Balanced mode.
