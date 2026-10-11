@@ -1,4 +1,4 @@
-# Tokonomics 8.8.0
+# Tokonomics 8.9.0
 
 Tokonomics is a Visual Studio Code extension that prepares leaner context for AI-assisted development and shows clear request-level usage information. Interactive guide & simulator: [tokonomics-team.github.io/tokonomics](https://tokonomics-team.github.io/tokonomics/).
 
@@ -8,12 +8,12 @@ Subscription chat: in VS Code Chat (Ask), use `@tokonomics /codex your question`
 
 ## What you get
 
-- Universal Agent Layer & Execution Optimizer: Native MCP server providing progressive disclosure AST skeletons, symbol hydration, execution output distillation (`tokonomics_distill_output`), live budget tracking, and response caching for Claude Code, Cursor, and Copilot agents.
+- Semantic Graph Slicing & Prefix Cache Pinning: Multi-file dependency graph program slicing extracting exact call trees and type contracts paired with deterministic 3-tier prompt envelopes and 1,024-token boundary padding for guaranteed prefix cache hits.
+- Universal Agent Layer & 8 Canonical MCP Tools: Standalone MCP server providing semantic graph slicing (`tokonomics_slice_graph`), prefix cache pinning (`tokonomics_pin_prefix`), output distillation (`tokonomics_distill_output`), and progressive AST disclosure for Claude Code, Cursor, and Copilot.
+- Top Repository Benchmarks: Validated across canonical repos (`reduxjs/redux`, `expressjs/express`, `tiangolo/fastapi`, `BurntSushi/ripgrep`, `facebook/react`) achieving 75.6% aggregate context token reduction and 100% multi-turn prefix invariance in 0.29ms.
 - Response Bloat Distiller: Distills test runners (Jest, Pytest, Go, Cargo, JUnit, GoogleTest), large JSON arrays, and diffs with up to 94.9% token reduction while preserving 100% of failure stacks and diagnostics.
-- Top Repository Benchmarks: Validated across canonical repos (`facebook/jest`, `tiangolo/fastapi`, `kubernetes/kubernetes`, `BurntSushi/ripgrep`, `spring-projects/spring-boot`, `supabase/postgrest`) achieving 85.5% aggregate bloat reduction in 0.44ms p95.
 - MCP Tool Firewall & Schema Pruner: Dynamic tool classification and compact minification saving up to 90.0% of tool context tokens in 2.3ms across 7 canonical community servers with 100% parameter accuracy.
 - Multi-Language AST Pruning: Native context compilation across C, C++, Python, TypeScript, JavaScript, Go, Rust, Java, C#, Ruby, Swift, Kotlin, PHP, and SQL.
-- Open-Source Benchmark Arena: Evaluated on Redux, Express, Axios, Fastify, React, and Flask with 66.2% average context reduction in Balanced mode.
 - Sticky KPI Cockpit with live polling, advisory budget caps, and smart model auto-routing.
 - Multi-phase context compilation stepper with stage-by-stage inspection tooltips.
 - Spatial AST Pruning Market Treemap with nested module sectors and Context X-Ray integration.

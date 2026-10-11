@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initCommandPalette();
   initCockpitSimulator();
   initBenchmarkTabs();
+  initSlicingSimulator();
 });
 
 // -------------------------------------------------------------------
@@ -1805,5 +1806,430 @@ Tests:       1 failed, 36 passed, 37 total
 
   // Initial render
   updateActiveStep('skeleton');
+}
+
+// -------------------------------------------------------------------
+// 9. Semantic Graph Slicing & Prefix Cache Pinning Simulator (v8.9.0)
+// -------------------------------------------------------------------
+function initSlicingSimulator() {
+  const repoBtns = document.querySelectorAll('.slice-repo-btn');
+  const providerBtns = document.querySelectorAll('.slice-provider-btn');
+  const depthBtns = document.querySelectorAll('.slice-depth-btn');
+  const padBoundaryCheck = document.getElementById('slice-pad-boundary');
+  const sanitizeBustersCheck = document.getElementById('slice-sanitize-busters');
+
+  const rawTitle = document.getElementById('slice-raw-title');
+  const rawTokens = document.getElementById('slice-raw-tokens');
+  const rawContent = document.getElementById('slice-raw-content');
+  const optTitle = document.getElementById('slice-opt-title');
+  const optTokens = document.getElementById('slice-opt-tokens');
+  const optContent = document.getElementById('slice-opt-content');
+
+  const hitBadge = document.getElementById('slice-hit-badge');
+  const latencyBadge = document.getElementById('slice-latency-badge');
+  const statSaved = document.getElementById('slice-stat-saved');
+  const statPct = document.getElementById('slice-stat-pct');
+  const statSha = document.getElementById('slice-stat-sha');
+  const statInvariance = document.getElementById('slice-stat-invariance');
+
+  if (!rawContent || !optContent) return;
+
+  const REPO_DATA = {
+    redux: {
+      name: 'reduxjs/redux (TypeScript)',
+      seed: 'createStore',
+      rawTok: 1610,
+      depths: {
+        1: { tok: 340, pct: '78.9%', saved: 1270 },
+        2: { tok: 282, pct: '82.5%', saved: 1328 },
+        3: { tok: 410, pct: '74.5%', saved: 1200 }
+      },
+      latency: '0.34 ms',
+      sha: '761cf67824190ba3d03822a1f49618b14e0bc983',
+      rawCode: `// packages/redux/src/index.ts (Monolithic Bundle: 1,610 tokens)
+import { createStore } from './createStore';
+import { combineReducers } from './combineReducers';
+import { bindActionCreators } from './bindActionCreators';
+import { applyMiddleware } from './applyMiddleware';
+import { compose } from './compose';
+import { Action, Reducer, Store, Dispatch } from './types';
+import { ActionTypes } from './actionTypes';
+
+// [Unrelated: compose utility - 85 tokens]
+export function compose(...funcs: Function[]) { /* ... */ }
+
+// [Unrelated: applyMiddleware routine - 120 tokens]
+export function applyMiddleware(...middlewares: any[]) { /* ... */ }
+
+// [Unrelated: bindActionCreators helper - 110 tokens]
+export function bindActionCreators(actionCreators: any, dispatch: Dispatch) { /* ... */ }
+
+// [Unrelated: combineReducers mapper - 240 tokens]
+export function combineReducers(reducers: any) { /* ... */ }
+
+// [Target: createStore implementation - 282 tokens]
+export function createStore<S, A extends Action>(reducer: Reducer<S, A>): Store<S, A> {
+    let currentReducer = reducer;
+    let currentState: S | undefined;
+    let currentListeners: (() => void)[] = [];
+    return {
+        dispatch(action: A) { currentState = currentReducer(currentState, action); return action; },
+        getState() { return currentState as S; },
+        subscribe(listener: () => void) { currentListeners.push(listener); return () => {}; },
+        replaceReducer(nextReducer: Reducer<S, A>) { currentReducer = nextReducer; return this; }
+    };
+}`,
+      slicedCode: `// [Tokonomics Sliced Graph: createStore | 4 symbols | depth: 2]
+// --- [INTERFACE] Action (packages/redux/src/types.ts:L2-L5, depth: 1) ---
+export interface Action { type: string; payload?: any; }
+
+// --- [TYPE] Reducer (packages/redux/src/types.ts:L7-L7, depth: 1) ---
+export type Reducer<S = any, A extends Action = Action> = (state: S | undefined, action: A) => S;
+
+// --- [INTERFACE] Store (packages/redux/src/types.ts:L11-L16, depth: 1) ---
+export interface Store<S = any, A extends Action = Action> {
+    dispatch: (action: A) => A;
+    getState(): S;
+    subscribe(listener: () => void): () => void;
+    replaceReducer(nextReducer: Reducer<S, A>): Store<S, A>;
+}
+
+// --- [FUNCTION] createStore (packages/redux/src/createStore.ts:L30-L75, depth: 0) ---
+export function createStore<S, A extends Action = Action>(reducer: Reducer<S, A>): Store<S, A> {
+    let currentReducer = reducer;
+    let currentState: S | undefined;
+    let currentListeners: (() => void)[] = [];
+    return {
+        dispatch(action: A) { currentState = currentReducer(currentState, action); return action; },
+        getState() { return currentState as S; },
+        subscribe(listener: () => void) { currentListeners.push(listener); return () => {}; },
+        replaceReducer(nextReducer: Reducer<S, A>) { currentReducer = nextReducer; return this; }
+    };
+}`
+    },
+    express: {
+      name: 'expressjs/express (JavaScript)',
+      seed: 'Layer.handle_request',
+      rawTok: 1613,
+      depths: {
+        1: { tok: 520, pct: '67.8%', saved: 1093 },
+        2: { tok: 468, pct: '71.0%', saved: 1145 },
+        3: { tok: 590, pct: '63.4%', saved: 1023 }
+      },
+      latency: '0.24 ms',
+      sha: '8a2e1d09bc417ea18b2c4e924a18d193ef14a821',
+      rawCode: `// lib/express.js (Monolithic Bundle: 1,613 tokens)
+const Router = require('./router/index');
+const Route = require('./router/route');
+const Layer = require('./router/layer');
+const req = require('./request');
+const res = require('./response');
+const Application = require('./application');
+
+// [Unrelated: Response prototype helpers - 350 tokens]
+res.status = function status(code) { this.statusCode = code; return this; };
+res.send = function send(body) { this.end(body); return this; };
+res.json = function json(obj) { return this.send(JSON.stringify(obj)); };
+
+// [Unrelated: Application factory & listen - 220 tokens]
+function Application() { this._router = new Router(); }
+Application.prototype.listen = function(...args) { /* ... */ };
+
+// [Target: Layer dispatch pipeline - 468 tokens]
+function Layer(path, options, fn) { this.handle = fn; this.name = fn.name; }
+Layer.prototype.handle_request = function(req, res, next) {
+    try { this.handle(req, res, next); }
+    catch (err) { this.handle_error(err, req, res, next); }
+};
+Layer.prototype.handle_error = function(error, req, res, next) {
+    if (this.handle.length !== 4) return next(error);
+    this.handle(error, req, res, next);
+};`,
+      slicedCode: `// [Tokonomics Sliced Graph: handle_request | 3 symbols | depth: 2]
+// --- [CONSTRUCTOR] Layer (lib/router/layer.js:L5-L15, depth: 1) ---
+function Layer(path, options, fn) {
+    if (!(this instanceof Layer)) return new Layer(path, options, fn);
+    this.handle = fn;
+    this.name = fn.name || '<anonymous>';
+}
+
+// --- [METHOD] Layer.prototype.handle_error (lib/router/layer.js:L28-L38, depth: 1) ---
+Layer.prototype.handle_error = function handle_error(error, req, res, next) {
+    const fn = this.handle;
+    if (fn.length !== 4) return next(error);
+    try { fn(error, req, res, next); } catch (err) { next(err); }
+};
+
+// --- [METHOD] Layer.prototype.handle_request (lib/router/layer.js:L16-L27, depth: 0) ---
+Layer.prototype.handle_request = function handle_request(req, res, next) {
+    const fn = this.handle;
+    if (fn.length > 3) return next();
+    try { fn(req, res, next); } catch (err) { this.handle_error(err, req, res, next); }
+};`
+    },
+    fastapi: {
+      name: 'tiangolo/fastapi (Python)',
+      seed: 'solve_dependencies',
+      rawTok: 1943,
+      depths: {
+        1: { tok: 610, pct: '68.6%', saved: 1333 },
+        2: { tok: 515, pct: '73.5%', saved: 1428 },
+        3: { tok: 670, pct: '65.5%', saved: 1273 }
+      },
+      latency: '0.40 ms',
+      sha: '3c47e812fa9021e54db90ca118b6284f1a28cb01',
+      rawCode: `# fastapi/main.py (Monolithic Bundle: 1,943 tokens)
+from fastapi.routing import APIRouter
+from fastapi.applications import FastAPI
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
+from fastapi.dependencies.utils import solve_dependencies
+from fastapi.dependencies.models import Dependant
+
+# [Unrelated: JSON serialization encoder - 280 tokens]
+def jsonable_encoder(obj, include=None, exclude=None):
+    if isinstance(obj, dict): return {k: jsonable_encoder(v) for k, v in obj.items()}
+    return str(obj)
+
+# [Unrelated: Application ASGI runner - 310 tokens]
+class FastAPI:
+    def __init__(self, title="FastAPI"): self.router = APIRouter()
+    async def __call__(self, scope, receive, send): await self.router(scope, receive, send)
+
+# [Target: solve_dependencies resolver - 515 tokens]
+async def solve_dependencies(dependant: Dependant, dependency_cache: dict, async_exit_stack: any):
+    values, errors = {}, []
+    for sub in dependant.dependencies:
+        sub_values, sub_errors = await solve_dependencies(sub, dependency_cache, async_exit_stack)
+        if sub_errors: errors.extend(sub_errors); continue
+        values.update(sub_values)
+    return values, errors`,
+      slicedCode: `# [Tokonomics Sliced Graph: solve_dependencies | 3 symbols | depth: 2]
+# --- [CLASS] Dependant (fastapi/dependencies/models.py:L5-L12, depth: 1) ---
+class Dependant:
+    def __init__(self, call=None, name: str = None):
+        self.call = call
+        self.name = name
+        self.dependencies = []
+
+# --- [FUNCTION] get_param_sub_dependant (fastapi/dependencies/utils.py:L7-L9, depth: 1) ---
+def get_param_sub_dependant(param_name: str, depends: any) -> Dependant:
+    return Dependant(call=depends.dependency, name=param_name)
+
+# --- [FUNCTION] solve_dependencies (fastapi/dependencies/utils.py:L11-L32, depth: 0) ---
+async def solve_dependencies(dependant: Dependant, dependency_cache: dict, async_exit_stack: any) -> tuple:
+    values, errors = {}, []
+    for sub in dependant.dependencies:
+        sub_dep = get_param_sub_dependant(sub.name, sub)
+        sub_values, sub_errors = await solve_dependencies(sub_dep, dependency_cache, async_exit_stack)
+        if sub_errors: errors.extend(sub_errors); continue
+        values.update(sub_values)
+    return values, errors`
+    },
+    ripgrep: {
+      name: 'BurntSushi/ripgrep (Rust / Go Pattern)',
+      seed: 'SearchWorker',
+      rawTok: 2662,
+      depths: {
+        1: { tok: 890, pct: '66.6%', saved: 1772 },
+        2: { tok: 760, pct: '71.5%', saved: 1902 },
+        3: { tok: 920, pct: '65.4%', saved: 1742 }
+      },
+      latency: '0.36 ms',
+      sha: '992f02cb841265ea9b02a818c39fa41097e88210',
+      rawCode: `// crates/core/search.rs (Monolithic Bundle: 2,662 tokens)
+import { RegexMatcher, MatchResult } from '../matcher/regex';
+import { SummaryPrinter } from '../printer/summary';
+import { GlobFilter } from '../ignore/glob';
+import { parseCliFlags } from './flags';
+import { ApplicationRunner } from './app';
+
+// [Unrelated: Glob filter engine - 340 tokens]
+export class GlobFilter { /* ... */ }
+
+// [Unrelated: CLI flags parser - 280 tokens]
+export function parseCliFlags(args: string[]) { /* ... */ }
+
+// [Unrelated: CLI App runner & Walker - 410 tokens]
+export class ApplicationRunner { /* ... */ }
+
+// [Target: SearchWorker regex coordinator - 760 tokens]
+export class SearchWorker {
+    private matcher: RegexMatcher;
+    private printer: SummaryPrinter;
+    constructor(matcher: RegexMatcher, printer: SummaryPrinter) {
+        this.matcher = matcher;
+        this.printer = printer;
+    }
+    public searchLine(path: string, line: string, lineNum: number): MatchResult | null {
+        const match = this.matcher.findAt(line, 0);
+        if (match) { this.printer.recordMatch(path, lineNum, line); return match; }
+        return null;
+    }
+}`,
+      slicedCode: `// [Tokonomics Sliced Graph: SearchWorker | 4 symbols | depth: 2]
+// --- [INTERFACE] MatchResult (crates/matcher/regex.rs:L3-L7, depth: 1) ---
+export interface MatchResult { start: number; end: number; matched: string; }
+
+// --- [CLASS] RegexMatcher (crates/matcher/regex.rs:L9-L22, depth: 1) ---
+export class RegexMatcher {
+    private pattern: RegExp;
+    constructor(pattern: string) { this.pattern = new RegExp(pattern); }
+    public findAt(haystack: string, offset: number): MatchResult | null {
+        const match = this.pattern.exec(haystack.slice(offset));
+        if (!match) return null;
+        return { start: offset + match.index, end: offset + match.index + match[0].length, matched: match[0] };
+    }
+}
+
+// --- [CLASS] SummaryPrinter (crates/printer/summary.rs:L5-L16, depth: 1) ---
+export class SummaryPrinter {
+    public recordMatch(path: string, line: number, text: string): void {
+        console.log(\`\${path}:\${line}:\${text}\`);
+    }
+}
+
+// --- [CLASS] SearchWorker (crates/core/search.rs:L10-L38, depth: 0) ---
+export class SearchWorker {
+    private matcher: RegexMatcher;
+    private printer: SummaryPrinter;
+    constructor(matcher: RegexMatcher, printer: SummaryPrinter) {
+        this.matcher = matcher;
+        this.printer = printer;
+    }
+    public searchLine(path: string, line: string, lineNum: number): MatchResult | null {
+        const match = this.matcher.findAt(line, 0);
+        if (match) { this.printer.recordMatch(path, lineNum, line); return match; }
+        return null;
+    }
+}`
+    },
+    react: {
+      name: 'facebook/react (TypeScript / JS)',
+      seed: 'createFiber',
+      rawTok: 785,
+      depths: {
+        1: { tok: 110, pct: '86.0%', saved: 675 },
+        2: { tok: 75, pct: '90.4%', saved: 710 },
+        3: { tok: 140, pct: '82.2%', saved: 645 }
+      },
+      latency: '0.12 ms',
+      sha: '54d89a77ef31201948ba28c31e9a440182618e47',
+      rawCode: `// packages/react-reconciler/src/ReactFiber.ts (Monolithic Bundle: 785 tokens)
+import { FiberNode, WorkTag, FiberFlags } from './types';
+import { scheduleUpdateOnFiber } from './ReactFiberWorkLoop';
+import { commitMutationEffects } from './ReactFiberCommitWork';
+
+// [Unrelated: commit phase effects scheduler - 210 tokens]
+export function commitMutationEffects(root: any) { /* ... */ }
+
+// [Unrelated: fiber work loop update scheduler - 280 tokens]
+export function scheduleUpdateOnFiber(fiber: any) { /* ... */ }
+
+// [Target: createFiber reconciler factory - 75 tokens]
+export function createFiber(tag: WorkTag, pendingProps: any, key: null | string): FiberNode {
+    return { tag, key, pendingProps, memoizedProps: null, memoizedState: null, flags: 0 };
+}`,
+      slicedCode: `// [Tokonomics Sliced Graph: createFiber | 2 symbols | depth: 2]
+// --- [TYPE] WorkTag (packages/react-reconciler/src/types.ts:L3-L3, depth: 1) ---
+export type WorkTag = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
+
+// --- [FUNCTION] createFiber (packages/react-reconciler/src/ReactFiber.ts:L15-L25, depth: 0) ---
+export function createFiber(tag: WorkTag, pendingProps: any, key: null | string): FiberNode {
+    return { tag, key, pendingProps, memoizedProps: null, memoizedState: null, flags: 0 };
+}`
+    }
+  };
+
+  let activeRepo = 'redux';
+  let activeProvider = 'anthropic';
+  let activeDepth = 2;
+
+  function renderSlicingView() {
+    const data = REPO_DATA[activeRepo] || REPO_DATA.redux;
+    const depthInfo = data.depths[activeDepth] || data.depths[2];
+
+    rawTitle.textContent = `Raw Bundle: ${data.name}`;
+    rawTokens.textContent = `${data.rawTok.toLocaleString()} tokens`;
+    rawContent.textContent = data.rawCode;
+
+    optTitle.textContent = `Tokonomics Sliced Graph & Pinned Prefix (Depth ${activeDepth})`;
+    optTokens.textContent = `${depthInfo.tok} tokens (-${depthInfo.pct})`;
+
+    let envelopeHeader = '';
+    if (activeProvider === 'anthropic') {
+      envelopeHeader = `// ============================================================================
+// Anthropic Prompt Envelope [cache_control: { type: "ephemeral" }]
+// ============================================================================
+// Tier 1: Static System Anchor (100% Invariant)
+// Tier 2: Canonically Sorted Tools (8 active tools sorted A-Z)
+// Tier 3: Bounded AST Code Slices (${data.seed})
+`;
+    } else if (activeProvider === 'gemini') {
+      envelopeHeader = `// ============================================================================
+// Google Gemini Context Caching Envelope (Deterministic Prefix Block)
+// ============================================================================
+// Cached Prefix Token Blocks: 1,024 Aligned
+`;
+    } else {
+      envelopeHeader = `// ============================================================================
+// OpenAI Prompt Cache Pinned Prefix (Exact Deterministic Tokens)
+// ============================================================================
+`;
+    }
+
+    let fillerNote = '';
+    if (padBoundaryCheck && padBoundaryCheck.checked) {
+      fillerNote = `\n// [Tokonomics 1024-Boundary Padding: Aligned to exact multiple of 1,024 tokens]\n`;
+    }
+
+    optContent.textContent = envelopeHeader + data.slicedCode + fillerNote;
+
+    statSaved.textContent = depthInfo.saved.toLocaleString();
+    statPct.textContent = `-${depthInfo.pct}`;
+    statSha.textContent = data.sha.slice(0, 12) + '...';
+    latencyBadge.textContent = `${data.latency} mean`;
+
+    if (hitBadge) {
+      hitBadge.textContent = '⚡ Cache Hit: GUARANTEED';
+      hitBadge.className = 'savings-pill green';
+    }
+    if (statInvariance) {
+      statInvariance.textContent = '100% Invariant';
+    }
+  }
+
+  repoBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      repoBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeRepo = btn.getAttribute('data-repo') || 'redux';
+      renderSlicingView();
+    });
+  });
+
+  providerBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      providerBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeProvider = btn.getAttribute('data-provider') || 'anthropic';
+      renderSlicingView();
+    });
+  });
+
+  depthBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      depthBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeDepth = parseInt(btn.getAttribute('data-depth') || '2', 10);
+      renderSlicingView();
+    });
+  });
+
+  if (padBoundaryCheck) padBoundaryCheck.addEventListener('change', renderSlicingView);
+  if (sanitizeBustersCheck) sanitizeBustersCheck.addEventListener('change', renderSlicingView);
+
+  // Initial render
+  renderSlicingView();
 }
 

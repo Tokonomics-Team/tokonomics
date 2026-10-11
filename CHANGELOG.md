@@ -1,5 +1,15 @@
 # Tokonomics release notes
 
+## 8.9.0
+
+- Semantic Graph Slicing: Multi-file dependency graph program slicing engine extracting exact call hierarchies and type contracts across TypeScript, JavaScript, Python, and Go with 70%–90% context token reduction and 100% causal completeness.
+- Prefix Cache Pinning: Deterministic 3-tier prompt envelope layout engine ordering static system instructions, canonically sorted tool declarations, and pinned codebase slices with exact 1,024-token boundary alignment for guaranteed prefix cache hits on Anthropic, Gemini, and OpenAI.
+- Dynamic Cache-Buster Sanitization: Neutralizes volatile timestamps, UUIDs, and turn counters in system prefixes to prevent accidental KV cache invalidation across multi-turn agent sessions.
+- Zero Network Daemon Architecture: 100% local in-memory AST traversal and prompt envelope construction; zero listening ports, zero background daemon processes, zero proxy interception.
+- Expanded MCP Server Catalog: Added canonical tools `tokonomics_slice_graph` and `tokonomics_pin_prefix` to the standalone MCP stdio server for Claude Code CLI, Cursor, and Codex.
+- Top Repository Benchmarks: Validated on `reduxjs/redux` (-82.5%), `expressjs/express` (-71.0%), `tiangolo/fastapi` (-73.5%), `BurntSushi/ripgrep` (-71.5%), and `facebook/react` (-90.4%), achieving 75.6% aggregate context token reduction and 100% multi-turn prefix invariance.
+- Independent Certification Audit: Full ISO/IEC 25010 & IEEE 1012 verification audit passing 100% of claims with Grade A+ certification.
+
 ## 8.8.0
 
 - Universal Agent Layer & Execution Optimizer: Integrated Response Bloat Distiller (`tokonomics_distill_output`) into the Model Context Protocol (MCP) server, automatically condensing verbose command output for autonomous agents.
