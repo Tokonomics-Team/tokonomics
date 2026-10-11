@@ -1,6 +1,6 @@
-# Tokonomics 8.9.0
+# Tokonomics 8.9.0 — AI Token Optimizer & Prompt Cache Engine
 
-Tokonomics is a Visual Studio Code extension that prepares leaner context for AI-assisted development and shows clear request-level usage information. Interactive guide & simulator: [tokonomics-team.github.io/tokonomics](https://tokonomics-team.github.io/tokonomics/).
+Tokonomics is a local multi-language context compiler, AST program slicer, and prefix cache pinner for VS Code, Claude Code, and Cursor with zero cloud data leaks. Interactive guide & simulator: [tokonomics-team.github.io/tokonomics](https://tokonomics-team.github.io/tokonomics/).
 
 Removes avoidable repetition while keeping required context. Results vary by workspace, model, and provider.
 

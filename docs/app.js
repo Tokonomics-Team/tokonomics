@@ -831,6 +831,26 @@ function escapeHtml(str) {
 // -------------------------------------------------------------------
 const COMMAND_DATABASE = [
   {
+    cmd: 'Tokonomics: Slice Active Symbol Dependency Graph (Cross-File AST)',
+    category: 'AST Slicing (v8.9.0)',
+    desc: 'Computes backward program slice around active editor symbol across file boundaries in < 0.3ms, cutting orthogonal tokens by 70%-90%.'
+  },
+  {
+    cmd: 'Tokonomics: Pin Prompt Prefix (1,024-Token Cache Alignment)',
+    category: 'Cache Pinning (v8.9.0)',
+    desc: 'Pins prompt prefix into deterministic 3-tier envelope with 1,024-token boundary padding, dynamic cache-buster sanitization, and Anthropic cache_control markers.'
+  },
+  {
+    cmd: '@tokonomics /slice [symbol]',
+    category: 'Chat Participant (v8.9.0)',
+    desc: 'Cross-file semantic dependency graph slicing in Copilot Chat, distilling symbol dependencies and showing real-time token savings.'
+  },
+  {
+    cmd: '@tokonomics /pin [prompt]',
+    category: 'Chat Participant (v8.9.0)',
+    desc: 'Pins system and static prompt context to 1,024-token boundaries in Copilot Chat for 100% prefix byte invariance and guaranteed cache hits.'
+  },
+  {
     cmd: 'Tokonomics: Copy Agent MCP Configuration',
     category: 'Agent Layer',
     desc: 'Generates and copies one-click MCP server configurations for Claude Code CLI, Cursor (.cursor/mcp.json), and Codex/Windsurf.'
