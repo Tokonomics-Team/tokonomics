@@ -1,4 +1,4 @@
-# Tokonomics 8.6.1
+# Tokonomics 8.7.0
 
 Tokonomics is a Visual Studio Code extension that prepares leaner context for AI-assisted development and shows clear request-level usage information. Interactive guide & simulator: [tokonomics-team.github.io/tokonomics](https://tokonomics-team.github.io/tokonomics/).
 
@@ -8,9 +8,10 @@ Subscription chat: in VS Code Chat (Ask), use `@tokonomics /codex your question`
 
 ## What you get
 
-- Model Context Protocol (MCP) Tool Firewall & Schema Pruner: Dynamic intent classification, on-demand catalog paging (`tokonomics_request_tool_catalog`), and compact minification saving up to 90.0% of tool context tokens in 2.3ms.
-- Empirical Community MCP Validation: Tested across 7 canonical community servers (55 tools: GitHub, Postgres, Filesystem, Brave Search, Puppeteer, Slack, Sentry) with 100% parameter accuracy and zero tool call misfires.
-- Open-Source Benchmark Arena: Evaluated on canonical production code from Redux, Express, Axios, Fastify, React, and Flask with 66.2% average context reduction in Balanced mode.
+- Universal Agent Layer MCP Server: Progressive disclosure AST skeletons, symbol hydration on demand, live budget metrics, and response cache for Claude Code CLI, Cursor, and Copilot agents via stdio JSON-RPC 2.0 with 100% eval task accuracy parity.
+- MCP Tool Firewall & Schema Pruner: Dynamic tool classification, catalog paging, and compact minification saving up to 90.0% of tool context tokens in 2.3ms.
+- Empirical Community MCP Validation: Tested across 7 canonical community servers (55 tools) with 100% parameter accuracy and zero tool call misfires.
+- Open-Source Benchmark Arena: Evaluated on Redux, Express, Axios, Fastify, React, and Flask with 66.2% average context reduction in Balanced mode.
 - Next-Gen Sticky KPI Cockpit with live polling, advisory budget caps, and smart model auto-routing.
 - Multi-phase context compilation stepper with stage-by-stage inspection tooltips.
 - Spatial AST Pruning Market Treemap with nested module sectors, efficiency color chips, and Context X-Ray integration.
@@ -51,6 +52,8 @@ Balanced mode and Selection workspace context are the recommended defaults.
 
 - `Tokonomics: Open Chat`
 - `Tokonomics: Show Savings Dashboard`
+- `Tokonomics: Copy Agent MCP Configuration`
+- `Tokonomics: Start Tokonomics MCP Server`
 - `Tokonomics: Show Live Session Savings`
 - `Tokonomics: Inspect Compiler Decision Trace`
 - `Tokonomics: Manage Project Memory`

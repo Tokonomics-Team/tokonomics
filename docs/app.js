@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initCopyButtons();
   initStudio();
   initMcpSimulator();
+  initAgentLayerSimulator();
   initCommandPalette();
   initCockpitSimulator();
   initBenchmarkTabs();
@@ -829,6 +830,16 @@ function escapeHtml(str) {
 // -------------------------------------------------------------------
 const COMMAND_DATABASE = [
   {
+    cmd: 'Tokonomics: Copy Agent MCP Configuration',
+    category: 'Agent Layer',
+    desc: 'Generates and copies one-click MCP server configurations for Claude Code CLI, Cursor (.cursor/mcp.json), and Codex/Windsurf.'
+  },
+  {
+    cmd: 'Tokonomics: Start Tokonomics MCP Server',
+    category: 'Agent Layer',
+    desc: 'Spawns the Tokonomics standalone MCP stdio server in a VS Code terminal for external autonomous agent connections.'
+  },
+  {
     cmd: 'Tokonomics: Toggle Usage Analytics',
     category: 'Privacy',
     desc: 'Toggles anonymous, privacy-preserving aggregate usage telemetry (Aptabase) with zero code or prompt collection.'
@@ -1384,5 +1395,297 @@ function initMcpSimulator() {
 
   // Initial render
   render();
+}
+
+// -------------------------------------------------------------------
+// 7. Interactive Agent Layer & Progressive Disclosure Simulator (v8.7.0)
+// -------------------------------------------------------------------
+function initAgentLayerSimulator() {
+  const fileBtns = document.querySelectorAll('.agent-file-btn');
+  const stepSkeleton = document.getElementById('btn-agent-step-skeleton');
+  const stepHydrate = document.getElementById('btn-agent-step-hydrate');
+  const stepBudget = document.getElementById('btn-agent-step-budget');
+  const activeCallLbl = document.getElementById('agent-active-call');
+  const btnTrigger = document.getElementById('btn-trigger-agent-action');
+  const rpcTrace = document.getElementById('agent-rpc-trace');
+  const contextHeader = document.getElementById('agent-context-header');
+  const contextTokens = document.getElementById('agent-context-tokens');
+  const contextView = document.getElementById('agent-context-view');
+  const statSaved = document.getElementById('agent-stat-saved');
+  const statReduction = document.getElementById('agent-stat-reduction');
+  const statFidelity = document.getElementById('agent-stat-fidelity');
+  const statParity = document.getElementById('agent-stat-parity');
+  const latencyBadge = document.getElementById('agent-rpc-latency');
+  const configTabs = document.querySelectorAll('.agent-config-tab');
+  const configCode = document.getElementById('agent-config-code');
+  const btnCopyConfig = document.getElementById('btn-copy-agent-config');
+
+  if (!rpcTrace || !contextView) return;
+
+  let currentFile = 'auth';
+  let currentStep = 'skeleton';
+  let requestId = 1;
+
+  const SCENARIOS = {
+    auth: {
+      path: 'src/auth/AuthService.ts',
+      symbol: 'AuthService.validateToken',
+      rawTok: 1450,
+      skeletonTok: 261,
+      hydratedTok: 412,
+      savedTok: 1038,
+      reduction: '71.6%',
+      skeleton: `export class AuthService {
+    private readonly jwtSecret: string;
+    private readonly tokenCache: Map<string, Session>;
+
+    constructor(config: AuthConfig) {
+        this.jwtSecret = config.jwtSecret;
+        this.tokenCache = new Map();
+    }
+
+    // [Tokonomics: Body hidden (24 lines, ~185 tokens). Expand with tokonomics_expand_symbol("src/auth/AuthService.ts", "AuthService.validateToken")]
+    async validateToken(bearer: string): Promise<UserClaims> { ... }
+
+    // [Tokonomics: Body hidden (38 lines, ~320 tokens). Expand with tokonomics_expand_symbol("src/auth/AuthService.ts", "AuthService.rotateKeys")]
+    async rotateKeys(keyId: string): Promise<KeyRotationResult> { ... }
+
+    // [Tokonomics: Body hidden (19 lines, ~140 tokens). Expand with tokonomics_expand_symbol("src/auth/AuthService.ts", "AuthService.hashPassword")]
+    private hashPassword(secret: string, salt: string): string { ... }
+}`,
+      hydrated: `// ============================================================================
+// Tokonomics Hydrated Symbol: AuthService.validateToken (Lines 42-65)
+// Exact Byte Boundary Retrieval (0.19ms) | 100% Parameter Fidelity
+// ============================================================================
+
+async validateToken(bearer: string): Promise<UserClaims> {
+    if (!bearer || !bearer.startsWith('Bearer ')) {
+        throw new UnauthorizedException('Malformed authorization header');
+    }
+    const rawToken = bearer.slice(7).trim();
+    const cached = this.tokenCache.get(rawToken);
+    if (cached && cached.expiresAt > Date.now()) {
+        return cached.claims;
+    }
+    const claims = await verifyJwtSignature(rawToken, this.jwtSecret, {
+        algorithms: ['HS256', 'RS256'],
+        clockToleranceSeconds: 5
+    });
+    this.tokenCache.set(rawToken, { claims, expiresAt: Date.now() + 60000 });
+    return claims;
+}`
+    },
+    gateway: {
+      path: 'src/models/ModelGateway.py',
+      symbol: 'ModelGateway.calculate_backoff',
+      rawTok: 1820,
+      skeletonTok: 310,
+      hydratedTok: 485,
+      savedTok: 1335,
+      reduction: '73.4%',
+      skeleton: `class ModelGateway:
+    def __init__(self, config: GatewayConfig):
+        self.config = config
+        self.circuit_breaker = CircuitBreaker(threshold=5)
+
+    # [Tokonomics: Body hidden (26 lines, ~210 tokens). Expand with tokonomics_expand_symbol("src/models/ModelGateway.py", "ModelGateway.dispatch_prompt")]
+    async def dispatch_prompt(self, payload: RequestPayload) -> Response: ...
+
+    # [Tokonomics: Body hidden (18 lines, ~145 tokens). Expand with tokonomics_expand_symbol("src/models/ModelGateway.py", "ModelGateway.calculate_backoff")]
+    def calculate_backoff(self, attempt: int, base_delay: float) -> float: ...
+
+    # [Tokonomics: Body hidden (35 lines, ~280 tokens). Expand with tokonomics_expand_symbol("src/models/ModelGateway.py", "ModelGateway.stream_response")]
+    async def stream_response(self, stream: AsyncIterator) -> AsyncIterator[Chunk]: ...`,
+      hydrated: `# ============================================================================
+# Tokonomics Hydrated Symbol: ModelGateway.calculate_backoff (Lines 52-69)
+# Exact Byte Boundary Retrieval (0.22ms) | 100% Parameter Fidelity
+# ============================================================================
+
+def calculate_backoff(self, attempt: int, base_delay: float) -> float:
+    if attempt <= 0:
+        return 0.0
+    factor = 2.0 ** min(attempt, 6)
+    jitter = random.uniform(0.85, 1.15)
+    delay = min(base_delay * factor * jitter, self.config.max_backoff_seconds)
+    logger.debug(f"Computed exponential backoff: attempt={attempt}, delay={delay:.2f}s")
+    return delay`
+    },
+    compiler: {
+      path: 'src/query/QueryCompiler.go',
+      symbol: 'QueryCompiler.CompileQuery',
+      rawTok: 1640,
+      skeletonTok: 285,
+      hydratedTok: 460,
+      savedTok: 1180,
+      reduction: '72.0%',
+      skeleton: `type QueryCompiler struct {
+    Catalog    *Catalog
+    OptLevel   OptimizationTier
+    MemoTable  map[uint64]*PlanNode
+}
+
+func NewQueryCompiler(cat *Catalog) *QueryCompiler { ... }
+
+// [Tokonomics: Body hidden (31 lines, ~240 tokens). Expand with tokonomics_expand_symbol("src/query/QueryCompiler.go", "QueryCompiler.CompileQuery")]
+func (qc *QueryCompiler) CompileQuery(sql string) (*ExecutionPlan, error) { ... }
+
+// [Tokonomics: Body hidden (42 lines, ~310 tokens). Expand with tokonomics_expand_symbol("src/query/QueryCompiler.go", "QueryCompiler.OptimizeAST")]
+func (qc *QueryCompiler) OptimizeAST(root *ASTNode) (*ASTNode, error) { ... }`,
+      hydrated: `// ============================================================================
+// Tokonomics Hydrated Symbol: QueryCompiler.CompileQuery (Lines 38-68)
+// Exact Byte Boundary Retrieval (0.18ms) | 100% Parameter Fidelity
+// ============================================================================
+
+func (qc *QueryCompiler) CompileQuery(sql string) (*ExecutionPlan, error) {
+    parsedAST, err := qc.Catalog.Parse(sql)
+    if err != nil {
+        return nil, fmt.Errorf("syntax validation failed: %w", err)
+    }
+    optimizedAST, err := qc.OptimizeAST(parsedAST)
+    if err != nil {
+        return nil, fmt.Errorf("logical rule optimization failed: %w", err)
+    }
+    hash := hashAST(optimizedAST)
+    if cachedPlan, ok := qc.MemoTable[hash]; ok {
+        return cachedPlan.ToExecutionPlan(), nil
+    }
+    plan := qc.generatePhysicalPlan(optimizedAST)
+    qc.MemoTable[hash] = plan
+    return plan.ToExecutionPlan(), nil
+}`
+    }
+  };
+
+  const CONFIGS = {
+    claude: 'claude mcp add tokonomics -- node ~/.vscode/extensions/tokonomics-ai/dist/mcp-server.js',
+    cursor: `{\n  "mcpServers": {\n    "tokonomics": {\n      "command": "node",\n      "args": ["\${env:HOME}/.vscode/extensions/tokonomics-ai/dist/mcp-server.js"]\n    }\n  }\n}`,
+    generic: `{\n  "mcpServers": {\n    "tokonomics": {\n      "command": "node",\n      "args": ["\${env:HOME}/.vscode/extensions/tokonomics-ai/dist/mcp-server.js"],\n      "env": {}\n    }\n  }\n}`
+  };
+
+  function updateActiveStep(step) {
+    currentStep = step;
+    stepSkeleton.classList.toggle('active', step === 'skeleton');
+    stepHydrate.classList.toggle('active', step === 'hydrate');
+    stepBudget.classList.toggle('active', step === 'budget');
+
+    const sc = SCENARIOS[currentFile];
+    if (step === 'skeleton') {
+      activeCallLbl.textContent = `tokonomics_read_skeleton(filePath: "${sc.path}")`;
+    } else if (step === 'hydrate') {
+      activeCallLbl.textContent = `tokonomics_expand_symbol(filePath: "${sc.path}", symbol: "${sc.symbol}")`;
+    } else if (step === 'budget') {
+      activeCallLbl.textContent = `tokonomics_budget_status()`;
+    }
+    renderAgentState();
+  }
+
+  function renderAgentState() {
+    const sc = SCENARIOS[currentFile];
+    requestId++;
+
+    if (currentStep === 'skeleton') {
+      latencyBadge.textContent = '0.38 ms';
+      rpcTrace.innerHTML = `
+<span style="color:#64748b;">// --- External Agent stdio Handshake ---</span>
+<span style="color:#38bdf8;">--&gt; {"jsonrpc":"2.0","id":${requestId},"method":"tools/call","params":{"name":"tokonomics_read_skeleton","arguments":{"filePath":"${sc.path}"}}}</span>
+
+<span style="color:#64748b;">// &lt;-- Tokonomics MCP JSON-RPC Response (0.38ms)</span>
+<span style="color:#a7f3d0;">&lt;-- {"jsonrpc":"2.0","id":${requestId},"result":{"content":[{"type":"text","text":"[AST Skeleton Pruned: ${sc.rawTok} -&gt; ${sc.skeletonTok} tokens]"}]}}</span>
+<span style="color:#c084fc;">✓ Progressive Disclosure Skeletons served with symbol hydration markers.</span>
+`;
+      contextHeader.textContent = `Agent Ingest Buffer: AST Skeleton (${sc.path})`;
+      contextTokens.textContent = `${sc.skeletonTok} tokens (-${Math.round((1 - sc.skeletonTok / sc.rawTok) * 100)}%)`;
+      contextView.textContent = sc.skeleton;
+      statSaved.textContent = (sc.rawTok - sc.skeletonTok).toLocaleString();
+      statReduction.textContent = `-${Math.round((1 - sc.skeletonTok / sc.rawTok) * 100)}%`;
+      statFidelity.textContent = '100%';
+      statParity.textContent = '100%';
+    } else if (currentStep === 'hydrate') {
+      latencyBadge.textContent = '0.19 ms';
+      rpcTrace.innerHTML = `
+<span style="color:#64748b;">// --- Agent Routine Inspection on Demand ---</span>
+<span style="color:#38bdf8;">--&gt; {"jsonrpc":"2.0","id":${requestId},"method":"tools/call","params":{"name":"tokonomics_expand_symbol","arguments":{"filePath":"${sc.path}","symbol":"${sc.symbol}"}}}</span>
+
+<span style="color:#64748b;">// &lt;-- Tokonomics Byte-Accurate Expansion (0.19ms)</span>
+<span style="color:#a7f3d0;">&lt;-- {"jsonrpc":"2.0","id":${requestId},"result":{"content":[{"type":"text","text":"${sc.symbol} hydrated with 100% boundary fidelity"}]}}</span>
+<span style="color:#10b981;">✓ Verbatim logic attached to working memory. Zero information lost.</span>
+`;
+      contextHeader.textContent = `Agent Working Memory: Hydrated ${sc.symbol}`;
+      contextTokens.textContent = `${sc.hydratedTok} tokens (-${sc.reduction})`;
+      contextView.textContent = sc.hydrated;
+      statSaved.textContent = sc.savedTok.toLocaleString();
+      statReduction.textContent = `-${sc.reduction}`;
+      statFidelity.textContent = '100% Verbatim';
+      statParity.textContent = '100%';
+    } else if (currentStep === 'budget') {
+      latencyBadge.textContent = '0.12 ms';
+      rpcTrace.innerHTML = `
+<span style="color:#64748b;">// --- Agent Autonomous Budget Query ---</span>
+<span style="color:#38bdf8;">--&gt; {"jsonrpc":"2.0","id":${requestId},"method":"tools/call","params":{"name":"tokonomics_budget_status","arguments":{}}}</span>
+
+<span style="color:#64748b;">// &lt;-- Live FinOps Telemetry Response (0.12ms)</span>
+<span style="color:#a7f3d0;">&lt;-- {"jsonrpc":"2.0","id":${requestId},"result":{"content":[{"type":"text","text":"{\\"sessionTokensSaved\\":14200,\\"circuitBreakerTripped\\":false}"}]}}</span>
+<span style="color:#38bdf8;">✓ Loop-breaker healthy: Turn burn velocity well under advisory threshold.</span>
+`;
+      contextHeader.textContent = `Agent Session FinOps & Cache Telemetry`;
+      contextTokens.textContent = `Budget: OK (0.84 cache rate)`;
+      contextView.textContent = `// ============================================================================
+// Tokonomics Session Budget & Loop-Breaker Telemetry
+// ============================================================================
+
+{
+  "activeTask": "tokonomics-v8.7-agent-rollout",
+  "sessionTokensSpent": 4820,
+  "sessionTokensSaved": 14200,
+  "tokensSavedPercentage": "74.6%",
+  "estimatedAvoidedCostUSD": "$0.426",
+  "monthlyBudgetLimitUSD": 50.00,
+  "currentMonthlySpendUSD": 3.82,
+  "circuitBreakerTripped": false,
+  "promptCacheHitRate": 0.88,
+  "promptPrefixAligned": true
+}`;
+      statSaved.textContent = '14,200';
+      statReduction.textContent = '-74.6%';
+      statFidelity.textContent = 'Verified';
+      statParity.textContent = '100%';
+    }
+  }
+
+  fileBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      fileBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentFile = btn.getAttribute('data-file');
+      updateActiveStep(currentStep);
+    });
+  });
+
+  if (stepSkeleton) stepSkeleton.addEventListener('click', () => updateActiveStep('skeleton'));
+  if (stepHydrate) stepHydrate.addEventListener('click', () => updateActiveStep('hydrate'));
+  if (stepBudget) stepBudget.addEventListener('click', () => updateActiveStep('budget'));
+
+  if (btnTrigger) {
+    btnTrigger.addEventListener('click', () => {
+      contextView.style.transition = 'background-color 0.3s';
+      contextView.style.backgroundColor = 'rgba(168, 85, 247, 0.15)';
+      setTimeout(() => { contextView.style.backgroundColor = ''; }, 300);
+      renderAgentState();
+    });
+  }
+
+  configTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      configTabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      const target = tab.getAttribute('data-config');
+      const val = CONFIGS[target] || CONFIGS.claude;
+      if (configCode) configCode.textContent = val;
+      if (btnCopyConfig) btnCopyConfig.setAttribute('data-copy', val);
+    });
+  });
+
+  // Initial render
+  updateActiveStep('skeleton');
 }
 
