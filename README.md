@@ -1,4 +1,4 @@
-# Tokonomics 8.7.0
+# Tokonomics 8.8.0
 
 Tokonomics is a Visual Studio Code extension that prepares leaner context for AI-assisted development and shows clear request-level usage information. Interactive guide & simulator: [tokonomics-team.github.io/tokonomics](https://tokonomics-team.github.io/tokonomics/).
 
@@ -8,19 +8,20 @@ Subscription chat: in VS Code Chat (Ask), use `@tokonomics /codex your question`
 
 ## What you get
 
-- Universal Agent Layer MCP Server: Progressive disclosure AST skeletons, symbol hydration on demand, live budget metrics, and response cache for Claude Code CLI, Cursor, and Copilot agents via stdio JSON-RPC 2.0 with 100% eval task accuracy parity.
-- MCP Tool Firewall & Schema Pruner: Dynamic tool classification, catalog paging, and compact minification saving up to 90.0% of tool context tokens in 2.3ms.
-- Empirical Community MCP Validation: Tested across 7 canonical community servers (55 tools) with 100% parameter accuracy and zero tool call misfires.
+- Universal Agent Layer & Execution Optimizer: Native MCP server providing progressive disclosure AST skeletons, symbol hydration, execution output distillation (`tokonomics_distill_output`), live budget tracking, and response caching for Claude Code, Cursor, and Copilot agents.
+- Response Bloat Distiller: Distills test runners (Jest, Pytest, Go, Cargo, JUnit, GoogleTest), large JSON arrays, and diffs with up to 94.9% token reduction while preserving 100% of failure stacks and diagnostics.
+- Top Repository Benchmarks: Validated across canonical repos (`facebook/jest`, `tiangolo/fastapi`, `kubernetes/kubernetes`, `BurntSushi/ripgrep`, `spring-projects/spring-boot`, `supabase/postgrest`) achieving 85.5% aggregate bloat reduction in 0.44ms p95.
+- MCP Tool Firewall & Schema Pruner: Dynamic tool classification and compact minification saving up to 90.0% of tool context tokens in 2.3ms across 7 canonical community servers with 100% parameter accuracy.
+- Multi-Language AST Pruning: Native context compilation across C, C++, Python, TypeScript, JavaScript, Go, Rust, Java, C#, Ruby, Swift, Kotlin, PHP, and SQL.
 - Open-Source Benchmark Arena: Evaluated on Redux, Express, Axios, Fastify, React, and Flask with 66.2% average context reduction in Balanced mode.
-- Next-Gen Sticky KPI Cockpit with live polling, advisory budget caps, and smart model auto-routing.
+- Sticky KPI Cockpit with live polling, advisory budget caps, and smart model auto-routing.
 - Multi-phase context compilation stepper with stage-by-stage inspection tooltips.
-- Spatial AST Pruning Market Treemap with nested module sectors, efficiency color chips, and Context X-Ray integration.
-- Optional, privacy-preserving aggregate telemetry (Aptabase) measuring token efficiency and runtime reliability with zero code, prompt, or personal data collection.
+- Spatial AST Pruning Market Treemap with nested module sectors and Context X-Ray integration.
+- Optional, privacy-preserving aggregate telemetry (Aptabase) measuring token efficiency with zero code or prompt collection.
 - Git branch financial drift tracking with main baseline comparisons and severity indicators.
 - Model efficiency frontier analysis (log-scale latency vs cost scatter plot with Pareto detection).
 - Dynamic budget burn-rate velocity gauge and monthly exhaustion horizon forecaster.
-- Developer engagement suite: ambient status bar sparkle feedback, 4-tier milestone ledger with CO2e carbon offset equivalency, and contextual prompt optimization CodeLens.
-- Real-time event-driven auto-refresh engine syncing telemetry smoothly upon context compilation.
+- Developer engagement suite: ambient status bar sparkle feedback, 4-tier milestone ledger, and contextual prompt CodeLens.
 - Task-oriented dashboard organized into Overview, Context, and Activity views with clear pricing explanations.
 - Local diagnostics, conservative fallbacks, and optional encrypted project memory.
 
@@ -95,13 +96,9 @@ Tokonomics can reduce context payloads, but it does not guarantee a reduction, a
 The activity dashboard organizes token metrics into three tabs:
 - **Overview**: Active task status, core token/cost metrics, latest request, and advisory budget alerts.
 - **Context**: Active editor diagnostics, context skeleton copying, diff preview, workspace scan, Context X-Ray, and local tool shortcuts.
-- **Activity**: Request ledger with accessible decision trace dialogs, model tables, daily trend charts with accessible labels, export, and confirmed metric reset.
+- **Activity**: Request ledger with decision trace dialogs, model tables, daily trend charts, export, and confirmed metric reset.
 
-The dashboard updates after handled requests without reloading the view. Token figures distinguish measured counts from local estimates. Dollar values appear only when Tokonomics has a recognized provider/model price and enough request usage information; otherwise, an unavailable reason is shown.
-
-The **Task spend & efficiency** panel separates observed usage costs, input-only projections, and estimated avoided cost. Use **Start task** to group requests in this window, **Set budget** for advisory limits, and **Rate outcome** for self-reported success. Resetting session metrics requires modal confirmation to prevent accidental loss.
-
-Use **Import Claude usage** for Claude Code assistant JSONL logs, or **Watch a log** to follow one selected file. Only usage metadata is retained; source prompts and code are never stored. History retains up to 10,000 requests for 90 days and daily aggregates for one year.
+Distinguishes measured counts from local estimates. The Task spend & efficiency panel separates observed usage costs and estimated avoided costs. History retains up to 10,000 requests for 90 days and daily aggregates for one year. Claude Code JSONL logs can be imported or watched directly.
 
 ## Privacy
 

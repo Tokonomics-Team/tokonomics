@@ -1398,13 +1398,14 @@ function initMcpSimulator() {
 }
 
 // -------------------------------------------------------------------
-// 7. Interactive Agent Layer & Progressive Disclosure Simulator (v8.7.0)
+// 7. Interactive Agent Layer & Execution Optimizer Simulator (v8.8.0)
 // -------------------------------------------------------------------
 function initAgentLayerSimulator() {
   const fileBtns = document.querySelectorAll('.agent-file-btn');
   const stepSkeleton = document.getElementById('btn-agent-step-skeleton');
   const stepHydrate = document.getElementById('btn-agent-step-hydrate');
   const stepBudget = document.getElementById('btn-agent-step-budget');
+  const stepDistill = document.getElementById('btn-agent-step-distill');
   const activeCallLbl = document.getElementById('agent-active-call');
   const btnTrigger = document.getElementById('btn-trigger-agent-action');
   const rpcTrace = document.getElementById('agent-rpc-trace');
@@ -1430,11 +1431,14 @@ function initAgentLayerSimulator() {
     auth: {
       path: 'src/auth/AuthService.ts',
       symbol: 'AuthService.validateToken',
+      framework: 'auto',
       rawTok: 1450,
       skeletonTok: 261,
       hydratedTok: 412,
+      distilledTok: 380,
       savedTok: 1038,
       reduction: '71.6%',
+      distillReduction: '73.8%',
       skeleton: `export class AuthService {
     private readonly jwtSecret: string;
     private readonly tokenCache: Map<string, Session>;
@@ -1473,16 +1477,26 @@ async validateToken(bearer: string): Promise<UserClaims> {
     });
     this.tokenCache.set(rawToken, { claims, expiresAt: Date.now() + 60000 });
     return claims;
-}`
+}`,
+      distilled: `[Tokonomics Execution Optimizer: Diff & Output Distilled]
+[File: src/auth/AuthService.ts]
+@@ -42,6 +42,9 @@ async validateToken(bearer: string): Promise<UserClaims>
++    if (!bearer || !bearer.startsWith('Bearer ')) {
++        throw new UnauthorizedException('Malformed authorization header');
++    }
+Unchanged context (18 lines) collapsed. Secret tokens and session bearer headers sanitized.`
     },
     gateway: {
       path: 'src/models/ModelGateway.py',
       symbol: 'ModelGateway.calculate_backoff',
+      framework: 'pytest',
       rawTok: 1820,
       skeletonTok: 310,
       hydratedTok: 485,
+      distilledTok: 544,
       savedTok: 1335,
       reduction: '73.4%',
+      distillReduction: '70.1%',
       skeleton: `class ModelGateway:
     def __init__(self, config: GatewayConfig):
         self.config = config
@@ -1508,16 +1522,28 @@ def calculate_backoff(self, attempt: int, base_delay: float) -> float:
     jitter = random.uniform(0.85, 1.15)
     delay = min(base_delay * factor * jitter, self.config.max_backoff_seconds)
     logger.debug(f"Computed exponential backoff: attempt={attempt}, delay={delay:.2f}s")
-    return delay`
+    return delay`,
+      distilled: `[Tokonomics Execution Optimizer: Pytest Distillation (tiangolo/fastapi)]
+============================= FAILURES =============================
+_________________________ test_circuit_breaker _________________________
+def test_circuit_breaker():
+>   response = gateway.dispatch_prompt(payload)
+E   CircuitBreakerError: Circuit open: 5 consecutive downstream timeouts
+tests/test_gateway.py:42: CircuitBreakerError
+=================== 1 failed, 24 passed in 0.42s ===================
+100% traceback and assertion diagnostic preserved (-70.1% token bloat).`
     },
     compiler: {
       path: 'src/query/QueryCompiler.go',
       symbol: 'QueryCompiler.CompileQuery',
+      framework: 'go',
       rawTok: 1640,
       skeletonTok: 285,
       hydratedTok: 460,
+      distilledTok: 294,
       savedTok: 1180,
       reduction: '72.0%',
+      distillReduction: '82.1%',
       skeleton: `type QueryCompiler struct {
     Catalog    *Catalog
     OptLevel   OptimizationTier
@@ -1552,7 +1578,74 @@ func (qc *QueryCompiler) CompileQuery(sql string) (*ExecutionPlan, error) {
     plan := qc.generatePhysicalPlan(optimizedAST)
     qc.MemoTable[hash] = plan
     return plan.ToExecutionPlan(), nil
-}`
+}`,
+      distilled: `[Tokonomics Execution Optimizer: Go Test Distillation (kubernetes/kubernetes)]
+--- FAIL: TestReconcileController (0.12s)
+    controller_test.go:88: failed reconcile: expected pod phase 'Running', got 'Pending'
+FAIL
+FAIL    k8s.io/kubernetes/pkg/controller/node    0.412s
+100% failure stack preserved. 18 passing benchmark subtests omitted (-82.1% tokens).`
+    },
+    jest: {
+      path: 'facebook/jest (test-run.log)',
+      symbol: 'PaymentGateway > should charge credit card',
+      framework: 'jest',
+      rawTok: 937,
+      skeletonTok: 290,
+      hydratedTok: 465,
+      distilledTok: 465,
+      savedTok: 472,
+      reduction: '50.4%',
+      distillReduction: '50.4%',
+      skeleton: `// [Tokonomics: Test Runner Output Summary]
+// Total Test Suites: 3 | Tests: 37 total (36 passed, 1 failed)
+// Expand execution failure with tokonomics_distill_output("facebook/jest")`,
+      hydrated: `FAIL src/__tests__/payment.test.ts (3.4s)
+  ● PaymentGateway > should charge credit card with idempotency
+    expect(received).toEqual(expected)
+    - Expected: "CHARGED_SUCCESS"
+    + Received: "IDEMPOTENCY_KEY_EXPIRED"
+      at Object.<anonymous> (src/__tests__/payment.test.ts:88:21)`,
+      distilled: `[Tokonomics Execution Optimizer: Jest Distillation (facebook/jest)]
+FAIL src/__tests__/payment.test.ts (3.4s)
+  ● PaymentGateway > should charge credit card with idempotency
+    expect(received).toEqual(expected)
+    - Expected: "CHARGED_SUCCESS"
+    + Received: "IDEMPOTENCY_KEY_EXPIRED"
+      at Object.<anonymous> (src/__tests__/payment.test.ts:88:21)
+
+Test Suites: 1 failed, 2 passed, 3 total
+Tests:       1 failed, 36 passed, 37 total
+[Tokonomics: 36 passing tests & ANSI escape codes stripped | 100% assertion diff preserved (-50.4% tokens)]`
+    },
+    postgres: {
+      path: 'supabase/postgrest (500_rows.json)',
+      symbol: 'QueryResults[0..500]',
+      framework: 'json',
+      rawTok: 14336,
+      skeletonTok: 350,
+      hydratedTok: 735,
+      distilledTok: 735,
+      savedTok: 13601,
+      reduction: '94.9%',
+      distillReduction: '94.9%',
+      skeleton: `// [Tokonomics: JSON Array (500 rows, 14,336 tokens)]
+// Bound array with tokonomics_distill_output("supabase/postgrest")`,
+      hydrated: `[
+  { "id": 1, "user_id": "usr_9918", "status": "active", "balance": 4820.50 },
+  { "id": 2, "user_id": "usr_9919", "status": "pending", "balance": 120.00 },
+  ... [498 more records] ...
+]`,
+      distilled: `[Tokonomics Execution Optimizer: JSON Array Bounding (supabase/postgrest)]
+[
+  { "id": 1, "user_id": "usr_9918", "status": "active", "balance": 4820.50, "created_at": "2026-10-11T12:00:00Z" },
+  { "id": 2, "user_id": "usr_9919", "status": "pending", "balance": 120.00, "created_at": "2026-10-11T12:05:00Z" },
+  { "id": 3, "user_id": "usr_9920", "status": "active", "balance": 890.10, "created_at": "2026-10-11T12:08:00Z" },
+  // ... [Tokonomics: 494 intermediate array elements omitted to preserve agent context. Head (3) & Tail (3) bounds retained] ...
+  { "id": 498, "user_id": "usr_9988", "status": "active", "balance": 310.00, "created_at": "2026-10-11T15:40:00Z" },
+  { "id": 499, "user_id": "usr_9989", "status": "failed", "balance": 0.00, "created_at": "2026-10-11T15:45:00Z" },
+  { "id": 500, "user_id": "usr_9990", "status": "active", "balance": 1450.75, "created_at": "2026-10-11T15:50:00Z" }
+]`
     }
   };
 
@@ -1564,9 +1657,10 @@ func (qc *QueryCompiler) CompileQuery(sql string) (*ExecutionPlan, error) {
 
   function updateActiveStep(step) {
     currentStep = step;
-    stepSkeleton.classList.toggle('active', step === 'skeleton');
-    stepHydrate.classList.toggle('active', step === 'hydrate');
-    stepBudget.classList.toggle('active', step === 'budget');
+    if (stepSkeleton) stepSkeleton.classList.toggle('active', step === 'skeleton');
+    if (stepHydrate) stepHydrate.classList.toggle('active', step === 'hydrate');
+    if (stepBudget) stepBudget.classList.toggle('active', step === 'budget');
+    if (stepDistill) stepDistill.classList.toggle('active', step === 'distill');
 
     const sc = SCENARIOS[currentFile];
     if (step === 'skeleton') {
@@ -1575,6 +1669,8 @@ func (qc *QueryCompiler) CompileQuery(sql string) (*ExecutionPlan, error) {
       activeCallLbl.textContent = `tokonomics_expand_symbol(filePath: "${sc.path}", symbol: "${sc.symbol}")`;
     } else if (step === 'budget') {
       activeCallLbl.textContent = `tokonomics_budget_status()`;
+    } else if (step === 'distill') {
+      activeCallLbl.textContent = `tokonomics_distill_output(rawOutput: "${sc.path}", framework: "${sc.framework || 'auto'}")`;
     }
     renderAgentState();
   }
@@ -1634,7 +1730,7 @@ func (qc *QueryCompiler) CompileQuery(sql string) (*ExecutionPlan, error) {
 // ============================================================================
 
 {
-  "activeTask": "tokonomics-v8.7-agent-rollout",
+  "activeTask": "tokonomics-v8.8-execution-optimizer",
   "sessionTokensSpent": 4820,
   "sessionTokensSaved": 14200,
   "tokensSavedPercentage": "74.6%",
@@ -1649,6 +1745,23 @@ func (qc *QueryCompiler) CompileQuery(sql string) (*ExecutionPlan, error) {
       statReduction.textContent = '-74.6%';
       statFidelity.textContent = 'Verified';
       statParity.textContent = '100%';
+    } else if (currentStep === 'distill') {
+      latencyBadge.textContent = '0.21 ms';
+      rpcTrace.innerHTML = `
+<span style="color:#64748b;">// --- Execution Output Distillation Protocol ---</span>
+<span style="color:#38bdf8;">--&gt; {"jsonrpc":"2.0","id":${requestId},"method":"tools/call","params":{"name":"tokonomics_distill_output","arguments":{"rawOutput":"${sc.path}","framework":"${sc.framework}"}}}</span>
+
+<span style="color:#64748b;">// &lt;-- Tokonomics Distiller Response (0.21ms)</span>
+<span style="color:#a7f3d0;">&lt;-- {"jsonrpc":"2.0","id":${requestId},"result":{"content":[{"type":"text","text":"[Distilled: ${sc.rawTok} -&gt; ${sc.distilledTok} tokens | -${sc.distillReduction || sc.reduction}]"}]}}</span>
+<span style="color:#10b981;">✓ 100% failure diagnostics &amp; assertions preserved. Repetitive noise &amp; secrets redacted.</span>
+`;
+      contextHeader.textContent = `Agent Working Memory: Distilled Execution Output`;
+      contextTokens.textContent = `${sc.distilledTok} tokens (-${sc.distillReduction || sc.reduction})`;
+      contextView.textContent = sc.distilled;
+      statSaved.textContent = (sc.rawTok - sc.distilledTok).toLocaleString();
+      statReduction.textContent = `-${sc.distillReduction || sc.reduction}`;
+      statFidelity.textContent = '100% Diagnostic';
+      statParity.textContent = '100%';
     }
   }
 
@@ -1657,13 +1770,18 @@ func (qc *QueryCompiler) CompileQuery(sql string) (*ExecutionPlan, error) {
       fileBtns.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       currentFile = btn.getAttribute('data-file');
-      updateActiveStep(currentStep);
+      if (currentFile === 'jest' || currentFile === 'postgres') {
+        updateActiveStep('distill');
+      } else {
+        updateActiveStep(currentStep);
+      }
     });
   });
 
   if (stepSkeleton) stepSkeleton.addEventListener('click', () => updateActiveStep('skeleton'));
   if (stepHydrate) stepHydrate.addEventListener('click', () => updateActiveStep('hydrate'));
   if (stepBudget) stepBudget.addEventListener('click', () => updateActiveStep('budget'));
+  if (stepDistill) stepDistill.addEventListener('click', () => updateActiveStep('distill'));
 
   if (btnTrigger) {
     btnTrigger.addEventListener('click', () => {

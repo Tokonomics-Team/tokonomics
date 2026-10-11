@@ -2732,7 +2732,7 @@ body {
 .mcp-ts-type { color: #34d399; }
 .mcp-ts-comment { color: #64748b; font-style: italic; }
 
-/* ================= Agent Layer & Progressive Disclosure Simulator (v8.7.0) ================= */
+/* ================= Agent Layer & Execution Optimizer Simulator (v8.8.0) ================= */
 .agent-step-btn {
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--border-color);
@@ -2757,6 +2757,11 @@ body {
   color: #d8b4fe;
   font-weight: 600;
 }
+.agent-step-btn.distill-step.active {
+  background: rgba(56, 189, 248, 0.2);
+  border-color: rgba(56, 189, 248, 0.8);
+  color: #38bdf8;
+}
 .agent-host-badge {
   font-family: var(--font-mono);
   font-size: 0.72rem;
@@ -2770,4 +2775,19 @@ body {
 .agent-jsonrpc-tag { color: #a7f3d0; }
 .agent-symbol-marker { color: #f59e0b; background: rgba(245, 158, 11, 0.1); padding: 1px 4px; border-radius: 3px; font-weight: 500; }
 .agent-hydrated-block { border-left: 2px solid var(--accent-green); background: rgba(16, 185, 129, 0.06); padding-left: 6px; }
+.distill-pill-green {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: #10b981;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+}
+.distill-trace-box {
+  background: rgba(15, 23, 42, 0.6);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 10px;
+}
+
 
