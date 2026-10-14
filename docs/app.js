@@ -831,6 +831,16 @@ function escapeHtml(str) {
 // -------------------------------------------------------------------
 const COMMAND_DATABASE = [
   {
+    cmd: 'Tokonomics: Export Air-Gapped Local DORA Audit Report',
+    category: 'Developer Velocity (v9.0.0)',
+    desc: 'Exports cryptographically stamped SHA-256 air-gapped audit reports containing Lead Time, CFR, and test stability with 0 bytes network egress.'
+  },
+  {
+    cmd: 'Tokonomics: Reset Developer Activity Metrics',
+    category: 'Developer Velocity (v9.0.0)',
+    desc: 'Resets in-memory keystroke tracking, code origin counters, and flow state buffers for the current session.'
+  },
+  {
     cmd: 'Tokonomics: Slice Active Symbol Dependency Graph (Cross-File AST)',
     category: 'AST Slicing (v8.9.0)',
     desc: 'Computes backward program slice around active editor symbol across file boundaries in < 0.3ms, cutting orthogonal tokens by 70%-90%.'

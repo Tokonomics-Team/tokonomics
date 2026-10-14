@@ -1,5 +1,15 @@
 # Tokonomics release notes
 
+## 9.0.0
+
+- Developer Productivity & Activity Telemetry: Local-only, non-invasive activity tracking using 2-minute heartbeats, 120s auto-pause on inactivity, and granular multi-language time attribution.
+- Code Origin Attribution Engine: Real-time heuristic classifier distinguishing human typing dynamics from streaming AI completions and bulk snippet insertions, computing exact human- vs. AI-authored line splits with near-AI correlation.
+- Flow State & AI Friction Correlation: In-memory analyzer identifying unbroken 20m+ deep coding sessions, calculating Flow Efficiency Score, and categorizing AI prompts into Accelerated Flow vs. High-Friction Detours.
+- Air-Gapped Local DORA Metrics: Inner-loop lead time for changes (with AI vs. manual velocity delta), blended pre-commit Change Failure Rate (CFR), local test pass rates, and recovery turnaround speed (MTTR) queried directly from local Git history and VS Code Test API.
+- Zero Outbound Egress Invariant: Strictly local execution with 0 bytes transmitted over network; zero external sockets, APIs, or telemetry daemons.
+- Tamper-Proof Air-Gapped Audit Compliance: One-click sanitized export of compliance summaries in JSON and HTML format, verified with a SHA-256 cryptographic audit fingerprint.
+- Unified Cockpit UI: Added ARIA-accessible Velocity & Flow and Local DORA tabs featuring responsive line gauges, friction indicators, and developer velocity KPI summary in the Overview panel.
+
 ## 8.9.0
 
 - Semantic Graph Slicing: Multi-file dependency graph program slicing engine extracting exact call hierarchies and type contracts across TypeScript, JavaScript, Python, and Go with 70%–90% context token reduction and 100% causal completeness.
@@ -22,37 +32,13 @@
 
 ## 8.7.0
 
-- Universal Agent Layer MCP Server: Native Model Context Protocol (MCP) server running over JSON-RPC 2.0 stdio, plugging into Claude Code CLI, Cursor Agent (`.cursor/mcp.json`), Codex CLI, and Copilot Agent mode.
-- Two-Stage Progressive Disclosure Engine: High-level AST skeletons on initial reads (`tokonomics_read_skeleton`) paired with on-demand symbol hydration (`tokonomics_expand_symbol`) for 100% eval task accuracy parity.
-- Agent Budget & Memory Cache Tools: Provides external agents with live session token/cost budget status (`tokonomics_budget_status`) and read-only cache checking (`tokonomics_check_cache`) to prevent redundant LLM generations.
-- Agent Configuration Helper & Dashboard Integration: Added one-click clipboard configuration exporters for Claude Code CLI and Cursor directly from the Command Palette and Dashboard Activity view (`Tokonomics: Copy Agent MCP Configuration`).
-- Standalone CLI Executable: Self-contained MCP server bundle (`dist/mcp-server.js`) packaged within the extension VSIX for zero-dependency execution via `node dist/mcp-server.js`.
-
-## 8.6.1
-
-- Multi-Language AST Pruning Engine: Native context compilation and slicing for C (`.c`, `.h`), C++ (`.cpp`, `.hpp`, `.cc`, `.cxx`), and top compiled languages with 55%–57% verified token reduction.
-- Header File Support: Extended language detection and file mapping to recognize C/C++ header files and Python interface files (`.pyi`).
-- Interactive Studio Playground: Added live C, C++, Java, and C# simulation playgrounds to the web documentation suite.
-
-## 8.6.0
-
-- Model Context Protocol (MCP) Tool Firewall: Dynamic tool intent classification, catalog virtualization (`tokonomics_request_tool_catalog`), and compact minification pruning up to 90.0% of tool context overhead in 2.3ms.
-- Community MCP Server Validation: Automated benchmark suite across 7 canonical community servers (55 tools) with 100% parameter accuracy and zero tool call misfires.
-- Open-Source Benchmark Arena: Evaluated against canonical production repositories (Redux, Express, Axios, Fastify, React, Flask) achieving 66.2% average context reduction in Balanced mode.
-- Direct Google Gemini API Provider: Native integration for Gemini models alongside official Claude and Codex CLI transports.
-
-## 8.5.x
-
-- Privacy-Preserving Aggregate Telemetry: Optional, anonymous usage metrics via Aptabase measuring token savings and runtime error categories with zero code or prompt collection.
-- Spatial AST Pruning Market Treemap: Two-level squarified market map featuring module sector frames and Context X-Ray integration.
-- Evergreen Dashboard UI: Polished live telemetry cockpit and resilient auto-refresh pipelines.
+- Universal Agent Layer MCP Server: Native Model Context Protocol (MCP) server running over JSON-RPC 2.0 stdio with two-stage progressive AST skeleton disclosure and on-demand symbol hydration.
+- Agent Budget & Memory Cache Tools: Session token/cost budget status (`tokonomics_budget_status`) and cache checking (`tokonomics_check_cache`).
+- Agent Configuration Helper & Standalone CLI: One-click clipboard configuration exporters for Claude Code CLI and Cursor.
 
 ## Earlier releases
 
-- 8.5.0: Sticky KPI cockpit, context pipeline stepper, spatial treemap, git branch drift, model frontier, and budget forecaster.
-- 8.4.0: Context X-Ray multi-criteria sorting, native chat model tier guidance, and large-file memory optimization.
-- 8.3.0: Secret scanning, Restricted Mode containment, authenticated project memory, and dockable native chat panel.
-- 8.2.0: Modernized dashboard into Overview, Context, and Activity tabs with responsive layouts.
-- 8.1.0: First Context Check, Context X-Ray estimates, opt-in Context Meter, chat handoffs, and tool-schema audits.
-- 8.0.0: Verified economic ROI model, expanded language context preparation, and task spend tracking.
+- 8.6.x: Multi-language AST pruning for C/C++, header mapping, MCP Tool Firewall (55 tools), and open-source benchmark arena.
+- 8.5.x: Privacy-preserving aggregate telemetry, spatial market treemap, and sticky KPI cockpit.
+- 8.4.x - 8.0.0: Context X-Ray multi-criteria sorting, native chat panel, task spend tracking, and verified economic ROI models.
 - 7.0.1: Refreshed context preparation with simplified configuration and encrypted project memory.

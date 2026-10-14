@@ -22,7 +22,7 @@
     <div class="header-container">
       <div class="brand">
         <img src="assets/icon.png" alt="Tokonomics Logo" class="brand-logo" width="32" height="32">
-        <span class="brand-name">Tokonomics<span class="version-tag">v8.9.0</span></span>
+        <span class="brand-name">Tokonomics<span class="version-tag">v9.0.0</span></span>
       </div>
       <nav class="nav-links">
         <a href="#quickstart" class="nav-link">Quickstart</a>
@@ -48,11 +48,11 @@
   <main>
     <section class="hero-section" id="hero">
       <div class="hero-badge">
-        <span class="pulse-dot"></span> 8.9.0 Released — Semantic Graph Slicing &amp; Prefix Cache Pinning: 75.6% Aggregate Token Savings on Top Repos &amp; Guaranteed Prefix Hits
+        <span class="pulse-dot"></span> 9.0.0 Released — Air-Gapped Developer Velocity, Code Origin Engine &amp; Local DORA Metrics: Zero Cloud Data Leaks
       </div>
       <h1 class="hero-title">Step-by-Step Feature Walkthrough & Documentation</h1>
       <p class="hero-subtitle">
-        Tokonomics is the local AI token optimizer, AST context compiler, and prefix cache pinner for VS Code, Claude Code, and Cursor. Prepare lean 14-language AST context, pin prompt envelopes for guaranteed KV cache hits, distill zombie terminal output, and manage autonomous agent spend.
+        Tokonomics is the local AI token optimizer, AST context compiler, prefix cache pinner, and air-gapped developer velocity/DORA engine for VS Code, Claude Code, and Cursor. Track active coding hours vs AI cost, classify human vs AI code origin, correlate flow state friction, and measure local lead time with zero network egress.
       </p>
       <div class="hero-cta-group">
         <a href="#guide" class="btn-primary-large" id="btn-start-guide">Explore Features Step-by-Step</a>
@@ -188,6 +188,10 @@
           <button class="guide-tab-btn" data-tab="semantic-slicing">
             <span class="tab-icon">🕸️</span>
             <span class="tab-text">14. Semantic Graph Slicing &amp; Prefix Pinning (v8.9.0)</span>
+          </button>
+          <button class="guide-tab-btn" data-tab="developer-velocity-dora">
+            <span class="tab-icon">⚡</span>
+            <span class="tab-text">15. Developer Velocity &amp; Local DORA (v9.0.0)</span>
           </button>
         </aside>
 
@@ -1394,6 +1398,81 @@
                       <td><strong>100% Parity (0 Losses)</strong></td>
                       <td><span class="distill-pill-green">100% Invariant</span></td>
                       <td><strong>0.29 ms (mean)</strong></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </article>
+
+          <!-- Tab 15: Developer Velocity, Code Origin & Local DORA (v9.0.0) -->
+          <article class="guide-panel" id="panel-developer-velocity-dora">
+            <div class="panel-header">
+              <span class="badge-accent">v9.0.0 Milestone</span>
+              <h3>15. Developer Velocity, Code Origin &amp; Air-Gapped Local DORA</h3>
+              <p class="panel-lead">Measures active coding time, classifies human typing vs AI completions, correlates flow state friction, and computes inner-loop DORA metrics directly from local Git history—with strict zero outbound network egress.</p>
+            </div>
+
+            <!-- Visual Flow & Cards -->
+            <div class="glass-card" style="padding: 24px; margin-bottom: 24px;">
+              <h4 style="margin: 0 0 16px 0; color: #fff; font-size: 1.15rem;">Unified Developer Cockpit Architecture</h4>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+                <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 16px;">
+                  <div style="font-weight: 600; color: var(--accent-cyan); margin-bottom: 8px;">1. Activity Telemetry &amp; Heartbeats</div>
+                  <p style="font-size: 0.85rem; color: var(--text-dim); margin: 0; line-height: 1.5;">2-minute activity bucket aggregation tracking keystrokes and active typing seconds. Auto-pauses on 120s idle to guarantee zero false active time.</p>
+                </div>
+                <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 16px;">
+                  <div style="font-weight: 600; color: var(--accent-purple); margin-bottom: 8px;">2. Code Origin Classifier</div>
+                  <p style="font-size: 0.85rem; color: var(--text-dim); margin: 0; line-height: 1.5;">Distinguishes continuous human keystrokes from bulk AI streaming insertions and paste events with &ge;95% accuracy and prompt proximity correlation.</p>
+                </div>
+                <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 16px;">
+                  <div style="font-weight: 600; color: var(--accent-green); margin-bottom: 8px;">3. Flow State &amp; Friction Index</div>
+                  <p style="font-size: 0.85rem; color: var(--text-dim); margin: 0; line-height: 1.5;">Clusters unbroken 20m+ coding blocks into deep work sessions. Identifies post-prompt rollbacks and computes the Flow Efficiency Score (0-100).</p>
+                </div>
+                <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 16px;">
+                  <div style="font-weight: 600; color: var(--accent-amber); margin-bottom: 8px;">4. Air-Gapped Local DORA</div>
+                  <p style="font-size: 0.85rem; color: var(--text-dim); margin: 0; line-height: 1.5;">Derives Lead Time for Changes (AI vs Manual delta), Change Failure Rate (CFR), pre-commit test pass rates, and MTTR from local Git metadata.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Interactive Metric Breakdown -->
+            <div class="glass-card" style="padding: 24px; margin-bottom: 24px;">
+              <h4 style="margin: 0 0 16px 0; color: #fff; font-size: 1.15rem;">Real-World Metric Invariants &amp; Privacy Guarantees</h4>
+              <div style="overflow-x: auto;">
+                <table class="benchmark-table modern-table" style="font-size: 0.82rem; margin: 0;">
+                  <thead>
+                    <tr>
+                      <th>Capability Area</th>
+                      <th>Reference Tools</th>
+                      <th>Tokonomics Architecture</th>
+                      <th>Privacy &amp; Air-Gap Invariant</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>Active Dev Hours vs AI Cost</strong></td>
+                      <td>Simple Coding Insights</td>
+                      <td>Combines 2-min activity heartbeats with Claude JSONL and model pricing ledgers.</td>
+                      <td><span class="distill-pill-green">100% Local (0 Egress)</span></td>
+                    </tr>
+                    <tr>
+                      <td><strong>Human vs AI Code Origin</strong></td>
+                      <td>WakaTime / Code Time</td>
+                      <td>Heuristic typing dynamics vs bulk AI insertions with entropy checks.</td>
+                      <td><span class="distill-pill-green">0 Keystroke Retention</span></td>
+                    </tr>
+                    <tr>
+                      <td><strong>Flow State &amp; Friction</strong></td>
+                      <td>Code Time (Software.com)</td>
+                      <td>Unbroken 20m+ coding block clustering with post-prompt rollback detection.</td>
+                      <td><span class="distill-pill-green">In-Memory Analysis</span></td>
+                    </tr>
+                    <tr>
+                      <td><strong>Local DORA Metrics</strong></td>
+                      <td>QuantumEdge</td>
+                      <td>Inner-loop Lead Time for Changes, blended CFR, and test pass rate from local Git.</td>
+                      <td><span class="distill-pill-green">SHA-256 Audit Stamp</span></td>
                     </tr>
                   </tbody>
                 </table>

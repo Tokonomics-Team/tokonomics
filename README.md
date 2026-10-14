@@ -1,6 +1,6 @@
-# Tokonomics 8.9.0 — AI Token Optimizer & Prompt Cache Engine
+# Tokonomics 9.0.0 — AI Token Optimizer, Developer Velocity & Local DORA Engine
 
-Tokonomics is a local multi-language context compiler, AST program slicer, and prefix cache pinner for VS Code, Claude Code, and Cursor with zero cloud data leaks. Interactive guide & simulator: [tokonomics-team.github.io/tokonomics](https://tokonomics-team.github.io/tokonomics/).
+Tokonomics is a local multi-language context compiler, AST program slicer, prefix cache pinner, and air-gapped developer velocity/DORA engine for VS Code, Claude Code, and Cursor with zero cloud data leaks. Interactive guide & simulator: [tokonomics-team.github.io/tokonomics](https://tokonomics-team.github.io/tokonomics/).
 
 Removes avoidable repetition while keeping required context. Results vary by workspace, model, and provider.
 
@@ -8,21 +8,18 @@ Subscription chat: in VS Code Chat (Ask), use `@tokonomics /codex your question`
 
 ## What you get
 
-- Semantic Graph Slicing & Prefix Cache Pinning: Multi-file dependency graph program slicing extracting exact call trees and type contracts paired with deterministic 3-tier prompt envelopes and 1,024-token boundary padding for guaranteed prefix cache hits.
-- Universal Agent Layer & 8 Canonical MCP Tools: Standalone MCP server providing semantic graph slicing (`tokonomics_slice_graph`), prefix cache pinning (`tokonomics_pin_prefix`), output distillation (`tokonomics_distill_output`), and progressive AST disclosure for Claude Code, Cursor, and Copilot.
-- Top Repository Benchmarks: Validated across canonical repos (`reduxjs/redux`, `expressjs/express`, `tiangolo/fastapi`, `BurntSushi/ripgrep`, `facebook/react`) achieving 75.6% aggregate context token reduction and 100% multi-turn prefix invariance in 0.29ms.
-- Response Bloat Distiller: Distills test runners (Jest, Pytest, Go, Cargo, JUnit, GoogleTest), large JSON arrays, and diffs with up to 94.9% token reduction while preserving 100% of failure stacks and diagnostics.
-- MCP Tool Firewall & Schema Pruner: Dynamic tool classification and compact minification saving up to 90.0% of tool context tokens in 2.3ms across 7 canonical community servers with 100% parameter accuracy.
+- Developer Productivity & Activity Telemetry (v9.0.0): 2-minute activity heartbeats tracking active coding time, keystroke cadence, and multi-language attribution with 120s idle pausing.
+- Code Origin Attribution Engine (v9.0.0): Real-time classifier distinguishing human typing from streaming AI completions, measuring human vs. AI authored lines.
+- Flow State & AI Friction Correlation (v9.0.0): Identifies 20m+ deep coding sessions, computes Flow Efficiency Score, and flags post-prompt debugging detours.
+- Air-Gapped Local DORA Metrics (v9.0.0): Inner-loop Lead Time for Changes (AI vs. manual delta), pre-commit CFR, and test pass rates from local Git history with 0 bytes network egress.
+- Unified Developer Cockpit: Interactive Velocity & Flow and Local DORA dashboard tabs with line gauges, friction indicators, and cryptographic audit export.
+- Semantic Graph Slicing & Prefix Cache Pinning: Cross-file dependency slicing extracting exact call trees paired with deterministic prompt envelopes and 1,024-token boundary padding for guaranteed cache hits.
+- Universal Agent Layer & 8 Canonical MCP Tools: Standalone MCP server providing progressive AST disclosure, program slicing, and output distillation for Claude Code, Cursor, and Copilot.
+- Response Bloat Distiller: Distills test runners (Jest, Pytest, Go, Cargo) and JSON with up to 94.9% token reduction while preserving failure stacks and diagnostics.
+- MCP Tool Firewall & Schema Pruner: Dynamic tool classification saving up to 90.0% tool context overhead across community servers.
 - Multi-Language AST Pruning: Native context compilation across C, C++, Python, TypeScript, JavaScript, Go, Rust, Java, C#, Ruby, Swift, Kotlin, PHP, and SQL.
-- Sticky KPI Cockpit with live polling, advisory budget caps, and smart model auto-routing.
-- Multi-phase context compilation stepper with stage-by-stage inspection tooltips.
-- Spatial AST Pruning Market Treemap with nested module sectors and Context X-Ray integration.
-- Optional, privacy-preserving aggregate telemetry (Aptabase) measuring token efficiency with zero code or prompt collection.
-- Git branch financial drift tracking with main baseline comparisons and severity indicators.
-- Model efficiency frontier analysis (log-scale latency vs cost scatter plot with Pareto detection).
-- Dynamic budget burn-rate velocity gauge and monthly exhaustion horizon forecaster.
-- Developer engagement suite: ambient status bar sparkle feedback, 4-tier milestone ledger, and contextual prompt CodeLens.
-- Task-oriented dashboard organized into Overview, Context, and Activity views with clear pricing explanations.
+- Sticky KPI Cockpit: Real-time token rates, advisory budget caps, branch drift tracking, model frontier scatter plots, and spatial market treemaps.
+- Task-oriented dashboard organized into Overview, Context, Activity, Velocity & Flow, and Local DORA views.
 - Local diagnostics, conservative fallbacks, and optional encrypted project memory.
 
 ## Get started
