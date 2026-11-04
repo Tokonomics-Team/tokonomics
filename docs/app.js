@@ -941,6 +941,21 @@ const COMMAND_DATABASE = [
     desc: 'Lints OpenAI functions, MCP inputSchema, or Claude schemas for flat parameter explosion (>6 args) and deep nesting.'
   },
   {
+    cmd: 'Tokonomics: Run Autonomous AI Harness Task',
+    category: 'AI Harness',
+    desc: 'Launches a closed-loop autonomous execution task with AST guardrails, LSP quiescence, and two-tier rollback.'
+  },
+  {
+    cmd: 'Tokonomics: Emergency Harness Rollback',
+    category: 'AI Harness',
+    desc: 'Instantly reverts in-memory editor buffers and checks out the stash snapshot with zero loss of uncommitted work.'
+  },
+  {
+    cmd: 'Tokonomics: Run Harness Security & Invariant Audit',
+    category: 'AI Harness',
+    desc: 'Audits workspace .tokonomics/mcp.json schemas, AST public contracts, and terminal execution rules.'
+  },
+  {
     cmd: 'Tokonomics: Open Chat',
     category: 'Chat Surface',
     desc: 'Opens the dedicated Tokonomics chat interface in the Secondary Side Bar.'
@@ -2263,3 +2278,69 @@ export function createFiber(tag: WorkTag, pendingProps: any, key: null | string)
   renderSlicingView();
 }
 
+
+  // AI Harness Cockpit Simulator Logic (v10.0.0)
+  const btnSimHarness = document.getElementById('btn-sim-harness');
+  const btnSimRollback = document.getElementById('btn-sim-rollback');
+  const simHarnessState = document.getElementById('sim-harness-state');
+  const simHarnessLog = document.getElementById('sim-harness-log');
+  const simHarnessLoops = document.getElementById('sim-harness-loops');
+  const simHarnessSurgery = document.getElementById('sim-harness-surgery');
+
+  if (btnSimHarness && simHarnessLog) {
+    let isSimulating = false;
+    btnSimHarness.addEventListener('click', () => {
+      if (isSimulating) return;
+      isSimulating = true;
+      btnSimHarness.disabled = true;
+      btnSimHarness.style.opacity = '0.6';
+
+      const steps = [
+        { state: '1/5 PLANNING & MCP DISCOVERY', color: '#58a6ff', msg: 'Discovered 4 tools from .tokonomics/mcp.json. Minified schemas (-35.3% tokens). Pinned Tier 0.' },
+        { state: '2/5 AST GUARDRAILS & SANDBOX', color: '#a371f7', msg: 'Structural diff check PASSED (0.01ms). Zero syntax corruptions. Sandboxed terminal initialized.' },
+        { state: '3/5 ACTING & TERMINAL EXEC', color: '#d29922', msg: 'Executing test runner... LSP diagnostics observed.' },
+        { state: '4/5 LOG SURGERY & RECLAMATION', color: '#39c5bb', msg: 'Compiler trace compacted (-82.6% tokens). Tier 3 demoted to AST skeleton.' },
+        { state: '5/5 CONVERGED SUCCESS (Turn 2)', color: '#4ec9b0', msg: 'Loop converged in 2 turns. All 4 tests passed. Ready for developer review.' }
+      ];
+
+      let idx = 0;
+      const timer = setInterval(() => {
+        if (idx < steps.length) {
+          const s = steps[idx];
+          if (simHarnessState) {
+            simHarnessState.innerText = s.state;
+            simHarnessState.style.color = s.color;
+          }
+          const row = document.createElement('div');
+          row.style.color = s.color;
+          row.innerText = '[' + s.state.split(' ')[0] + '] ' + s.msg;
+          simHarnessLog.prepend(row);
+          idx++;
+        } else {
+          clearInterval(timer);
+          isSimulating = false;
+          btnSimHarness.disabled = false;
+          btnSimHarness.style.opacity = '1';
+          if (simHarnessLoops) {
+            simHarnessLoops.innerText = parseInt(simHarnessLoops.innerText || '48') + 1;
+          }
+          if (simHarnessSurgery) {
+            simHarnessSurgery.innerText = (parseInt(simHarnessSurgery.innerText.replace(/,/g, '') || '124580') + 380).toLocaleString();
+          }
+        }
+      }, 700);
+    });
+  }
+
+  if (btnSimRollback && simHarnessLog) {
+    btnSimRollback.addEventListener('click', () => {
+      if (simHarnessState) {
+        simHarnessState.innerText = 'TWO-TIER ROLLBACK COMPLETE';
+        simHarnessState.style.color = '#ff7b72';
+      }
+      const row = document.createElement('div');
+      row.style.color = '#ff7b72';
+      row.innerText = '[ROLLBACK] Two-Tier rollback executed: In-memory TextDocument buffers restored via WorkspaceEdit + Git stash checked out.';
+      simHarnessLog.prepend(row);
+    });
+  }

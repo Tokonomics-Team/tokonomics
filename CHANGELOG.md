@@ -1,5 +1,17 @@
 # Tokonomics release notes
 
+## 10.0.0
+
+- AI Harness Engineering Runtime: Autonomous, closed-loop execution runtime with stateful FSM (Planning -> Guardrail -> Acting -> Observing -> Convergence/Rollback) enforcing strict 5-turn retry limits and cyclic oscillation detection.
+- Outbound MCP Client Hub: Discovers workspace `.tokonomics/mcp.json` configs, auto-prunes tool schemas with `McpSchemaMinifier` (saving >= 35% tool tokens), and securely proxies stdio tool calls with workspace trust gating.
+- Dynamic Prefix Governance & Shadow-Harness Telemetry: Pinned static Tier 0/1 prompt envelopes with Anthropic `cache_control: { type: "ephemeral" }` breakpoints for >= 1,024 tokens, capturing 90% read discounts ($0.30/M vs $3.00/M) and simulating live cost savings.
+- Two-Tier Rollback Engine: In-memory `vscode.TextDocument` undo buffer restoration via `WorkspaceEdit` paired with dangling git tree snapshots (`git stash create`), guaranteeing zero loss of unreviewed developer edits.
+- Sandboxed Terminal Runner: Headless child_process and VS Code PTY runner with Issue #316556 hang prevention (150ms drain race), automatic normalization of literal newlines, stdout secret redaction, and 30s timeout watchdog.
+- Active Context Surgery & Dynamic Tier Demotion: Tail-end in-place log surgery replacing resolved compiler traces with compact digests (-82.6% tokens) without busting prompt caches, plus dynamic demotion of previous edit targets from Tier 3 to Tier 1 via Progressive Disclosure skeletons.
+- Structural Diff & Bash AST Guardrails: Multi-gate syntax integrity checks (preventing unbalanced delimiter corruption), contract preservation checks (blocking unauthorized deletion of public exported interfaces and methods), workspace path jail confinement, and destructive command blacklisting.
+- AI Harness Cockpit: Interactive Dashboard panel with live multi-turn telemetry, Tier 0/1/2 cache hit gauges, surgery counters, real-time guardrail ledger, and one-click Emergency Rollback.
+- Contributed Commands & Chat Integration: Contributed `@tokonomics /harness` participant command, `Tokonomics: Run Autonomous AI Harness Task`, `Tokonomics: Emergency Harness Rollback`, and `Tokonomics: Run Harness Security & Invariant Audit`.
+
 ## 9.0.0
 
 - Developer Productivity & Activity Telemetry: Local-only, non-invasive activity tracking using 2-minute heartbeats, 120s auto-pause on inactivity, and granular multi-language time attribution.
