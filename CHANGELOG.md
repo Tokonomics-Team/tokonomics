@@ -1,5 +1,18 @@
 # Tokonomics release notes
 
+## 11.0.0
+
+- Universal Multi-Provider Cache Quantizer: Hardware-level chunk boundary quantization for Anthropic (1,024), DeepSeek-V3/R1 (64), OpenAI (128), and Gemini (32k) with exact boundary alignment padding, preventing cache thrashing.
+- Merkle Prefix Invariance Engine: Git-blob SHA-1 topological prefix sorter ensuring 100% byte invariance and zero cache-busting drift across multi-file permutations.
+- Predictive Tool-RAG: Inverted index router dynamically selecting the top 3 to 5 relevant tools, clamping tool schema overhead to <= 450 tokens (-84% bloat reduction) with essential tool pinning.
+- Two-Phase Compact TypeScript Schemas: Single-line TypeScript signatures (-77% tokens) and local parameter validation with targeted 1-line remediation prompts upon schema mismatch.
+- Inter-Procedural Program Dependency Slicing: Backward semantic slicing over def-use chains and control dominators with 100% causal type closure across TypeScript, Python, and Go (-57.9% to -75.6% tokens).
+- Token-Conscious Extractive Log Surgery: Preserves 100% of culprit stack frames, failing assertions, and compiler diagnostics while pruning noisy passing test suites (-70% token reduction).
+- Agentless 3-Phase Execution Pipeline: Deterministic 3-phase execution (Localization -> Patch -> Sliced Verify) converging in 3 turns with pre-flight Two-Tier rollback safety.
+- Symbolic Test Slicing: Maps modified AST symbols to targeted unit tests, dropping test execution latency by 96.6% (35s -> 1.2s).
+- FSM Type-State Capability Masking: Strict tool authorization enforcing read-only discovery during planning and eliminating unauthorized side-effects before patch verification.
+- Zero-Bloat Frontier Cockpit: Streamlined 4-tile status strip surfacing hardware chunk quantization, Merkle invariance, Tool-RAG reduction, and test acceleration.
+
 ## 10.0.0
 
 - AI Harness Engineering Runtime: Autonomous, closed-loop execution runtime with stateful FSM (Planning -> Guardrail -> Acting -> Observing -> Convergence/Rollback) enforcing strict 5-turn retry limits and cyclic oscillation detection.

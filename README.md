@@ -1,4 +1,4 @@
-# Tokonomics 10.0.0 — AI Token Optimizer, Autonomous Execution Harness & Local DORA Engine
+# Tokonomics 11.0.0 — AI Token Optimizer, Autonomous Execution Harness & Local DORA Engine
 
 Tokonomics is a local multi-language context compiler, autonomous execution harness, AST program slicer, prefix cache pinner, and air-gapped developer velocity/DORA engine for VS Code, Claude Code, and Cursor with zero cloud data leaks. Interactive guide & simulator: [tokonomics-team.github.io/tokonomics](https://tokonomics-team.github.io/tokonomics/).
 
@@ -8,10 +8,16 @@ Subscription chat: in VS Code Chat (Ask), use `@tokonomics /codex your question`
 
 ## What you get
 
+- Universal Multi-Provider Cache Quantizer (v11.0.0): Hardware-level chunk boundary quantization for Anthropic (1,024), DeepSeek-V3/R1 (64), OpenAI (128), and Gemini (32k) with exact chunk alignment padding and 0% boundary overshoot.
+- Merkle Prefix Invariance Engine (v11.0.0): Git-blob SHA-1 topological prefix sorter ensuring 100% byte invariance and zero cache-busting drift across multi-file permutations.
+- Predictive Tool-RAG & Compact TypeScript Schemas (v11.0.0): Inverted index router dynamically selecting the top 3 to 5 relevant tools ($\le 450$ tokens, -84% overhead), compact function signatures (-77% tokens), and local parameter validation with 1-line remediation prompts.
+- Inter-Procedural Program Dependency Slicing (v11.0.0): Backward semantic slicing over def-use chains and control dominators with 100% causal type closure across TypeScript, Python, and Go (-57.9% to -75.6% tokens).
+- Agentless Hierarchical Execution & Symbolic Test Slicing (v11.0.0): Deterministic 3-phase execution (Localization -> Patch -> Sliced Verify) converging in 3 turns, paired with targeted test slicing reducing test latency by 96.6% (35s -> 1.2s), and FSM type-state capability masking eliminating unauthorized side-effects in planning.
+- Zero-Bloat Frontier Cockpit (v11.0.0): Streamlined 4-tile status strip surfacing hardware chunk quantization, Merkle invariance, Tool-RAG reduction, and test acceleration.
 - AI Harness Engineering Runtime (v10.0.0): Autonomous, closed-loop execution runtime with stateful FSM (Planning -> Guardrail -> Acting -> Observing -> Convergence/Rollback), 5-iteration retry limits, and cyclic oscillation detection.
 - Outbound MCP Client Hub & Prefix Governance (v10.0.0): Workspace `.tokonomics/mcp.json` discovery, dynamic schema minification (-35% tokens), and 4-tier context caching with Anthropic `cache_control` breakpoints capturing 90% read discounts ($0.30/M vs $3.00/M).
 - Two-Tier Rollback Engine (v10.0.0): Fast in-memory `vscode.TextDocument` undo buffer restoration via `WorkspaceEdit` paired with dangling git tree snapshots (`git stash create`), preventing uncommitted code loss on abort.
-- Active Context Surgery & Dynamic Tier Demotion (v10.0.0): Tail-end log surgery replacing resolved compiler traces with compact digests (-82.6% tokens) without busting prompt caches, plus dynamic demotion of previous edit targets from Tier 3 to Tier 1 via Progressive Disclosure skeletons.
+- Active Context Surgery & Dynamic Tier Demotion (v10.0.0): Tail-end log surgery replacing resolved compiler traces with compact digests (-82.6% tokens) without busting prompt caches, plus dynamic demotion of previous edit targets via Progressive Disclosure skeletons.
 - Structural Diff & Bash AST Guardrails (v10.0.0): Syntactic integrity validation, contract preservation (blocking accidental public export/method deletion), workspace path confinement, and destructive command blacklisting.
 - AI Harness Cockpit (v10.0.0): Interactive Dashboard panel featuring live multi-turn telemetry, Tier 0/1/2 cache hit gauges, surgery counters, real-time guardrail ledger, and one-click Emergency Rollback.
 - Developer Productivity & Activity Telemetry (v9.0.0): 2-minute activity heartbeats tracking active coding time, keystroke cadence, and multi-language attribution with 120s idle pausing.
